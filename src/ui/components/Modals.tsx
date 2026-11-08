@@ -33,9 +33,9 @@ function Overlay({ children, title }: { children: React.ReactNode; title: string
 
 export function AsChooserModal() {
   const asChooser = useGameStore((s) => s.asChooser);
-  if (!asChooser) return null;
   const chooseAs = useGameStore((s) => s.chooseAs);
   const close = useGameStore((s) => s.closeAsChooser);
+  if (!asChooser) return null;
   return (
     <Overlay title="选择使用方式">
       <div className="as-options">

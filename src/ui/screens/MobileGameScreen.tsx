@@ -64,7 +64,7 @@ export function MobileGameScreen() {
     );
   }
 
-  const mode = game.state.rules?.mode ?? 'identity';
+  const mode = game.state.players.length === 2 ? 'duel' : (game.state.rules?.mode ?? 'identity');
   const currentId = game.state.current;
   const current = game.state.players[currentId];
   const mine = currentId === humanId;

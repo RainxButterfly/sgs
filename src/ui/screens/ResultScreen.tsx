@@ -18,7 +18,7 @@ export function ResultScreen() {
   if (!game || !result) return null;
 
   const human = game.state.players[humanId];
-  const mode = game.state.rules.mode;
+  const mode = game.state.players.length === 2 ? 'duel' : game.state.rules.mode;
   const humanWon =
     mode === 'guozhan'
       ? result.winner === human.faction

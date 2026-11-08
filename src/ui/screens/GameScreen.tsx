@@ -57,6 +57,7 @@ export function GameScreen() {
     );
   }
   const n = game.state.players.length;
+  const displayMode = n === 2 ? 'duel' : game.state.rules.mode;
   const currentId = game.state.current;
 
   const selectedOption =
@@ -105,7 +106,7 @@ export function GameScreen() {
               <PlayerSeat
                 key={player.id}
                 player={player}
-                mode={game.state.rules.mode}
+                mode={displayMode}
                 current={player.id === currentId}
                 targetable={targetable.has(player.id)}
                 selected={selectedTargets.includes(player.id)}
@@ -124,7 +125,7 @@ export function GameScreen() {
         <div className="own-area">
           <HeroPanel
             player={human}
-            mode={game.state.rules.mode}
+            mode={displayMode}
             current={human.id === currentId}
             flash={flash}
             handLimitModifier={game.state.rules?.handLimitModifier ?? 0}

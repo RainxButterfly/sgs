@@ -290,7 +290,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const mode = rules?.mode ?? 'identity';
     const roles = buildRoles(count, mode);
     roles.sort(() => Math.random() - 0.5);
-    const visibleLordIndex = mode === 'identity' || mode === 'landlord' ? roles.indexOf('lord') : -1;
+    const visibleLordIndex =
+      count > 2 && (mode === 'identity' || mode === 'landlord') ? roles.indexOf('lord') : -1;
     const lordIndex = visibleLordIndex;
     const lordHeroId = lordIndex > 0 ? bots[lordIndex - 1].heroId : null;
     set({

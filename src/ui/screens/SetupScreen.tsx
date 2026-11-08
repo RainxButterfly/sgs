@@ -39,7 +39,7 @@ export function SetupScreen() {
         : mode === 'guozhan'
           ? '魏 · 蜀 · 吴 · 群 · 阵营团战，存活到最后的势力获胜'
           : mode === 'custom' && effectiveCount === 2
-            ? '主公 1 · 反贼 1'
+            ? '2 人单挑 · 双方没有身份'
             : mode === 'custom' && effectiveCount === 3
               ? '主公 1 · 忠臣 1 · 反贼 1'
               : mode === 'custom' && effectiveCount === 4

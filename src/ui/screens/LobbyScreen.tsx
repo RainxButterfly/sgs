@@ -303,7 +303,7 @@ export function LobbyScreen() {
                 <>
                   <RulesEditor rules={rules} onChange={(next) => setLanRules('custom', next)} />
                   <span className="setup-hint">
-                    2 人为主公/反贼；3–4 人为主公/忠臣/反贼；5 人以上使用标准身份配置。
+                    2 人为无身份单挑；3–4 人为主公/忠臣/反贼；5 人以上使用标准身份配置。
                   </span>
                 </>
               )}

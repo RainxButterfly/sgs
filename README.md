@@ -6,13 +6,13 @@
 
 Windows 安装版：
 
-https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-0.5.1-setup.exe
+https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-0.5.2-setup.exe
 
 运行安装程序，按提示安装，桌面和开始菜单会生成快捷方式。
 
 Windows 便携版：
 
-https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.1.zip
+https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.2.zip
 
 解压后双击 `四国闪.bat` 启动。
 

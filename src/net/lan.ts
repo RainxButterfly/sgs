@@ -229,7 +229,7 @@ export class LanHostManager {
     this.roles = roles;
     const lordIndex = roles.indexOf('lord');
     const humans = 1 + this.guests.length;
-    const visibleIdentity = gameMode === 'identity' || gameMode === 'landlord';
+    const visibleIdentity = total > 2 && (gameMode === 'identity' || gameMode === 'landlord');
     if (!visibleIdentity || lordIndex < 0) {
       this.lordPlayerId = null;
       this.lordBotHero = null;

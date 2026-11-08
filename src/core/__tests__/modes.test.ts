@@ -42,6 +42,23 @@ describe('对局模式', () => {
     expect(game.state.over || io.stopped).toBe(true);
   }, 20000);
 
+  it('2 人自定义对局也没有主公加成和主公技', () => {
+    const io = new SimIO();
+    const game = new Game(
+      {
+        players: [
+          { name: 'A', heroId: 'caocao', isBot: true },
+          { name: 'B', heroId: 'liubei', isBot: true },
+        ],
+        seed: 202603012,
+        rules: { mode: 'identity' },
+      },
+      io,
+    );
+    expect(game.state.players.map((p) => p.maxHp)).toEqual([4, 4]);
+    expect(game.state.players.some((p) => p.skills.includes('hujia'))).toBe(false);
+  });
+
   it('1v1 双方没有主公加成和主公技', () => {
     const io = new SimIO();
     const game = new Game(

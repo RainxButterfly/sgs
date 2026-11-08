@@ -1,14 +1,14 @@
 {
-  "version": "0.5.1",
-  "notes": "v0.5.1：优化手机端出牌区高度，避免技能按钮较多时手牌被挤出屏幕。",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.1.zip",
+  "version": "0.5.2",
+  "notes": "v0.5.2：修复选择视为牌时界面报错；2 人对局统一为无身份单挑，不再有主公加成。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.2.zip",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.1.zip",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.1.zip",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.1.zip",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.1.zip",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.1.zip",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.1.zip"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.2.zip",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.2.zip",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.2.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.2.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.2.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.2.zip"
   ],
-  "sha256": "cc18dbc72f37693f1114b167c29f8f884f20f05edf26fdf639e29e4ba6111323"
+  "sha256": "87afe16ff58956e55048eb59294deb628bb7076bb9b0025e68de8c96ba8220ec"
 }

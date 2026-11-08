@@ -134,7 +134,7 @@ export class Game {
       usedHeroes.add(heroId);
       const hero = HERO_MAP.get(heroId)!;
       if (mode === 'guozhan') guozhanCounts[hero.faction] += 1;
-      const isLord = roles[i] === 'lord' && mode !== 'duel';
+      const isLord = roles[i] === 'lord' && mode !== 'duel' && count > 2;
       const maxHp = Math.max(1, hero.hp + (isLord ? 1 : 0) + rules.hpModifier);
       return {
         id: i,
@@ -208,7 +208,7 @@ export class Game {
 
     for (const p of players) this.drawRaw(p, rules.initialHand);
     for (const p of players) {
-      if (mode === 'duel') {
+      if (mode === 'duel' || count === 2) {
         this.log(`【${p.name}】选择了武将【${p.heroName}】`, 'system');
       } else if (p.role === 'lord') {
         this.log(`【${p.name}】以主公身份登场，选择武将【${p.heroName}】`, 'system');
@@ -1988,7 +1988,7 @@ export class Game {
       }
       return;
     }
-    if (this.state.rules.mode === 'duel') {
+    if (this.state.rules.mode === 'duel' || this.state.players.length === 2) {
       if (alive.length === 0) this.endGame('draw', '两败俱伤，单挑不分胜负。');
       else if (alive.length === 1) {
         const winner = alive[0];
