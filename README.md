@@ -18,7 +18,7 @@ https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win
 
 安卓安装版（arm64）：
 
-https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-0.5.4-arm64.apk
+https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-0.5.4-arm64.apk
 
 手机允许安装未知来源应用后打开 APK。手机和电脑连接同一个 WiFi 或虚拟局域网，进入「局域网联机 → 加入房间」，填写电脑上显示的地址和房间码即可同局游戏。
 
