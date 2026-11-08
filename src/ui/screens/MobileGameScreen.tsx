@@ -97,7 +97,7 @@ export function MobileGameScreen() {
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
   const humanEquips = equipNames(human);
-  const recent = cardHistory.slice(-3);
+  const recent = [...cardHistory].slice(-3).reverse();
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
     const card = entry.cards[0];
@@ -243,9 +243,8 @@ export function MobileGameScreen() {
           )}
         </div>
         <div className="m-history">
-          {recent.map((entry, index) => (
+          {recent.map((entry) => (
             <div key={entry.id} className="m-history-item">
-              <span className="m-history-index">{index + 1}</span>
               <em>{entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'}</em>
               <span>{actionText(entry)}</span>
               {entry.targets && entry.targets.length > 0 && (

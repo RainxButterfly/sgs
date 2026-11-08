@@ -1,3 +1,5 @@
+import { scheduleDataSnapshot } from './dataStorage';
+
 const STORAGE_KEY = 'sgs-background-v1';
 const MAX_EDGE = 1920;
 
@@ -29,6 +31,7 @@ export function saveBackgroundSettings(settings: BackgroundSettings): void {
   if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    scheduleDataSnapshot();
   } catch {
     // 存储空间不足时保留当前会话内的设置
   }

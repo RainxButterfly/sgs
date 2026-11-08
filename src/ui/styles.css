@@ -6586,3 +6586,57 @@ button {
     line-height: 1.35;
   }
 }
+
+.lobby-hero-wrap {
+  position: relative;
+  display: flex;
+}
+
+.lobby-hero-top {
+  min-width: 0;
+}
+
+.lobby-hero-name,
+.hero-card-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-hero-info {
+  position: absolute;
+  top: -7px;
+  right: -5px;
+  z-index: 4;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(219, 181, 108, 0.5);
+  border-radius: 50%;
+  background: rgba(30, 24, 17, 0.96);
+  color: var(--gold-bright);
+  font-family: Georgia, serif;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.settings-dir-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-dir-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-ok {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #a9e6b9;
+}

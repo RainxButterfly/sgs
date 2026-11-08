@@ -13,6 +13,7 @@ import {
   type AppUpdateInfo,
 } from './update';
 import { loadBackgroundSettings, saveBackgroundSettings } from './background';
+import { scheduleDataSnapshot } from './dataStorage';
 import { addMatchRecord, localDateKey } from './history';
 import type {
   AskRequest,
@@ -46,7 +47,7 @@ interface SavedLanSession {
 
 const LAN_SESSION_KEY = 'sgk-lan-session';
 
-function loadSavedLanSession(): SavedLanSession | null {
+export function loadSavedLanSession(): SavedLanSession | null {
   try {
     const raw = localStorage.getItem(LAN_SESSION_KEY);
     if (!raw) return null;
@@ -61,6 +62,7 @@ function loadSavedLanSession(): SavedLanSession | null {
 function saveLanSession(session: SavedLanSession): void {
   try {
     localStorage.setItem(LAN_SESSION_KEY, JSON.stringify(session));
+    scheduleDataSnapshot();
   } catch {
     // ignore storage failures
   }
@@ -69,6 +71,7 @@ function saveLanSession(session: SavedLanSession): void {
 function clearSavedLanSession(): void {
   try {
     localStorage.removeItem(LAN_SESSION_KEY);
+    scheduleDataSnapshot();
   } catch {
     // ignore storage failures
   }

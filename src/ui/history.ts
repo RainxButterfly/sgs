@@ -1,4 +1,5 @@
 import type { Faction, LogEntry, Role } from '../core/types';
+import { scheduleDataSnapshot } from './dataStorage';
 
 export interface MatchPlayerRecord {
   name: string;
@@ -80,6 +81,7 @@ function saveHistory(groups: HistoryGroup[]): void {
       }
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    scheduleDataSnapshot();
   } catch {
     // 存储空间不足时保留已有记录
   }

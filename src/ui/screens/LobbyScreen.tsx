@@ -17,6 +17,7 @@ export function LobbyScreen() {
   const leaveLan = useGameStore((s) => s.leaveLan);
   const pickLanHero = useGameStore((s) => s.pickLanHero);
   const lanConnId = useGameStore((s) => s.lanConnId);
+  const joinedRoom = useGameStore((s) => s.room);
   const [count, setCount] = useState(8);
   const [copied, setCopied] = useState<string | null>(null);
   const host = lanRole === 'host';
@@ -193,32 +194,55 @@ export function LobbyScreen() {
         <div className="lobby-grid">
           <section className="room-card">
             <div className="room-card-title">房间信息</div>
-            <div className="room-row">
-              <span className="room-label">联机地址</span>
-              <span className="room-value small">选择手机要使用的地址</span>
-              <button type="button" className="btn ghost small" onClick={() => copy(address, 'addr')}>
-                {copied === 'addr' ? '已复制' : '复制'}
-              </button>
-            </div>
-            <div className="address-list">
-              {addressOptions.map((entry) => {
-                const active = entry.ip === selectedAddress?.ip;
-                return (
-                  <button
-                    key={entry.ip}
-                    type="button"
-                    className={`address-item ${active ? 'on' : ''}`}
-                    onClick={() => setSelectedIp(entry.ip)}
-                  >
-                    <span className="address-name">{nicLabel(entry.name)}</span>
-                    <span className="address-value">
-                      {entry.ip}:{lobby.room.port}
-                    </span>
-                    <span className="address-state">{active ? '使用中' : '切换'}</span>
+            {host ? (
+              <>
+                <div className="room-row">
+                  <span className="room-label">联机地址</span>
+                  <span className="room-value small">选择手机要使用的地址</span>
+                  <button type="button" className="btn ghost small" onClick={() => copy(address, 'addr')}>
+                    {copied === 'addr' ? '已复制' : '复制'}
                   </button>
-                );
-              })}
-            </div>
+                </div>
+                <div className="address-list">
+                  {addressOptions.map((entry) => {
+                    const active = entry.ip === selectedAddress?.ip;
+                    return (
+                      <button
+                        key={entry.ip}
+                        type="button"
+                        className={`address-item ${active ? 'on' : ''}`}
+                        onClick={() => setSelectedIp(entry.ip)}
+                      >
+                        <span className="address-name">{nicLabel(entry.name)}</span>
+                        <span className="address-value">
+                          {entry.ip}:{lobby.room.port}
+                        </span>
+                        <span className="address-state">{active ? '使用中' : '切换'}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="room-row">
+                <span className="room-label">房主地址</span>
+                <span className="room-value">
+                  {joinedRoom?.ip ?? lobby.room.ip}:{joinedRoom?.port ?? lobby.room.port}
+                </span>
+                <button
+                  type="button"
+                  className="btn ghost small"
+                  onClick={() =>
+                    copy(
+                      `${joinedRoom?.ip ?? lobby.room.ip}:${joinedRoom?.port ?? lobby.room.port}`,
+                      'addr',
+                    )
+                  }
+                >
+                  {copied === 'addr' ? '已复制' : '复制'}
+                </button>
+              </div>
+            )}
             <div className="room-row">
               <span className="room-label">房间码</span>
               <span className="room-value code">{lobby.room.code}</span>
@@ -226,9 +250,11 @@ export function LobbyScreen() {
                 {copied === 'code' ? '已复制' : '复制'}
               </button>
             </div>
-            <div className="address-hint">
-              二维码使用当前选中的地址。ZeroTier 地址打不开时，请允许四国闪通过 Windows 防火墙，或切换到局域网地址。
-            </div>
+            {host && (
+              <div className="address-hint">
+                二维码使用当前选中的地址。ZeroTier 地址打不开时，请允许四国闪通过 Windows 防火墙，或切换到局域网地址。
+              </div>
+            )}
             {host && (
               <div className="room-qr">
                 {qr ? (

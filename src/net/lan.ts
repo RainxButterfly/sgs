@@ -281,7 +281,15 @@ export class LanHostManager {
   private refreshLobby(): void {
     this.lobby = this.buildLobby();
     this.hooks.onLobby(this.lobby);
-    this.broadcast({ t: 'lobby', lobby: this.lobby } satisfies HostPayload);
+    const guestLobby: LobbyState = {
+      ...this.lobby,
+      room: {
+        ip: this.info.ip,
+        port: this.info.port,
+        code: this.info.code,
+      },
+    };
+    this.broadcast({ t: 'lobby', lobby: guestLobby } satisfies HostPayload);
   }
 
   private handleServer(event: ServerEvent): void {

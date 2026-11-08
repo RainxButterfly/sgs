@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME } from '../../core/types';
 import type { LobbyPlayer } from '../../net/protocol';
+import { HeroDetailModal } from './HeroDetail';
 import { HeroDataHover, HoverInfo } from './HoverInfo';
 
 interface Props {
@@ -33,6 +35,7 @@ export function LanPickPanel({
   onStart,
   onCancel,
 }: Props) {
+  const [detailHero, setDetailHero] = useState<string | null>(null);
   const allPicked = players.every((player) => player.heroId);
   const emptySlots = Math.max(0, startCount - players.length);
   const lordReady = !lordPlayerId || !!lordHeroId;
@@ -128,6 +131,24 @@ export function LanPickPanel({
                   {taken && <span className="lobby-hero-flag">已被选择</span>}
                   {picked && <span className="lobby-hero-flag picked">已选择</span>}
                 </button>
+                <span
+                  className="lobby-hero-info"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="查看武将信息"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setDetailHero(heroId);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.stopPropagation();
+                      setDetailHero(heroId);
+                    }
+                  }}
+                >
+                  i
+                </span>
                 </HoverInfo>
               );
             })}
@@ -155,6 +176,13 @@ export function LanPickPanel({
           </div>
         )}
       </div>
+      {detailHero && (
+        <HeroDetailModal
+          heroId={detailHero}
+          showRole={false}
+          onClose={() => setDetailHero(null)}
+        />
+      )}
     </div>
   );
 }

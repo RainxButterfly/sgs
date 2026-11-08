@@ -17,12 +17,11 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
     net::UdpSocket,
+    path::PathBuf,
     sync::{Arc, Mutex, OnceLock},
     time::Duration,
 };
-use tauri::Emitter;
-#[cfg(target_os = "android")]
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tokio::sync::mpsc;
 
 const UPDATE_REPO: &str = "RainxButterfly/sgs";
@@ -477,6 +476,85 @@ fn random_secret() -> String {
         .to_lowercase()
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DataDirInfo {
+    path: String,
+    default_path: String,
+}
+
+fn default_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    app.path().app_data_dir().map_err(|error| error.to_string())
+}
+
+fn data_dir_marker(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let dir = app.path().app_config_dir().map_err(|error| error.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|error| error.to_string())?;
+    Ok(dir.join("data-dir.txt"))
+}
+
+fn current_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    if let Ok(marker) = data_dir_marker(app) {
+        if let Ok(raw) = std::fs::read_to_string(&marker) {
+            let value = raw.trim();
+            if !value.is_empty() {
+                return Ok(PathBuf::from(value));
+            }
+        }
+    }
+    default_data_dir(app)
+}
+
+async fn data_dir_info_impl(app: tauri::AppHandle) -> Result<DataDirInfo, String> {
+    let default_path = default_data_dir(&app)?;
+    let path = current_data_dir(&app)?;
+    std::fs::create_dir_all(&path).map_err(|error| format!("无法创建数据目录：{error}"))?;
+    Ok(DataDirInfo {
+        path: path.to_string_lossy().to_string(),
+        default_path: default_path.to_string_lossy().to_string(),
+    })
+}
+
+#[tauri::command]
+async fn data_dir_info(app: tauri::AppHandle) -> Result<DataDirInfo, String> {
+    data_dir_info_impl(app).await
+}
+
+#[tauri::command]
+async fn set_data_dir(app: tauri::AppHandle, path: String) -> Result<DataDirInfo, String> {
+    let marker = data_dir_marker(&app)?;
+    let value = path.trim();
+    if value.is_empty() {
+        let _ = std::fs::remove_file(&marker);
+    } else {
+        let dir = PathBuf::from(value);
+        std::fs::create_dir_all(&dir).map_err(|error| format!("无法创建目录：{error}"))?;
+        std::fs::write(&marker, dir.to_string_lossy().as_bytes())
+            .map_err(|error| format!("保存设置失败：{error}"))?;
+    }
+    data_dir_info_impl(app).await
+}
+
+#[tauri::command]
+async fn write_data_snapshot(app: tauri::AppHandle, contents: String) -> Result<(), String> {
+    let dir = current_data_dir(&app)?;
+    std::fs::create_dir_all(&dir).map_err(|error| format!("无法创建数据目录：{error}"))?;
+    let target = dir.join("siguoshan-data.json");
+    std::fs::write(&target, contents).map_err(|error| format!("写入数据失败：{error}"))
+}
+
+#[tauri::command]
+async fn read_data_snapshot(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let dir = current_data_dir(&app)?;
+    let target = dir.join("siguoshan-data.json");
+    if !target.exists() {
+        return Ok(None);
+    }
+    std::fs::read_to_string(&target)
+        .map(Some)
+        .map_err(|error| format!("读取数据失败：{error}"))
+}
+
 #[tauri::command]
 async fn start_room() -> Result<RoomInfo, String> {
     if let Some(info) = ROOM_INFO.lock().map_err(|e| e.to_string())?.clone() {
@@ -744,7 +822,11 @@ pub fn run() {
             check_android_update,
             prepare_portable_update,
             install_android_update,
-            android_battery
+            android_battery,
+            data_dir_info,
+            set_data_dir,
+            write_data_snapshot,
+            read_data_snapshot
         ]);
     #[cfg(target_os = "android")]
     let builder = builder.plugin(installer_plugin());

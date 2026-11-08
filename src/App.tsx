@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
+import { loadBackgroundSettings } from './ui/background';
 import { SettingsModal } from './ui/components/SettingsModal';
+import { initDataStorage } from './ui/dataStorage';
 import { UpdateModal } from './ui/components/UpdateModal';
-import { useGameStore } from './ui/store';
+import { loadSavedLanSession, useGameStore } from './ui/store';
 import { GameScreen } from './ui/screens/GameScreen';
 import { HeroGallery } from './ui/screens/HeroGallery';
 import { LanScreen } from './ui/screens/LanScreen';
@@ -18,6 +20,18 @@ export default function App() {
   const screen = useGameStore((s) => s.screen);
   const gameError = useGameStore((s) => s.error);
   const mobile = useIsMobile();
+
+  useEffect(() => {
+    void initDataStorage().then((restored) => {
+      if (!restored) return;
+      const background = loadBackgroundSettings();
+      useGameStore.setState({
+        bgImage: background.image,
+        bgDim: background.dim,
+        savedLanSession: loadSavedLanSession(),
+      });
+    });
+  }, []);
 
   useEffect(() => {
     if (!import.meta.env.PROD) return;
