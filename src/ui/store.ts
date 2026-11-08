@@ -51,6 +51,7 @@ interface PlayEvent {
   card: Card;
   as: string;
   targets: number[];
+  isResponse?: boolean;
 }
 
 interface JudgeEvent {
@@ -71,10 +72,12 @@ interface FlashEvent {
 
 interface CardHistoryEntry {
   id: number;
-  kind: 'discard' | 'reveal' | 'judge';
+  kind: 'play' | 'respond' | 'discard' | 'reveal' | 'judge';
   playerId?: number;
   cards: Card[];
   label: string;
+  as?: string;
+  targets?: number[];
 }
 
 interface GameStore {
@@ -743,13 +746,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const patch: Partial<GameStore> = { version: state.version + 1 };
     if (ev.type === 'playCard' || ev.type === 'respond') {
       eventSeq += 1;
+      const isResponse = ev.type === 'respond';
       patch.lastPlay = {
         id: eventSeq,
         playerId: ev.playerId,
         card: ev.card,
         as: ev.as,
         targets: ev.type === 'playCard' ? ev.targets : [],
+        isResponse,
       };
+      patch.cardHistory = [
+        ...state.cardHistory,
+        {
+          id: eventSeq,
+          kind: isResponse ? ('respond' as const) : ('play' as const),
+          playerId: ev.playerId,
+          cards: [ev.card],
+          label: isResponse ? '打出' : '使用',
+          as: ev.as,
+          targets: ev.type === 'playCard' ? ev.targets : [],
+        },
+      ].slice(-5);
     } else if (ev.type === 'judge') {
       eventSeq += 1;
       patch.lastJudge = {
@@ -771,7 +788,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       patch.cardHistory = [
         ...baseHistory,
         { id: eventSeq, kind: 'judge' as const, playerId: ev.playerId, cards: [ev.card], label: ev.reason },
-      ].slice(-4);
+      ].slice(-5);
     } else if (ev.type === 'discard' && ev.cards.length > 0) {
       eventSeq += 1;
       patch.cardHistory = [
@@ -783,7 +800,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           cards: ev.cards,
           label: ev.reason ?? '弃置',
         },
-      ].slice(-4);
+      ].slice(-5);
     } else if (ev.type === 'reveal' && ev.cards.length > 0) {
       eventSeq += 1;
       patch.cardHistory = [
@@ -795,7 +812,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           cards: ev.cards,
           label: '展示',
         },
-      ].slice(-4);
+      ].slice(-5);
     } else if (ev.type === 'damage' || ev.type === 'heal') {
       eventSeq += 1;
       patch.flash = {

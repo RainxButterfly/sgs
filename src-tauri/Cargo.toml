@@ -1,6 +1,6 @@
 [package]
 name = "sanguosha"
-version = "0.5.2"
+version = "0.5.3"
 description = "四国闪 · 星河"
 authors = ["星河一叶Roxy <ck_xuv@vip.qq.com>"]
 license = "Apache-2.0"

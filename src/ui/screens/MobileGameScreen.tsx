@@ -3,6 +3,7 @@ import defaultBg from '../../assets/bg-default.jpg';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
+import { cardDisplayName } from '../labels';
 import { CardView } from '../components/CardView';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { Hand } from '../components/Hand';
@@ -87,8 +88,19 @@ export function MobileGameScreen() {
   const humanSkills = [...new Set([...human.skills, ...(human.extraSkills ?? [])])]
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
-  const recent = cardHistory.slice(-2);
+  const recent = cardHistory.slice(-3);
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
+  const actionText = (entry: (typeof cardHistory)[number]) => {
+    const card = entry.cards[0];
+    if (entry.kind === 'play' || entry.kind === 'respond') {
+      const verb = entry.kind === 'respond' ? '打出' : '使用';
+      const as = entry.as ?? (card ? cardDisplayName(card) : '');
+      if (card && as !== cardDisplayName(card)) return `将【${cardDisplayName(card)}】当【${as}】${verb}`;
+      return `${verb}【${as}】`;
+    }
+    if (entry.kind === 'judge') return `判定【${card ? cardDisplayName(card) : ''}】`;
+    return `${entry.label} ${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
+  };
 
   const exit = () => {
     const state = useGameStore.getState();
@@ -200,7 +212,10 @@ export function MobileGameScreen() {
               <CardView card={lastPlay.card} size="sm" />
               <span>
                 <b>{targetName(lastPlay.playerId)}</b>
-                {lastPlay.as === lastPlay.card.name ? ` 使用【${lastPlay.card.name}】` : ` 将【${lastPlay.card.name}】当【${lastPlay.as}】`}
+                {lastPlay.isResponse ? ' 打出' : ' 使用'}
+                {lastPlay.as === cardDisplayName(lastPlay.card)
+                  ? `【${cardDisplayName(lastPlay.card)}】`
+                  : `【${cardDisplayName(lastPlay.card)}】当【${lastPlay.as}】`}
                 {lastPlay.targets.length > 0 && ` → ${lastPlay.targets.map(targetName).join('、')}`}
               </span>
             </div>
@@ -210,12 +225,11 @@ export function MobileGameScreen() {
           <div className="m-history">
             {recent.map((entry) => (
               <div key={entry.id} className="m-history-item">
-                <em>
-                  {entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'} · {entry.label}
-                </em>
-                {entry.cards.slice(0, 3).map((card) => (
-                  <span key={card.id}>{card.name}</span>
-                ))}
+                <em>{entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'}</em>
+                <span>{actionText(entry)}</span>
+                {entry.targets && entry.targets.length > 0 && (
+                  <i>→ {entry.targets.map(targetName).join('、')}</i>
+                )}
               </div>
             ))}
           </div>

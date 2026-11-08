@@ -1,14 +1,14 @@
 {
-  "version": "0.5.2",
-  "notes": "v0.5.2：修复选择视为牌时界面报错；2 人对局统一为无身份单挑，不再有主公加成。",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.2.zip",
+  "version": "0.5.3",
+  "notes": "v0.5.3：中央新增出牌顺序列表，清楚显示谁使用了什么牌、目标是谁，以及打出、弃牌和判定记录。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.3.zip",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.2.zip",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.2.zip",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.2.zip",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.2.zip",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.2.zip",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.2.zip"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.3.zip",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.3.zip",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.3.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.3.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.3.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.5.3.zip"
   ],
-  "sha256": "87afe16ff58956e55048eb59294deb628bb7076bb9b0025e68de8c96ba8220ec"
+  "sha256": "5f14d15ab48020d7c18ca274a53a93aadef86cb3be7bd2ae0cc06fe80a65f94f"
 }
