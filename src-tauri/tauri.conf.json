@@ -1,0 +1,61 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "sanguosha",
+  "version": "0.1.0",
+  "identifier": "com.rainxbutterfly.sanguosha",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run build && npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "三国杀 · 星河",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1120,
+        "minHeight": 720,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "android": {
+      "debugApplicationIdSuffix": ".debug"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY1REZFRjYyRThDNUMyRDMKUldUVHdzWG9ZdS9mWldUNEt2ZDRURk53dDZ3VXNwa3pSL21ZYy9xY3FvbTZHUVpNUDVRZ1lxRFkK",
+      "endpoints": [
+        "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/latest.json",
+        "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/latest.json",
+        "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@master/latest.json",
+        "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/latest.json",
+        "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/latest.json",
+        "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/master/latest.json",
+        "https://raw.githubusercontent.com/RainxButterfly/sgs/main/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

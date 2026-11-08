@@ -1,0 +1,36 @@
+[package]
+name = "sanguosha"
+version = "0.1.0"
+description = "三国杀 · 星河"
+authors = ["星河一叶Roxy <ck_xuv@vip.qq.com>"]
+license = "Apache-2.0"
+edition = "2021"
+rust-version = "1.90"
+
+[lib]
+name = "app_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.12.5", features = [] }
+tauri-plugin-log = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "net", "time"] }
+axum = { version = "0.8", features = ["ws"] }
+futures-util = "0.3"
+rand = "0.9"
+if-addrs = "0.13"
+rust-embed = "8"
+mime_guess = "2"
+reqwest = { version = "0.13", default-features = false, features = ["native-tls"] }
+sha2 = "0.11"
+zip = "9"
+semver = "1"
+base64 = "0.22"

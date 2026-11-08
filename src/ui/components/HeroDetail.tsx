@@ -1,0 +1,128 @@
+import { HERO_MAP } from '../../core/deck';
+import { equipSkillId } from '../../core/equipment';
+import { SKILL_MAP } from '../../core/skills';
+import { FACTION_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
+
+interface Props {
+  heroId: string;
+  player?: PlayerState;
+  showRole?: boolean;
+  onClose: () => void;
+}
+
+const SLOTS = [
+  { key: 'weapon', label: '武器' },
+  { key: 'armor', label: '防具' },
+  { key: 'horsePlus', label: '+1 马' },
+  { key: 'horseMinus', label: '-1 马' },
+] as const;
+
+export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
+  const hero = HERO_MAP.get(heroId);
+  if (!hero) return null;
+  const skillIds = [...hero.skillIds, ...(hero.lordSkillId ? [hero.lordSkillId] : [])];
+  const pips = player ? Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp) : [];
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className={`modal hero-detail faction-${hero.faction}`} onClick={(event) => event.stopPropagation()}>
+        <div className="hero-detail-head">
+          <div className="detail-emblem">{FACTION_NAME[hero.faction]}</div>
+          <div className="detail-identity">
+            <div className="detail-name-row">
+              <span className="detail-name">{hero.name}</span>
+              <span className={`gender-badge ${hero.gender}`}>{hero.gender === 'male' ? '♂' : '♀'}</span>
+              {player && showRole && <span className={`role-tag role-${player.role}`}>{ROLE_NAME[player.role]}</span>}
+            </div>
+            <div className="detail-title">{hero.title}</div>
+            <div className="detail-meta">
+              <span>体力 {player ? `${Math.max(0, player.hp)}/${player.maxHp}` : hero.hp}</span>
+              {player && <span>手牌 {player.hand.length}</span>}
+              {player && !player.alive && <span className="detail-dead">已阵亡</span>}
+            </div>
+            {player && (
+              <div className="hp-row big detail-pips">
+                {pips.map((filled, index) => (
+                  <span key={index} className={`hp-pip ${filled ? 'hp-on' : 'hp-off'}`} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="detail-quote">「{hero.quote}」</div>
+
+        <div className="detail-section-title">武将技能</div>
+        <div className="detail-skills">
+          {skillIds.map((id) => {
+            const skill = SKILL_MAP.get(id);
+            if (!skill) return null;
+            return (
+              <div key={id} className={`detail-skill ${skill.lord ? 'is-lord' : ''}`}>
+                <div className="detail-skill-head">
+                  <b>{skill.name}</b>
+                  {skill.lord && <span className="detail-tag">主公技</span>}
+                  {skill.locked && <span className="detail-tag">锁定技</span>}
+                </div>
+                <p>{skill.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {player && (player.flipped || player.unyu.length > 0) && (
+          <>
+            <div className="detail-section-title">当前状态</div>
+            <div className="detail-judge">
+              {player.flipped && <span className="detail-tag">翻面</span>}
+              {player.unyu.map((card) => (
+                <span key={card.id} className="mini-unyu">
+                  创 {card.name}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+
+        {player && (
+          <>
+            <div className="detail-section-title">装备技能</div>
+            <div className="detail-equips">
+              {SLOTS.map(({ key, label }) => {
+                const card = player.equips[key];
+                const skill = card ? SKILL_MAP.get(equipSkillId(card.name) ?? '') : undefined;
+                return (
+                  <div key={key} className={`detail-equip ${card ? 'filled' : ''}`}>
+                    <div className="detail-equip-head">
+                      <span>{label}</span>
+                      <b>{card ? card.name : '—'}</b>
+                    </div>
+                    {skill && <p>{skill.desc}</p>}
+                  </div>
+                );
+              })}
+            </div>
+            {player.judgeZone.length > 0 && (
+              <>
+                <div className="detail-section-title">判定区</div>
+                <div className="detail-judge">
+                  {player.judgeZone.map((card) => (
+                    <span key={card.id} className="mini-judge">
+                      {card.name}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={onClose}>
+            关闭
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

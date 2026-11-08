@@ -1,0 +1,11 @@
+{
+  "version": "0.2.0",
+  "notes": "在这里填写更新说明。",
+  "pub_date": "2026-11-08T10:00:00Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "把 .nsis.zip.sig 文件内容粘贴到这里",
+      "url": "https://ghfast.top/https://github.com/RainxButterfly/sgs/releases/download/v0.2.0/sanguosha_0.2.0_x64-setup.nsis.zip"
+    }
+  }
+}

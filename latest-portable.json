@@ -1,0 +1,12 @@
+{
+  "version": "0.1.0",
+  "notes": "首发版本：42 名武将、自定义规则、手机扫码加入与内置便携自动更新。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.1.0.zip",
+  "urls": [
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.1.0.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.1.0.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.1.0.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.1.0.zip"
+  ],
+  "sha256": "000203fd82c4430ea3221095021dd41d65eac716156856ee06d5e3f5b5bcf4e8"
+}

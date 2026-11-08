@@ -1,0 +1,12 @@
+node_modules/
+dist/
+src-tauri/target/
+shots/
+*.log
+.DS_Store
+Thumbs.db
+
+release/
+
+src-tauri/updater.key
+src-tauri/updater.key.pub
