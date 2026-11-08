@@ -97,7 +97,7 @@ export function MobileGameScreen() {
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
   const humanEquips = equipNames(human);
-  const recent = [...cardHistory].slice(-3).reverse();
+  const recent = [...cardHistory].slice(-5).reverse();
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
     const card = entry.cards[0];
@@ -108,8 +108,21 @@ export function MobileGameScreen() {
       return `${verb}【${as}】`;
     }
     if (entry.kind === 'judge') return `判定【${card ? cardDisplayName(card) : ''}】`;
+    if (entry.kind === 'discard') {
+      const cards = entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('');
+      return `弃置${cards}${entry.label && entry.label !== '弃置' ? ` · ${entry.label}` : ''}`;
+    }
+    if (entry.kind === 'gain') {
+      return `获得${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
+    }
     return `${entry.label} ${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
   };
+
+  const latest = recent[0];
+  const latestCard = latest?.cards[0];
+  const latestPlayer = latest?.playerId !== undefined ? targetName(latest.playerId) : '';
+  const latestText = latest ? actionText(latest) : '';
+  const latestTargets = latest?.targets ?? [];
 
   const exit = () => {
     const state = useGameStore.getState();
@@ -222,7 +235,17 @@ export function MobileGameScreen() {
           )}
         </div>
         <div className="m-stage">
-          {lastPlay ? (
+          {latestCard ? (
+            <div className="m-last-play">
+              <CardView card={latestCard} size="sm" />
+              <span>
+                <b>{latestPlayer}</b> {latestText}
+                {latestTargets.length > 0 && (
+                  <em className="m-last-target">→ {latestTargets.map(targetName).join('、')}</em>
+                )}
+              </span>
+            </div>
+          ) : lastPlay ? (
             <div className="m-last-play">
               <CardView card={lastPlay.card} size="sm" />
               <span>
@@ -232,9 +255,7 @@ export function MobileGameScreen() {
                   ? `【${cardDisplayName(lastPlay.card)}】`
                   : `【${cardDisplayName(lastPlay.card)}】当【${lastPlay.as}】`}
                 {lastPlay.targets.length > 0 && (
-                  <em className="m-last-target">
-                    → {lastPlay.targets.map(targetName).join('、')}
-                  </em>
+                  <em className="m-last-target">→ {lastPlay.targets.map(targetName).join('、')}</em>
                 )}
               </span>
             </div>

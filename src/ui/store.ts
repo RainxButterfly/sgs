@@ -134,7 +134,7 @@ interface FlashEvent {
 
 interface CardHistoryEntry {
   id: number;
-  kind: 'play' | 'respond' | 'discard' | 'reveal' | 'judge';
+  kind: 'play' | 'respond' | 'discard' | 'reveal' | 'judge' | 'gain';
   playerId?: number;
   cards: Card[];
   label: string;
@@ -925,6 +925,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
           playerId: ev.playerId,
           cards: ev.cards,
           label: ev.reason ?? '弃置',
+        },
+      ].slice(-5);
+    } else if (ev.type === 'gain' && ev.cards.length > 0) {
+      eventSeq += 1;
+      patch.cardHistory = [
+        ...state.cardHistory,
+        {
+          id: eventSeq,
+          kind: 'gain' as const,
+          playerId: ev.playerId,
+          cards: ev.cards,
+          label: ev.public ? '获得' : '获得一张牌',
         },
       ].slice(-5);
     } else if (ev.type === 'reveal' && ev.cards.length > 0) {
