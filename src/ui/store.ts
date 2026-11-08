@@ -5,7 +5,13 @@ import { botAction } from '../core/bot';
 import { smartBotAction } from '../core/smartBot';
 import { LanClientManager, LanHostManager, createRoomInfo, isAndroidApp, isTauri, parseAddress } from '../net/lan';
 import type { LobbyState, RoomInfo } from '../net/protocol';
-import { checkAppUpdate, installAppUpdate, type AppUpdateInfo } from './update';
+import {
+  checkAndroidUpdate,
+  checkAppUpdate,
+  installAndroidUpdate,
+  installAppUpdate,
+  type AppUpdateInfo,
+} from './update';
 import { loadBackgroundSettings, saveBackgroundSettings } from './background';
 import { addMatchRecord, localDateKey } from './history';
 import type {
@@ -30,6 +36,42 @@ interface PreGame {
   roles: Role[];
   lordIndex: number;
   lordHeroId: string | null;
+}
+
+interface SavedLanSession {
+  address: string;
+  code: string;
+  name: string;
+}
+
+const LAN_SESSION_KEY = 'sgk-lan-session';
+
+function loadSavedLanSession(): SavedLanSession | null {
+  try {
+    const raw = localStorage.getItem(LAN_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<SavedLanSession>;
+    if (!parsed.address || !parsed.code || !parsed.name) return null;
+    return { address: parsed.address, code: parsed.code, name: parsed.name };
+  } catch {
+    return null;
+  }
+}
+
+function saveLanSession(session: SavedLanSession): void {
+  try {
+    localStorage.setItem(LAN_SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function clearSavedLanSession(): void {
+  try {
+    localStorage.removeItem(LAN_SESSION_KEY);
+  } catch {
+    // ignore storage failures
+  }
 }
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0';
@@ -104,6 +146,7 @@ interface GameStore {
   lanConnId: number;
   joinPreset: { address: string; code: string } | null;
   suspended: boolean;
+  savedLanSession: SavedLanSession | null;
   appVersion: string;
   updateInfo: AppUpdateInfo | null;
   updateState: UpdateState;
@@ -139,6 +182,8 @@ interface GameStore {
   suspendGame: () => void;
   resumeGame: () => void;
   quitSuspendedGame: () => void;
+  resumeSavedLanSession: () => Promise<void>;
+  dismissSavedLanSession: () => void;
   checkUpdate: (manual?: boolean) => Promise<void>;
   installUpdate: () => Promise<void>;
   openUpdateModal: () => void;
@@ -212,6 +257,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lanConnId: -1,
   joinPreset: null,
   suspended: false,
+  savedLanSession: loadSavedLanSession(),
   appVersion: APP_VERSION,
   updateInfo: null,
   updateState: 'idle',
@@ -386,8 +432,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     get().game?.stop?.();
     get().lanHost?.close();
     get().lanClient?.leave();
+    clearSavedLanSession();
     resolveAsk = null;
     set({
+      savedLanSession: null,
       screen: 'menu',
       game: null,
       preGame: null,
@@ -487,7 +535,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         onError: (message) => set({ netError: message }),
         onClosed: () => set({ netError: '房间连接已断开，请返回重试', lanHost: null }),
       });
+      clearSavedLanSession();
       set({
+        savedLanSession: null,
         lanRole: 'host',
         lanHost: host,
         lanClient: null,
@@ -513,7 +563,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({ netError: '请输入房间码' });
       return;
     }
-    const client = new LanClientManager(ip, port, cleanCode, name.trim() || '玩家', {
+    const playerName = name.trim() || '玩家';
+    const client = new LanClientManager(ip, port, cleanCode, playerName, {
       onWelcome: (connId) => set({ lanConnId: connId }),
       onLobby: (lobby) =>
         set({
@@ -558,7 +609,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       onEvent: (event) => get().event(event),
       onEnd: (text, winner) => {
         if (get().result) return;
-        set({ result: { text, winner } });
+        clearSavedLanSession();
+        set({ result: { text, winner }, savedLanSession: null });
         setTimeout(() => {
           if (get().result) set({ screen: 'result' });
         }, 1400);
@@ -566,14 +618,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       onError: (message) => set({ netError: message }),
       onClosed: () =>
         set({
-          netError: '连接已断开',
+          netError: '连接已断开，可以尝试回归房间',
           lanClient: null,
           lanRole: null,
           game: null,
           pending: null,
-          screen: 'lan',
+          screen: 'menu',
+          suspended: false,
         }),
     });
+    const session: SavedLanSession = { address: `${ip}:${port}`, code: cleanCode, name: playerName };
+    saveLanSession(session);
     set({
       lanRole: 'client',
       lanClient: client,
@@ -586,6 +641,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       game: null,
       result: null,
       pending: null,
+      suspended: false,
+      savedLanSession: session,
       version: get().version + 1,
     });
   },
@@ -613,7 +670,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   checkUpdate: async (manual = false) => {
-    if (isAndroidApp()) return;
     if (!isTauri()) {
       if (manual) {
         set({
@@ -634,7 +690,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     set({ updateState: 'checking', updateError: null });
     try {
-      const info = await checkAppUpdate();
+      const info = isAndroidApp() ? await checkAndroidUpdate() : await checkAppUpdate();
       if (info) {
         set({
           updateInfo: info,
@@ -663,6 +719,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       updateModalOpen: true,
     });
     try {
+      if (info.android) {
+        await installAndroidUpdate(info, (downloaded, total) =>
+          set({ updateProgress: { downloaded, total } }),
+        );
+        set({ updateState: 'latest', updateInfo: null, updateModalOpen: false });
+        return;
+      }
       await installAppUpdate(info, (downloaded, total) =>
         set({ updateProgress: { downloaded, total } }),
       );
@@ -703,8 +766,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   leaveLan: () => {
     get().lanHost?.close();
     get().lanClient?.leave();
+    clearSavedLanSession();
     resolveAsk = null;
     set({
+      savedLanSession: null,
       screen: 'menu',
       game: null,
       preGame: null,
@@ -738,10 +803,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ screen: game.state.over ? 'result' : 'game', suspended: false });
   },
 
+  resumeSavedLanSession: async () => {
+    const saved = get().savedLanSession;
+    if (!saved) return;
+    await get().joinLanRoom(saved.address, saved.code, saved.name);
+  },
+
+  dismissSavedLanSession: () => {
+    clearSavedLanSession();
+    set({ savedLanSession: null });
+  },
+
   quitSuspendedGame: () => {
     get().lanClient?.leave();
+    clearSavedLanSession();
     resolveAsk = null;
     set({
+      savedLanSession: null,
       screen: 'menu',
       game: null,
       preGame: null,

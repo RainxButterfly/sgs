@@ -11,6 +11,7 @@ import { LogPanel } from '../components/LogPanel';
 import { GameModals } from '../components/Modals';
 import { PromptBar } from '../components/PromptBar';
 import { useGameSnapshot, useGameStore } from '../store';
+import { useDeviceStatus } from '../useDeviceStatus';
 
 function roleText(player: PlayerState, mode: string, self = false): string {
   if (mode === 'duel' || mode === 'guozhan') return '';
@@ -32,6 +33,7 @@ export function MobileGameScreen() {
   const bgDim = useGameStore((s) => s.bgDim);
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
+  const { time, battery } = useDeviceStatus();
 
   if (!game) {
     return (
@@ -119,6 +121,10 @@ export function MobileGameScreen() {
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
 
       <header className="m-topbar">
+        <div className="m-device-status">
+          <b>{time}</b>
+          {battery !== null && <span>{battery}%</span>}
+        </div>
         <span className="m-brand">闪</span>
         <span className="m-turn">
           <b>{mine ? '轮到你' : `等待 ${current?.name ?? ''}`}</b>

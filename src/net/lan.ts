@@ -208,7 +208,13 @@ export class LanHostManager {
       this.picking && !!this.hostHeroId && this.guests.every((guest) => !!guest.heroId);
     const lordSeat = this.lordPlayerId == null && this.lordBotHero ? this.roles?.indexOf('lord') : undefined;
     return {
-      room: { ip: this.info.ip, ips: this.info.ips, port: this.info.port, code: this.info.code },
+      room: {
+        ip: this.info.ip,
+        ips: this.info.ips,
+        names: this.info.names,
+        port: this.info.port,
+        code: this.info.code,
+      },
       hostName: this.hostName,
       players,
       maxPlayers: this.rules.mode === 'duel' ? 2 : this.rules.mode === 'landlord' ? 3 : 8,

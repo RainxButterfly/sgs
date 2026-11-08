@@ -3,6 +3,7 @@ import type { AskRequest, Card, CustomRules, GameAction, GameEvent, GameState, P
 export interface RoomInfo {
   ip: string;
   ips?: string[];
+  names?: string[];
   port: number;
   code: string;
   secret: string;
@@ -11,6 +12,7 @@ export interface RoomInfo {
 export interface RoomAddress {
   ip: string;
   ips?: string[];
+  names?: string[];
   port: number;
   code: string;
 }

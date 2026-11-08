@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGameStore } from '../store';
 
 function formatBytes(value: number): string {
@@ -16,8 +17,20 @@ export function UpdateModal() {
   const close = useGameStore((s) => s.closeUpdateModal);
   const install = useGameStore((s) => s.installUpdate);
   const check = useGameStore((s) => s.checkUpdate);
+  const [copied, setCopied] = useState(false);
 
   if (!open) return null;
+
+  const copyUrl = async () => {
+    if (!info) return;
+    try {
+      await navigator.clipboard.writeText(info.raw.urls?.[0] ?? info.raw.url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
   const percent =
     progress.total > 0 ? Math.min(100, Math.round((progress.downloaded / progress.total) * 100)) : 0;
   const busy = state === 'downloading' || state === 'installing';
@@ -48,7 +61,9 @@ export function UpdateModal() {
             </div>
             {info.notes && <pre className="update-notes">{info.notes}</pre>}
             <div className="update-hint">
-              下载完成后会自动替换程序并重启，不需要卸载旧版本。
+              {info.android
+                ? '会先下载安装包，然后打开系统安装器。首次安装需要允许四国闪“安装未知应用”，覆盖安装不会丢失对局记录。'
+                : '下载完成后会自动替换程序并重启，不需要卸载旧版本。'}
             </div>
           </>
         )}
@@ -56,7 +71,13 @@ export function UpdateModal() {
         {busy && (
           <>
             <div className="update-status">
-              {state === 'downloading' ? '正在下载更新…' : '正在安装，应用即将重启…'}
+              {state === 'downloading'
+                ? info?.android
+                  ? '正在下载安装包…'
+                  : '正在下载更新…'
+                : info?.android
+                  ? '正在打开系统安装器…'
+                  : '正在安装，应用即将重启…'}
             </div>
             <div className="update-bar">
               <span style={{ width: `${percent}%` }} />
@@ -78,7 +99,9 @@ export function UpdateModal() {
           <>
             <div className="update-error">{error ?? '更新失败，请稍后重试。'}</div>
             <div className="update-hint">
-              如果当前网络无法访问镜像，可以稍后再试，或者让朋友把新的便携包发给你。
+              {info?.android
+                ? '如果系统安装器没有弹出，可以复制下载链接，在手机浏览器里手动下载安装。'
+                : '如果当前网络无法访问镜像，可以稍后再试，或者让朋友把新的便携包发给你。'}
             </div>
           </>
         )}
@@ -86,6 +109,11 @@ export function UpdateModal() {
         <div className="modal-actions">
           {busy ? null : state === 'available' ? (
             <>
+              {info?.android && (
+                <button type="button" className="btn ghost" onClick={() => void copyUrl()}>
+                  {copied ? '已复制' : '复制链接'}
+                </button>
+              )}
               <button type="button" className="btn ghost" onClick={close}>
                 稍后
               </button>
@@ -95,6 +123,11 @@ export function UpdateModal() {
             </>
           ) : state === 'error' ? (
             <>
+              {info?.android && (
+                <button type="button" className="btn ghost" onClick={() => void copyUrl()}>
+                  {copied ? '已复制' : '复制下载链接'}
+                </button>
+              )}
               <button type="button" className="btn ghost" onClick={close}>
                 关闭
               </button>

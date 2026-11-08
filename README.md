@@ -6,19 +6,19 @@
 
 Windows 安装版：
 
-https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-0.5.4-setup.exe
+https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-setup.exe
 
 运行安装程序，按提示安装，桌面和开始菜单会生成快捷方式。
 
 Windows 便携版：
 
-https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.4.zip
+https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip
 
 解压后双击 `四国闪.bat` 启动。
 
 安卓安装版（arm64）：
 
-https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-0.5.4-arm64.apk
+https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk
 
 手机允许安装未知来源应用后打开 APK。手机和电脑连接同一个 WiFi 或虚拟局域网，进入「局域网联机 → 加入房间」，填写电脑上显示的地址和房间码即可同局游戏。
 
@@ -80,7 +80,9 @@ https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-0.5
 
 ## 自动更新
 
-程序会读取仓库中的 `latest-portable.json`，从 jsDelivr、ghfast、ghproxy 等地址下载更新包，校验后替换程序并重启。
+程序启动约 1 秒后会自动读取仓库中的 `latest-portable.json`，从 jsDelivr、ghfast、ghproxy 等地址下载更新包，校验后替换程序并重启。
+
+安卓版读取 `latest-android.json`，在应用内下载 APK，然后调起系统安装器。首次更新时需要在系统提示里允许四国闪“安装未知应用”，覆盖安装不会丢失对局记录。
 
 建议把程序解压到桌面、文档等可写目录，不要放在 `Program Files`。
 

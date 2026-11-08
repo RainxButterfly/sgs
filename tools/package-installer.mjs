@@ -25,7 +25,7 @@ fs.writeFileSync(
 );
 
 const hasDll = fs.existsSync(path.join(stage, 'WebView2Loader.dll'));
-const output = path.resolve(`release/siguoshan-xinghe-${version}-setup.exe`);
+const output = path.resolve('release/siguoshan-xinghe-setup.exe');
 const numeric = version.split('.').map((part) => Number(part) || 0);
 while (numeric.length < 4) numeric.push(0);
 const versionNum = numeric.slice(0, 4).join('.');

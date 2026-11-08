@@ -3275,7 +3275,7 @@ dependencies = [
 
 [[package]]
 name = "sanguosha"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "axum",
  "base64 0.22.1",

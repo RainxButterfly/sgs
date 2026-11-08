@@ -1,9 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { execFileSync, execSync } from 'node:child_process';
 
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const version = pkg.version;
+const repo = process.env.UPDATE_REPO || 'RainxButterfly/sgs';
 const androidHome = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT;
 if (!androidHome) {
   console.error('请先设置 ANDROID_HOME 指向 Android SDK。');
@@ -27,6 +29,17 @@ if (!fs.existsSync(buildGradle)) {
   execFileSync('npx', ['tauri', 'android', 'init'], { stdio: 'inherit', shell: true });
 }
 
+const androidIcons = path.resolve('src-tauri/icons/android');
+if (fs.existsSync(androidIcons)) {
+  for (const entry of fs.readdirSync(androidIcons)) {
+    fs.cpSync(
+      path.join(androidIcons, entry),
+      path.join(androidDir, 'app/src/main/res', entry),
+      { recursive: true },
+    );
+  }
+}
+
 let gradle = fs.readFileSync(buildGradle, 'utf8');
 gradle = gradle.replace(
   'manifestPlaceholders["usesCleartextTraffic"] = "false"',
@@ -40,12 +53,148 @@ fs.writeFileSync(strings, stringsXml, 'utf8');
 
 const manifestPath = path.join(androidDir, 'app/src/main/AndroidManifest.xml');
 let manifest = fs.readFileSync(manifestPath, 'utf8');
-if (!manifest.includes('android:screenOrientation="portrait"')) {
+if (!manifest.includes('REQUEST_INSTALL_PACKAGES')) {
+  manifest = manifest.replace(
+    '<uses-permission android:name="android.permission.INTERNET" />',
+    '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />',
+  );
+}
+if (manifest.includes('android:screenOrientation=')) {
+  manifest = manifest.replace(
+    /android:screenOrientation="[^"]*"/,
+    'android:screenOrientation="sensorLandscape"',
+  );
+} else {
   manifest = manifest.replace(
     'android:name=".MainActivity"',
-    'android:name=".MainActivity"\n            android:screenOrientation="portrait"',
+    'android:name=".MainActivity"\n            android:screenOrientation="sensorLandscape"',
   );
-  fs.writeFileSync(manifestPath, manifest, 'utf8');
+}
+fs.writeFileSync(manifestPath, manifest, 'utf8');
+
+const themePath = path.join(androidDir, 'app/src/main/res/values/themes.xml');
+let theme = fs.readFileSync(themePath, 'utf8');
+if (!theme.includes('android:windowFullscreen')) {
+  theme = theme.replace(
+    '</style>',
+    '        <item name="android:windowFullscreen">true</item>\n        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>\n    </style>',
+  );
+  fs.writeFileSync(themePath, theme, 'utf8');
+}
+
+const installerDir = path.join(androidDir, 'app/src/main/java/com/rainxbutterfly/sanguosha');
+fs.mkdirSync(installerDir, { recursive: true });
+fs.writeFileSync(
+  path.join(installerDir, 'InstallerPlugin.kt'),
+  `package com.rainxbutterfly.sanguosha
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.os.BatteryManager
+import androidx.core.content.FileProvider
+import app.tauri.annotation.Command
+import app.tauri.annotation.InvokeArg
+import app.tauri.annotation.TauriPlugin
+import app.tauri.plugin.Invoke
+import app.tauri.plugin.JSObject
+import app.tauri.plugin.Plugin
+import java.io.File
+
+@InvokeArg
+class InstallApkArgs {
+    lateinit var path: String
+}
+
+@TauriPlugin
+class InstallerPlugin(private val activity: Activity) : Plugin(activity) {
+    @Command
+    fun install(invoke: Invoke) {
+        try {
+            val args = invoke.parseArgs(InstallApkArgs::class.java)
+            val file = File(args.path)
+            if (!file.exists()) throw IllegalStateException("安装包不存在")
+            val authority = activity.packageName + ".fileprovider"
+            val uri = FileProvider.getUriForFile(activity, authority, file)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            activity.startActivity(intent)
+            invoke.resolve()
+        } catch (ex: Exception) {
+            invoke.reject(ex.message)
+        }
+    }
+
+    @Command
+    fun battery(invoke: Invoke) {
+        try {
+            val manager = activity.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+            val result = JSObject()
+            result.put("level", manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY))
+            invoke.resolve(result)
+        } catch (ex: Exception) {
+            invoke.reject(ex.message)
+        }
+    }
+}
+`,
+  'utf8',
+);
+
+fs.writeFileSync(
+  path.join(installerDir, 'MainActivity.kt'),
+  `package com.rainxbutterfly.sanguosha
+
+import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+
+class MainActivity : TauriActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+        hideSystemBars()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemBars()
+    }
+
+    private fun hideSystemBars() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+}
+`,
+  'utf8',
+);
+
+const tauriPropsPath = path.join(androidDir, 'app/tauri.properties');
+let tauriProps = fs.readFileSync(tauriPropsPath, 'utf8');
+const [major, minor, patch] = version.split('.').map((part) => Number(part) || 0);
+const versionCode = major * 1000000 + minor * 1000 + patch;
+tauriProps = tauriProps
+  .replace(/tauri\.android\.versionName=.*/g, `tauri.android.versionName=${version}`)
+  .replace(/tauri\.android\.versionCode=.*/g, `tauri.android.versionCode=${versionCode}`);
+fs.writeFileSync(tauriPropsPath, tauriProps, 'utf8');
+
+const proguardPath = path.join(androidDir, 'app/proguard-rules.pro');
+let proguard = fs.existsSync(proguardPath) ? fs.readFileSync(proguardPath, 'utf8') : '';
+if (!proguard.includes('InstallerPlugin')) {
+  fs.writeFileSync(
+    proguardPath,
+    `${proguard}\n-keep class com.rainxbutterfly.sanguosha.InstallerPlugin { *; }\n-keep class com.rainxbutterfly.sanguosha.InstallApkArgs { *; }\n`,
+    'utf8',
+  );
 }
 
 console.log('构建前端…');
@@ -101,7 +250,7 @@ const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
 execFileSync(
   gradlew,
   ['assembleArm64Release', '-x', 'rustBuildArm64Release', '-x', 'rustBuildUniversalRelease', '--no-daemon'],
-  { cwd: androidDir, stdio: 'inherit', env },
+  { cwd: androidDir, stdio: 'inherit', env, shell: process.platform === 'win32' },
 );
 
 const unsigned = path.join(androidDir, 'app/build/outputs/apk/arm64/release/app-arm64-release-unsigned.apk');
@@ -121,7 +270,7 @@ const tools = path.join(androidHome, 'build-tools', buildTools);
 const outDir = path.resolve('release/android');
 fs.mkdirSync(outDir, { recursive: true });
 const aligned = path.join(outDir, 'app-arm64-release-aligned.apk');
-const final = path.resolve(`release/siguoshan-xinghe-${version}-arm64.apk`);
+const final = path.resolve('release/siguoshan-xinghe-arm64.apk');
 const keys = fs
   .readFileSync(path.join(outDir, 'keystore.properties'), 'utf8')
   .split(/\r?\n/)
@@ -150,4 +299,38 @@ execFileSync(
   ],
   { stdio: 'inherit', shell: true },
 );
+
+const sha256 = crypto.createHash('sha256').update(fs.readFileSync(final)).digest('hex');
+fs.mkdirSync('updates', { recursive: true });
+const updateName = 'siguoshan-xinghe-arm64.apk';
+const updatePath = path.join('updates', updateName);
+for (let attempt = 0; ; attempt += 1) {
+  try {
+    fs.copyFileSync(final, updatePath);
+    break;
+  } catch (error) {
+    if (attempt >= 5) throw error;
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  }
+}
+const argNotes =
+  process.argv[3] ||
+  (process.argv[2] && !process.argv[2].includes('/') ? process.argv[2] : '');
+const notes = process.env.UPDATE_NOTES || argNotes || `四国闪 · 星河 v${version}`;
+const cacheBust = `?v=${version}`;
+const urls = [
+  `https://ghfast.top/https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
+  `https://ghproxy.net/https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
+  `https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
+  `https://cdn.jsdelivr.net/gh/${repo}@main/updates/${updateName}${cacheBust}`,
+  `https://gcore.jsdelivr.net/gh/${repo}@main/updates/${updateName}${cacheBust}`,
+  `https://fastly.jsdelivr.net/gh/${repo}@main/updates/${updateName}${cacheBust}`,
+];
+fs.writeFileSync(
+  'latest-android.json',
+  `${JSON.stringify({ version, notes, url: urls[0], urls, sha256 }, null, 2)}\n`,
+  'utf8',
+);
 console.log(`安卓安装包完成：${final}`);
+console.log(`安卓更新清单：latest-android.json`);
+console.log(`安卓更新包副本：updates/${updateName}`);

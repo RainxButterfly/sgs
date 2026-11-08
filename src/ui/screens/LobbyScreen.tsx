@@ -65,9 +65,16 @@ export function LobbyScreen() {
   }
 
   const address = `${lobby.room.ip}:${lobby.room.port}`;
+  const primaryName = lobby.room.names?.[0] ?? '';
+  const primaryIsZeroTier = /zerotier/i.test(primaryName);
+  const nicLabel = (name: string) =>
+    /zerotier/i.test(name) ? 'ZeroTier' : /radmin/i.test(name) ? 'Radmin' : name;
   const otherAddresses = (lobby.room.ips ?? [])
-    .filter((ip) => ip !== lobby.room.ip)
-    .map((ip) => `${ip}:${lobby.room.port}`);
+    .map((ip, index) => ({ ip, name: lobby.room.names?.[index] ?? '' }))
+    .filter((entry) => entry.ip !== lobby.room.ip);
+  const formatAddress = (entry: { ip: string }) => `${entry.ip}:${lobby.room.port}`;
+  const formatNic = (entry: { ip: string; name: string }) =>
+    entry.name ? `${nicLabel(entry.name)} ${formatAddress(entry)}` : formatAddress(entry);
   const players = lobby.players;
   const maxTotal = lobby.maxPlayers;
   const me = host ? players.find((player) => player.isHost) : players.find((player) => player.connId === lanConnId);
@@ -175,7 +182,9 @@ export function LobbyScreen() {
           <section className="room-card">
             <div className="room-card-title">房间信息</div>
             <div className="room-row">
-              <span className="room-label">房主地址</span>
+              <span className="room-label">
+                房主地址{primaryIsZeroTier ? ' · ZeroTier' : ''}
+              </span>
               <span className="room-value">{address}</span>
               <button type="button" className="btn ghost small" onClick={() => copy(address, 'addr')}>
                 {copied === 'addr' ? '已复制' : '复制'}
@@ -191,19 +200,19 @@ export function LobbyScreen() {
             {otherAddresses.length > 0 && (
               <div className="room-row">
                 <span className="room-label">其他网卡</span>
-                <span className="room-value small">{otherAddresses.join(' / ')}</span>
+                <span className="room-value small">{otherAddresses.map(formatNic).join(' / ')}</span>
                 <button
                   type="button"
                   className="btn ghost small"
-                  onClick={() => copy(otherAddresses[0], 'alt')}
+                  onClick={() => copy(formatAddress(otherAddresses[0]), 'alt')}
                 >
                   {copied === 'alt' ? '已复制' : '复制'}
                 </button>
               </div>
             )}
             <div className="room-hint">
-              同一 WiFi 下，输入以上地址与房间码即可加入。进入选将后各自选择武将，身份随机隐藏。
-              首次创建房间若出现 Windows 防火墙提示，请允许“专用网络”访问。
+              同一 WiFi 下，输入以上地址与房间码即可加入；异地联机请用标有 ZeroTier 的地址。
+              进入选将后各自选择武将，身份随机隐藏。首次创建房间若出现 Windows 防火墙提示，请允许“专用网络”访问。
             </div>
             {host && (
               <div className="room-qr">

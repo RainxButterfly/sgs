@@ -1,6 +1,5 @@
 import { HEROES } from '../../core/deck';
 import { FACTION_NAME } from '../../core/types';
-import { isAndroidApp } from '../../net/lan';
 import { useGameStore } from '../store';
 
 export function MainMenu() {
@@ -8,6 +7,9 @@ export function MainMenu() {
   const suspended = useGameStore((s) => s.suspended);
   const resumeGame = useGameStore((s) => s.resumeGame);
   const quitSuspendedGame = useGameStore((s) => s.quitSuspendedGame);
+  const savedLanSession = useGameStore((s) => s.savedLanSession);
+  const resumeSavedLanSession = useGameStore((s) => s.resumeSavedLanSession);
+  const dismissSavedLanSession = useGameStore((s) => s.dismissSavedLanSession);
   const appVersion = useGameStore((s) => s.appVersion);
   const updateInfo = useGameStore((s) => s.updateInfo);
   const updateState = useGameStore((s) => s.updateState);
@@ -45,6 +47,24 @@ export function MainMenu() {
                   }}
                 >
                   退出房间
+                </button>
+              </div>
+            </div>
+          )}
+          {!suspended && savedLanSession && (
+            <div className="suspended-banner">
+              <div className="suspended-text">
+                <b>上次的房间还开着</b>
+                <span>
+                  {savedLanSession.address} · 房间码 {savedLanSession.code}
+                </span>
+              </div>
+              <div className="suspended-actions">
+                <button type="button" className="btn primary" onClick={() => void resumeSavedLanSession()}>
+                  回归房间
+                </button>
+                <button type="button" className="btn ghost" onClick={dismissSavedLanSession}>
+                  忽略
                 </button>
               </div>
             </div>
@@ -100,21 +120,17 @@ export function MainMenu() {
             >
               设置
             </button>
-            {isAndroidApp() ? (
-              <span className="menu-update">手机版 v{appVersion}</span>
-            ) : (
-              <button
-                type="button"
-                className={`menu-update ${updateInfo ? 'has-update' : ''}`}
-                onClick={openUpdateModal}
-              >
-                {updateState === 'checking'
-                  ? '正在检查更新…'
-                  : updateInfo
-                    ? `发现新版本 v${updateInfo.version} · 查看`
-                    : `检查更新 · v${appVersion}`}
-              </button>
-            )}
+            <button
+              type="button"
+              className={`menu-update ${updateInfo ? 'has-update' : ''}`}
+              onClick={openUpdateModal}
+            >
+              {updateState === 'checking'
+                ? '正在检查更新…'
+                : updateInfo
+                  ? `发现新版本 v${updateInfo.version} · 查看`
+                  : `检查更新 · v${appVersion}`}
+            </button>
           </div>
         </div>
         <div className="menu-side">

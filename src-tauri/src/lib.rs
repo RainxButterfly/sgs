@@ -9,7 +9,7 @@ use axum::{
     Router,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{future::join_all, SinkExt, StreamExt};
 use rand::{distr::Alphanumeric, Rng};
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
@@ -21,6 +21,8 @@ use std::{
     time::Duration,
 };
 use tauri::Emitter;
+#[cfg(target_os = "android")]
+use tauri::Manager;
 use tokio::sync::mpsc;
 
 const UPDATE_REPO: &str = "RainxButterfly/sgs";
@@ -41,6 +43,27 @@ struct UpdateProgress {
     total: u64,
 }
 
+fn manifest_urls(name: &str) -> Vec<String> {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0);
+    vec![
+        format!("https://gcore.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
+        format!("https://fastly.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
+        format!("https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
+        format!("https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@master/{name}?t={stamp}"),
+        format!("https://gcore.jsdelivr.net/gh/{UPDATE_REPO}@master/{name}?t={stamp}"),
+        format!(
+            "https://ghfast.top/https://raw.githubusercontent.com/{UPDATE_REPO}/main/{name}?t={stamp}"
+        ),
+        format!(
+            "https://ghproxy.net/https://raw.githubusercontent.com/{UPDATE_REPO}/main/{name}?t={stamp}"
+        ),
+        format!("https://raw.githubusercontent.com/{UPDATE_REPO}/main/{name}?t={stamp}"),
+    ]
+}
+
 fn update_manifest_urls() -> Vec<String> {
     let mut urls = Vec::new();
     if let Ok(custom) = std::env::var("SANGUOSHA_UPDATE_MANIFEST") {
@@ -48,49 +71,28 @@ fn update_manifest_urls() -> Vec<String> {
             urls.push(custom);
         }
     }
-    let stamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|duration| duration.as_secs())
-        .unwrap_or(0);
-    urls.push(format!(
-        "https://gcore.jsdelivr.net/gh/{UPDATE_REPO}@main/latest-portable.json?t={stamp}"
-    ));
-    urls.push(format!(
-        "https://fastly.jsdelivr.net/gh/{UPDATE_REPO}@main/latest-portable.json?t={stamp}"
-    ));
-    urls.push(format!(
-        "https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@main/latest-portable.json?t={stamp}"
-    ));
-    urls.push(format!(
-        "https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@master/latest-portable.json?t={stamp}"
-    ));
-    urls.push(format!(
-        "https://gcore.jsdelivr.net/gh/{UPDATE_REPO}@master/latest-portable.json?t={stamp}"
-    ));
-    urls.push(format!(
-        "https://ghfast.top/https://raw.githubusercontent.com/{UPDATE_REPO}/main/latest-portable.json?t={stamp}"
-    ));
-    urls.push(format!(
-        "https://ghproxy.net/https://raw.githubusercontent.com/{UPDATE_REPO}/main/latest-portable.json?t={stamp}"
-    ));
-    urls.push(format!(
-        "https://raw.githubusercontent.com/{UPDATE_REPO}/main/latest-portable.json?t={stamp}"
-    ));
+    urls.extend(manifest_urls("latest-portable.json"));
     urls
 }
 
-#[tauri::command]
-async fn check_portable_update() -> Result<Option<PortableUpdateInfo>, String> {
+async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>, String> {
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(15))
+        .timeout(Duration::from_secs(6))
         .user_agent("sanguosha-xinghe-updater/0.1")
         .build()
         .map_err(|error| error.to_string())?;
     let mut errors = Vec::new();
     let mut best: Option<PortableUpdateInfo> = None;
     let mut succeeded = false;
-    for url in update_manifest_urls() {
-        match client.get(&url).send().await {
+    let requests = urls.into_iter().map(|url| {
+        let client = client.clone();
+        async move {
+            let response = client.get(&url).send().await;
+            (url, response)
+        }
+    });
+    for (url, response) in join_all(requests).await {
+        match response {
             Ok(response) if response.status().is_success() => {
                 match response.json::<PortableUpdateInfo>().await {
                     Ok(info) => {
@@ -135,6 +137,16 @@ async fn check_portable_update() -> Result<Option<PortableUpdateInfo>, String> {
         "无法连接更新镜像。{}",
         errors.last().cloned().unwrap_or_default()
     ))
+}
+
+#[tauri::command]
+async fn check_portable_update() -> Result<Option<PortableUpdateInfo>, String> {
+    check_manifest(update_manifest_urls()).await
+}
+
+#[tauri::command]
+async fn check_android_update() -> Result<Option<PortableUpdateInfo>, String> {
+    check_manifest(manifest_urls("latest-android.json")).await
 }
 
 #[tauri::command]
@@ -233,6 +245,108 @@ async fn prepare_portable_update(
     Ok(())
 }
 
+#[cfg(target_os = "android")]
+struct InstallerState(tauri::plugin::PluginHandle<tauri::Wry>);
+
+#[cfg(target_os = "android")]
+#[derive(serde::Deserialize)]
+struct BatteryInfo {
+    level: i32,
+}
+
+#[cfg(target_os = "android")]
+fn installer_plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
+    tauri::plugin::Builder::<tauri::Wry>::new("installer")
+        .setup(|app, api| {
+            match api.register_android_plugin(
+                "com.rainxbutterfly.sanguosha",
+                "InstallerPlugin",
+            ) {
+                Ok(handle) => {
+                    app.manage(InstallerState(handle));
+                }
+                Err(error) => {
+                    log::error!("installer plugin unavailable: {error}");
+                }
+            }
+            Ok(())
+        })
+        .build()
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn install_android_update(
+    app: tauri::AppHandle,
+    urls: Vec<String>,
+    sha256: String,
+) -> Result<(), String> {
+    let mut errors: Vec<String> = Vec::new();
+    let mut data: Option<Vec<u8>> = None;
+    for url in &urls {
+        match download_update(&app, url).await {
+            Ok(bytes) => {
+                let mut hasher = Sha256::new();
+                hasher.update(&bytes);
+                let actual: String = hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect();
+                if actual.eq_ignore_ascii_case(&sha256) {
+                    data = Some(bytes);
+                    break;
+                }
+                errors.push(format!("{url}: 更新包校验失败"));
+            }
+            Err(error) => errors.push(format!("{url}: {error}")),
+        }
+    }
+    let data = data.ok_or_else(|| {
+        format!(
+            "更新包下载失败。{}",
+            errors.last().cloned().unwrap_or_default()
+        )
+    })?;
+    let cache = app.path().app_cache_dir().map_err(|error| error.to_string())?;
+    std::fs::create_dir_all(&cache).map_err(|error| error.to_string())?;
+    let path = cache.join("siguoshan-update.apk");
+    std::fs::write(&path, &data).map_err(|error| error.to_string())?;
+    let state = app
+        .try_state::<InstallerState>()
+        .ok_or_else(|| "手机安装器未初始化，请重新安装本版本后再试".to_string())?;
+    state
+        .0
+        .run_mobile_plugin::<serde_json::Value>(
+            "install",
+            serde_json::json!({ "path": path.to_string_lossy() }),
+        )
+        .map_err(|error| format!("打开系统安装器失败：{error}"))?;
+    Ok(())
+}
+
+#[cfg(not(target_os = "android"))]
+#[tauri::command]
+async fn install_android_update(_urls: Vec<String>, _sha256: String) -> Result<(), String> {
+    Err("仅安卓版支持此更新方式".to_string())
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn android_battery(app: tauri::AppHandle) -> Result<i32, String> {
+    let state = app
+        .try_state::<InstallerState>()
+        .ok_or_else(|| "电量读取不可用".to_string())?;
+    state
+        .0
+        .run_mobile_plugin_async::<BatteryInfo>("battery", serde_json::json!({}))
+        .await
+        .map(|info| info.level)
+        .map_err(|error| error.to_string())
+}
+
+#[cfg(not(target_os = "android"))]
+#[tauri::command]
+fn android_battery() -> Result<i32, String> {
+    Ok(-1)
+}
+
 async fn download_update(app: &tauri::AppHandle, url: &str) -> Result<Vec<u8>, String> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(600))
@@ -291,6 +405,7 @@ struct Room {
 pub struct RoomInfo {
     ip: String,
     ips: Vec<String>,
+    names: Vec<String>,
     port: u16,
     code: String,
     secret: String,
@@ -306,8 +421,8 @@ struct WsQuery {
     name: Option<String>,
 }
 
-fn all_ipv4() -> Vec<String> {
-    let mut result = Vec::new();
+fn all_ipv4() -> Vec<(String, String)> {
+    let mut result: Vec<(String, String)> = Vec::new();
     if let Ok(interfaces) = if_addrs::get_if_addrs() {
         for iface in interfaces {
             if iface.is_loopback() {
@@ -315,8 +430,8 @@ fn all_ipv4() -> Vec<String> {
             }
             if let std::net::IpAddr::V4(ip) = iface.ip() {
                 let value = ip.to_string();
-                if !result.contains(&value) {
-                    result.push(value);
+                if !result.iter().any(|(existing, _)| existing == &value) {
+                    result.push((value, iface.name));
                 }
             }
         }
@@ -338,6 +453,7 @@ fn local_ip() -> String {
     let interfaces = all_ipv4();
     interfaces
         .iter()
+        .map(|(ip, _)| ip)
         .find(|ip| !ip.starts_with("169.254."))
         .cloned()
         .unwrap_or_else(|| "127.0.0.1".to_string())
@@ -382,15 +498,25 @@ async fn start_room() -> Result<RoomInfo, String> {
         }),
     });
 
-    let mut ips = all_ipv4();
-    let ip = local_ip();
-    if !ips.contains(&ip) {
-        ips.insert(0, ip.clone());
+    let mut entries = all_ipv4();
+    let ip = entries
+        .iter()
+        .find(|(_, name)| name.to_lowercase().contains("zerotier"))
+        .map(|(ip, _)| ip.clone())
+        .unwrap_or_else(local_ip);
+    if let Some(index) = entries.iter().position(|(address, _)| address == &ip) {
+        let entry = entries.remove(index);
+        entries.insert(0, entry);
+    } else {
+        entries.insert(0, (ip.clone(), String::new()));
     }
+    let ips = entries.iter().map(|(ip, _)| ip.clone()).collect();
+    let names = entries.iter().map(|(_, name)| name.clone()).collect();
 
     let info = RoomInfo {
         ip,
         ips,
+        names,
         port,
         code: room.code.clone(),
         secret: room.secret.clone(),
@@ -428,7 +554,10 @@ async fn static_handler(uri: Uri) -> impl IntoResponse {
         Some(content) => {
             let mime = mime_guess::from_path(name).first_or_octet_stream();
             (
-                [(header::CONTENT_TYPE, mime.as_ref())],
+                [
+                    (header::CONTENT_TYPE, mime.as_ref()),
+                    (header::CACHE_CONTROL, "no-store"),
+                ],
                 content.data.into_owned(),
             )
                 .into_response()
@@ -599,8 +728,9 @@ fn route_message(room: &Arc<Room>, from: u64, is_host: bool, value: serde_json::
     }
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::default()
                 .level(log::LevelFilter::Info)
@@ -611,8 +741,14 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             start_room,
             check_portable_update,
-            prepare_portable_update
-        ])
+            check_android_update,
+            prepare_portable_update,
+            install_android_update,
+            android_battery
+        ]);
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(installer_plugin());
+    builder
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

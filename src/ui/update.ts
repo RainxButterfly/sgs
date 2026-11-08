@@ -15,6 +15,7 @@ export interface AppUpdateInfo {
   currentVersion: string;
   notes: string;
   date?: string;
+  android?: boolean;
   raw: PortableUpdateInfo;
 }
 
@@ -30,6 +31,37 @@ export async function checkAppUpdate(): Promise<AppUpdateInfo | null> {
     notes: info.notes,
     raw: info,
   };
+}
+
+export async function checkAndroidUpdate(): Promise<AppUpdateInfo | null> {
+  if (!isTauri()) return null;
+  const info = await invoke<PortableUpdateInfo | null>('check_android_update');
+  if (!info) return null;
+  return {
+    version: info.version,
+    currentVersion: APP_VERSION,
+    notes: info.notes,
+    android: true,
+    raw: info,
+  };
+}
+
+export async function installAndroidUpdate(
+  info: AppUpdateInfo,
+  onProgress: (downloaded: number, total: number) => void,
+): Promise<void> {
+  const unlisten = await listen<{ downloaded: number; total: number }>(
+    'portable-update-progress',
+    (event) => onProgress(event.payload.downloaded, event.payload.total),
+  );
+  try {
+    await invoke('install_android_update', {
+      urls: info.raw.urls?.length ? info.raw.urls : [info.raw.url],
+      sha256: info.raw.sha256,
+    });
+  } finally {
+    unlisten();
+  }
 }
 
 export async function installAppUpdate(

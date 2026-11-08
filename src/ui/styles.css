@@ -525,9 +525,11 @@ button {
 }
 
 .setup-label {
+  flex: 0 0 auto;
   font-size: 14.5px;
   letter-spacing: 0.2em;
   color: var(--gold);
+  white-space: nowrap;
 }
 
 .setup-hint {
@@ -538,10 +540,13 @@ button {
 
 .count-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .count-btn {
+  flex: 0 0 auto;
   border: 1px solid var(--line);
   background: transparent;
   color: var(--muted);
@@ -550,6 +555,7 @@ button {
   cursor: pointer;
   font-size: 14px;
   letter-spacing: 0.08em;
+  white-space: nowrap;
   transition: all 0.15s ease;
 }
 
@@ -4588,7 +4594,12 @@ button {
   z-index: 1;
 }
 
-.mobile-game > *:not(.game-bg):not(.game-bg-shade) {
+.mobile-game > .m-topbar,
+.mobile-game > .m-seats,
+.mobile-game > .m-table,
+.mobile-game > .m-self,
+.mobile-game > .m-prompt,
+.mobile-game > .m-hand {
   position: relative;
   z-index: 2;
 }
@@ -5554,5 +5565,814 @@ button {
 
   .fatal-card h1 {
     font-size: 24px;
+  }
+}
+
+/* ---------- 手机横屏布局 ---------- */
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px) {
+  .mobile-game {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+    grid-template-columns: minmax(0, 1fr);
+    height: 100dvh;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .m-topbar {
+    min-height: 38px;
+    padding: max(4px, env(safe-area-inset-top)) 10px 4px;
+    gap: 6px;
+  }
+
+  .m-brand {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .m-turn b {
+    font-size: 12.5px;
+  }
+
+  .m-turn em {
+    font-size: 9.5px;
+  }
+
+  .m-top-actions {
+    gap: 3px;
+  }
+
+  .m-top-actions button {
+    min-height: 30px;
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .m-seats {
+    gap: 6px;
+    padding: 5px 8px 3px;
+  }
+
+  .m-seat {
+    flex: 0 0 118px;
+    width: 118px;
+    height: 64px;
+    min-height: 0;
+    padding: 5px 7px;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .m-seat-head {
+    gap: 4px;
+  }
+
+  .m-seat-head b {
+    font-size: 15px;
+  }
+
+  .m-seat-info {
+    width: 21px;
+    height: 21px;
+    font-size: 10px;
+  }
+
+  .m-role {
+    padding: 0 3px;
+    font-size: 8px;
+    line-height: 13px;
+  }
+
+  .m-seat-name {
+    margin-top: 1px;
+    font-size: 9.5px;
+  }
+
+  .m-seat-stats {
+    gap: 5px;
+    margin-top: 2px;
+    font-size: 10px;
+  }
+
+  .m-seat-skills {
+    display: none;
+  }
+
+  .m-current {
+    top: -6px;
+    right: 5px;
+    padding: 0 4px;
+    font-size: 8.5px;
+  }
+
+  .m-target-hint {
+    right: 5px;
+    bottom: 3px;
+    font-size: 8.5px;
+  }
+
+  .m-dead {
+    font-size: 14px;
+  }
+
+  .m-table {
+    margin: 3px 8px 0;
+    padding: 5px 8px;
+    gap: 3px;
+    border-radius: 6px;
+  }
+
+  .m-piles {
+    gap: 8px;
+    font-size: 9.5px;
+  }
+
+  .m-stage {
+    gap: 8px;
+  }
+
+  .m-last-play {
+    max-width: 52%;
+    gap: 6px;
+  }
+
+  .m-last-play .card {
+    width: 40px;
+    height: 57px;
+  }
+
+  .m-last-play .card-name {
+    font-size: 11px;
+    max-width: 34px;
+  }
+
+  .m-last-play .card-corner {
+    font-size: 7.5px;
+  }
+
+  .m-last-play > span {
+    font-size: 10px;
+    line-height: 1.4;
+    -webkit-line-clamp: 2;
+  }
+
+  .m-stage-empty {
+    font-size: 10.5px;
+  }
+
+  .m-history {
+    gap: 1px;
+  }
+
+  .m-history-item {
+    font-size: 9.5px;
+    gap: 5px;
+  }
+
+  .m-history-item em {
+    max-width: 64px;
+  }
+
+  .m-self {
+    margin: 3px 8px 0;
+    padding: 4px 8px;
+    gap: 6px;
+    border-radius: 6px;
+  }
+
+  .m-self-main {
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+
+  .m-self-main b {
+    font-size: 15px;
+  }
+
+  .m-self-role,
+  .m-self-hp,
+  .m-self-limit {
+    padding: 0 5px;
+    font-size: 9.5px;
+    white-space: nowrap;
+  }
+
+  .m-self-skills {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 9.5px;
+  }
+
+  .m-detail-btn {
+    min-height: 28px;
+    padding: 3px 8px;
+    font-size: 10.5px;
+  }
+
+  .m-prompt {
+    margin: 3px 8px 0;
+    max-height: 36dvh;
+  }
+
+  .m-prompt .prompt-bar.idle {
+    display: none;
+  }
+
+  .m-prompt .prompt-bar {
+    padding: 5px 8px;
+    gap: 4px;
+  }
+
+  .m-prompt .prompt-title {
+    font-size: 12px;
+  }
+
+  .m-prompt .prompt-status {
+    font-size: 10.5px;
+    line-height: 1.35;
+  }
+
+  .m-prompt .prompt-actions {
+    gap: 4px;
+  }
+
+  .m-prompt .prompt-actions .btn {
+    min-height: 30px;
+    padding: 4px 8px;
+    font-size: 10.5px;
+  }
+
+  .m-hand {
+    padding: 2px 8px calc(3px + env(safe-area-inset-bottom));
+  }
+
+  .m-hand .hand-cards {
+    gap: 4px;
+    padding-top: 2px;
+  }
+
+  .m-hand .card {
+    width: 56px;
+    height: 80px;
+    padding: 2px;
+  }
+
+  .m-hand .card-name {
+    font-size: 12.5px;
+    max-width: 48px;
+  }
+
+  .m-hand .card-corner {
+    font-size: 9px;
+  }
+
+  .m-hand .card-selected {
+    transform: translateY(-4px) !important;
+  }
+
+  .setup-screen,
+  .pick-screen,
+  .lan-screen,
+  .result-screen,
+  .gallery-screen,
+  .menu-screen {
+    padding: calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right))
+      calc(6px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+  }
+
+  .setup-panel {
+    width: 100%;
+    padding: 10px 14px 12px;
+    border-radius: 7px;
+  }
+
+  .setup-head {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 8px;
+  }
+
+  .setup-kicker {
+    margin-bottom: 2px;
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+  }
+
+  .setup-title {
+    margin-bottom: 2px;
+    font-size: 22px;
+    letter-spacing: 0.16em;
+  }
+
+  .setup-desc {
+    display: none;
+  }
+
+  .setup-row {
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 7px 0 5px;
+    min-width: 0;
+  }
+
+  .setup-label {
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+  }
+
+  .count-group {
+    flex-wrap: nowrap;
+    gap: 5px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .count-group::-webkit-scrollbar {
+    display: none;
+  }
+
+  .count-btn {
+    padding: 4px 10px;
+    font-size: 11.5px;
+  }
+
+  .setup-hint {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10.5px;
+    text-align: right;
+  }
+
+  .setup-actions {
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+
+  .setup-actions .btn.big {
+    min-height: 32px;
+    padding: 5px 14px;
+    font-size: 12.5px;
+  }
+
+  .setup-picked {
+    font-size: 10.5px;
+  }
+
+  .pick-layout {
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .pick-seats {
+    padding: 8px 10px;
+  }
+
+  .pick-seat {
+    padding: 5px 4px;
+    gap: 6px;
+    font-size: 11.5px;
+  }
+
+  .pick-seat-hero {
+    font-size: 15px;
+  }
+
+  .pick-seat-label,
+  .pick-seat-tag {
+    font-size: 9.5px;
+  }
+
+  .pick-seat-note {
+    margin-top: 6px;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .pick-hero-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .pick-hero-grid .hero-card {
+    padding: 8px;
+  }
+
+  .pick-panel .setup-actions {
+    margin-top: 8px;
+    padding: 6px 10px;
+  }
+
+  .modal {
+    width: 92vw;
+    max-height: 90dvh;
+    padding: 12px;
+  }
+
+  .modal-minimized {
+    top: 28px;
+  }
+
+  .log-panel {
+    width: 52vw;
+    right: 0;
+  }
+
+  .menu-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 4vw;
+  }
+
+  .menu-title {
+    font-size: clamp(44px, 8vw, 66px);
+  }
+
+  .menu-divider {
+    margin: 10px 0 12px;
+  }
+
+  .menu-actions {
+    gap: 7px;
+  }
+
+  .menu-actions .btn.big {
+    min-width: 180px;
+    min-height: 34px;
+    padding: 5px 14px;
+    font-size: 12.5px;
+  }
+
+  .menu-subtitle {
+    margin-top: 8px;
+    font-size: 11px;
+  }
+
+  .menu-seal {
+    top: -34px;
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .lan-screen .setup-panel,
+  .result-screen .result-panel {
+    padding: 12px 14px;
+  }
+
+  .lan-grid {
+    gap: 10px;
+  }
+
+  .lan-card {
+    padding: 10px 12px;
+  }
+
+  .lan-card-title {
+    font-size: 15px;
+  }
+
+  .lan-card-desc {
+    font-size: 10.5px;
+  }
+
+  .field span {
+    font-size: 11px;
+  }
+
+  .field input {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .lobby-grid {
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .room-card,
+  .player-list-card {
+    padding: 10px 12px;
+  }
+}
+
+@media (hover: none) {
+  .hover-card {
+    display: none !important;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px) {
+  .m-seat {
+    overflow: visible;
+  }
+
+  .m-seats {
+    padding-top: 10px;
+  }
+
+  .m-history {
+    border-left: 1px solid rgba(219, 181, 108, 0.16);
+    padding-left: 8px;
+  }
+
+  .pick-layout {
+    padding-bottom: 46px;
+  }
+
+  .pick-panel .setup-actions {
+    bottom: 0;
+  }
+
+  .menu-content {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(560px, 100%);
+    gap: 0;
+  }
+
+  .menu-side {
+    display: none;
+  }
+
+  .menu-seal {
+    display: none;
+  }
+
+  .menu-title {
+    font-size: clamp(38px, 6.5vw, 50px);
+    letter-spacing: 0.12em;
+  }
+
+  .menu-subtitle {
+    margin-top: 4px;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+  }
+
+  .menu-divider {
+    width: 62%;
+    margin: 6px 0 8px;
+  }
+
+  .menu-actions {
+    gap: 4px;
+  }
+
+  .menu-actions .btn.big {
+    width: 100%;
+    min-width: 0;
+    min-height: 30px;
+    padding: 3px 12px;
+    font-size: 12px;
+  }
+
+  .menu-foot,
+  .menu-author {
+    display: none;
+  }
+
+  .menu-utility {
+    margin-top: 4px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px) {
+  .m-top-actions button {
+    min-height: 32px;
+    padding: 4px 9px;
+    font-size: 11.5px;
+  }
+
+  .m-detail-btn {
+    min-height: 32px;
+    padding: 4px 9px;
+    font-size: 11px;
+  }
+
+  .m-prompt .prompt-actions .btn {
+    min-height: 32px;
+    padding: 5px 9px;
+  }
+
+  .count-btn {
+    min-height: 30px;
+    padding: 5px 11px;
+  }
+
+  .setup-actions .btn.big {
+    min-height: 34px;
+  }
+
+  .modal {
+    width: min(680px, 72vw);
+    max-height: 82dvh;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px) {
+  .m-seat-head {
+    gap: 3px;
+  }
+
+  .m-seat-head b {
+    min-width: 0;
+    font-size: 14.5px;
+  }
+
+  .m-seat-info {
+    width: 20px;
+    height: 20px;
+    font-size: 9.5px;
+  }
+
+  .m-role {
+    padding: 0 2px;
+    font-size: 7.5px;
+    line-height: 12px;
+  }
+
+  .pick-seats {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .pick-seat {
+    white-space: nowrap;
+  }
+
+  .pick-seat-hero {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pick-seat-tag {
+    flex: 0 0 auto;
+  }
+
+  .pick-panel {
+    padding-bottom: 56px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px) {
+  .m-seat .m-role {
+    position: absolute;
+    top: -6px;
+    left: 6px;
+    z-index: 2;
+    background: rgba(30, 24, 17, 0.94);
+    border-color: rgba(219, 181, 108, 0.5);
+  }
+
+  .m-seat-head > b {
+    flex: 0 1 auto;
+  }
+}
+
+.m-device-status {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 34px;
+  font-size: 9px;
+  line-height: 1.1;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.m-device-status b {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold-bright);
+}
+
+.m-device-status span {
+  color: #a9e6b9;
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px) {
+  .m-device-status {
+    min-width: 32px;
+    font-size: 8.5px;
+  }
+
+  .m-device-status b {
+    font-size: 11px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px) {
+  .lobby-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .room-card,
+  .player-list-card {
+    padding: 8px 10px;
+  }
+
+  .room-row {
+    margin: 2px 0;
+  }
+
+  .room-value {
+    font-size: 13px;
+  }
+
+  .room-hint {
+    font-size: 9.5px;
+    line-height: 1.4;
+  }
+
+  .room-qr {
+    display: none;
+  }
+
+  .player-list {
+    max-height: 190px;
+    overflow-y: auto;
+  }
+
+  .lobby-player {
+    padding: 4px 8px;
+  }
+
+  .start-row {
+    margin-top: 6px;
+    padding-top: 6px;
+  }
+
+  .start-row .btn.big {
+    min-height: 32px;
+  }
+
+  .lobby-rules-summary {
+    font-size: 10px;
+  }
+
+  .lobby-hero-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .lobby-hero-card {
+    padding: 6px;
+  }
+
+  .lobby-hero-name {
+    font-size: 16px;
+  }
+
+  .lobby-hero-title {
+    font-size: 10px;
+  }
+
+  .lobby-hero-skills {
+    max-height: 54px;
+    overflow: hidden;
+    font-size: 9px;
+  }
+
+  .hero-detail {
+    width: 100vw;
+    max-width: none;
+    padding: 14px 18px;
+    margin-top: 0;
+  }
+
+  .detail-backdrop {
+    padding-top: 0;
+  }
+
+  .log-panel {
+    width: 100vw;
+    top: 0;
+  }
+
+  .log-head {
+    padding: 8px 12px;
+  }
+
+  .history-modal {
+    width: 100vw;
+    height: 100dvh;
+    padding: 10px;
+  }
+
+  .history-layout {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
   }
 }

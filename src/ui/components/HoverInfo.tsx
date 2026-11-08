@@ -17,6 +17,7 @@ export function HoverInfo({ content, children, className, as = 'span' }: Props) 
   const Tag = as;
 
   const show = (event: React.SyntheticEvent<HTMLElement>) => {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const width = 330;
     const left =

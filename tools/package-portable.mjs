@@ -30,7 +30,7 @@ fs.writeFileSync(
   'utf8',
 );
 
-const zipName = `siguoshan-xinghe-win64-${version}.zip`;
+const zipName = 'siguoshan-xinghe-win64.zip';
 const zipPath = path.join('release', zipName);
 const zip = new AdmZip();
 zip.addLocalFile(path.join(folder, 'sanguosha.exe'), '', 'sanguosha.exe');
@@ -42,9 +42,10 @@ zip.addLocalFile(path.join(folder, '四国闪.bat'), '', '四国闪.bat');
 zip.writeZip(zipPath);
 
 const sha256 = crypto.createHash('sha256').update(fs.readFileSync(zipPath)).digest('hex');
-const jsdelivr = `https://cdn.jsdelivr.net/gh/${repo}@main/updates/${zipName}`;
-const gcore = `https://gcore.jsdelivr.net/gh/${repo}@main/updates/${zipName}`;
-const fastly = `https://fastly.jsdelivr.net/gh/${repo}@main/updates/${zipName}`;
+const cacheBust = `?v=${version}`;
+const jsdelivr = `https://cdn.jsdelivr.net/gh/${repo}@main/updates/${zipName}${cacheBust}`;
+const gcore = `https://gcore.jsdelivr.net/gh/${repo}@main/updates/${zipName}${cacheBust}`;
+const fastly = `https://fastly.jsdelivr.net/gh/${repo}@main/updates/${zipName}${cacheBust}`;
 const manifest = {
   version,
   notes,
@@ -53,9 +54,9 @@ const manifest = {
     jsdelivr,
     gcore,
     fastly,
-    `https://ghfast.top/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}`,
-    `https://ghproxy.net/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}`,
-    `https://raw.githubusercontent.com/${repo}/main/updates/${zipName}`,
+    `https://ghfast.top/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
+    `https://ghproxy.net/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
+    `https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
   ],
   sha256,
 };

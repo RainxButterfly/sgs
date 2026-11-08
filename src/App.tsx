@@ -25,7 +25,7 @@ export default function App() {
       if (useGameStore.getState().screen === 'menu') {
         void useGameStore.getState().checkUpdate(false);
       }
-    }, 4000);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
