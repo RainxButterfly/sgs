@@ -2,6 +2,7 @@ import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
 import { rankText, shortCardName } from '../labels';
+import { EquipHover, HeroHover, HoverInfo, SkillHover } from './HoverInfo';
 
 interface Flash {
   id: number;
@@ -84,17 +85,19 @@ export function PlayerSeat({
         {current && <span className="seat-turn-tag">行动中</span>}
         {player.isBot && <span className="ai-badge">AI</span>}
         {onDetail && (
-          <button
-            type="button"
-            className="seat-info"
-            title="查看武将详情"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDetail();
-            }}
-          >
-            i
-          </button>
+          <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} />}>
+            <button
+              type="button"
+              className="seat-info"
+              title="查看武将详情"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDetail();
+              }}
+            >
+              i
+            </button>
+          </HoverInfo>
         )}
       </div>
       <div className="seat-sub">
@@ -114,9 +117,11 @@ export function PlayerSeat({
           <span className="seat-empty">无装备</span>
         ) : (
           equips.map((c) => (
-            <span key={c.id} className="mini-equip" title={c.name}>
-              {shortCardName(c.name)}
-            </span>
+            <HoverInfo key={c.id} content={<EquipHover name={c.name} />}>
+              <span className="mini-equip" title={c.name}>
+                {shortCardName(c.name)}
+              </span>
+            </HoverInfo>
           ))
         )}
       </div>
@@ -145,9 +150,11 @@ export function PlayerSeat({
         {[...new Set([...player.skills, ...player.extraSkills])].map((id) => {
           const skill = SKILL_MAP.get(id);
           return skill ? (
-            <span key={id} className={`mini-skill ${skill.lord ? 'lord' : ''}`} title={skill.desc}>
-              {skill.name}
-            </span>
+            <HoverInfo key={id} content={<SkillHover skillId={id} />}>
+              <span className={`mini-skill ${skill.lord ? 'lord' : ''}`} title={skill.desc}>
+                {skill.name}
+              </span>
+            </HoverInfo>
           ) : null;
         })}
       </div>

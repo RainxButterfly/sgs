@@ -6,7 +6,7 @@
 
 Windows 版：
 
-https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.0.zip
+https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.1.zip
 
 解压后运行 `sanguosha.exe`。
 
@@ -18,6 +18,7 @@ https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win
 - 身份场、1v1、斗地主、国战、自定义对局
 - 判定、出牌响应、濒死求桃、身份与阵营胜负结算
 - 视为技、锁定技、主公技、主动技、限定技、觉醒、拼点、翻面、不屈、屯田、化身、蛊惑
+- 鼠标悬停查看武将技能，点击打开侧边详情，不遮挡牌桌中央
 - 联机大厅选将、武将详情、武将图鉴、人机对局
 - 局域网联机，断线后由电脑接管
 - 手机浏览器扫码加入，支持添加到主屏幕

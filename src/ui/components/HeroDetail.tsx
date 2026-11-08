@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { HERO_MAP } from '../../core/deck';
 import { equipSkillId } from '../../core/equipment';
 import { SKILL_MAP } from '../../core/skills';
@@ -18,6 +19,13 @@ const SLOTS = [
 ] as const;
 
 export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   const hero = HERO_MAP.get(heroId);
   if (!hero) return null;
   const skillIds = [
@@ -30,8 +38,16 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
   const pips = player ? Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp) : [];
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className={`modal hero-detail faction-${hero.faction}`} onClick={(event) => event.stopPropagation()}>
+    <div className="detail-backdrop" onClick={onClose}>
+      <div
+        className={`hero-detail faction-${hero.faction}`}
+        role="dialog"
+        aria-modal="true"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button type="button" className="detail-close" onClick={onClose} aria-label="收起武将详情">
+          ×
+        </button>
         <div className="hero-detail-head">
           <div className="detail-emblem">{FACTION_NAME[hero.faction]}</div>
           <div className="detail-identity">
@@ -129,9 +145,9 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
           </>
         )}
 
-        <div className="modal-actions">
+        <div className="modal-actions detail-actions">
           <button type="button" className="btn ghost" onClick={onClose}>
-            关闭
+            收起详情
           </button>
         </div>
       </div>

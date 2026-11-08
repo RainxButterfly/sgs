@@ -3033,16 +3033,180 @@ button {
   color: var(--gold-bright);
 }
 
+.detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  padding-top: 60px;
+  background: linear-gradient(90deg, transparent 52%, rgba(10, 8, 6, 0.22));
+}
+
 .hero-detail {
-  width: min(780px, 94vw);
-  max-height: 88vh;
+  --faction: var(--gold);
+  position: relative;
+  width: min(450px, 96vw);
+  height: 100%;
+  max-height: none;
   overflow-y: auto;
+  padding: 26px 26px 24px;
+  background: linear-gradient(180deg, rgba(64, 53, 39, 0.985), rgba(38, 31, 23, 0.99));
+  border-left: 1px solid rgba(219, 181, 108, 0.5);
+  box-shadow: -24px 0 70px rgba(0, 0, 0, 0.5);
+  animation: detailIn 0.22s ease;
+}
+
+@keyframes detailIn {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.detail-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(219, 181, 108, 0.4);
+  border-radius: 50%;
+  background: rgba(20, 16, 12, 0.45);
+  color: var(--gold-bright);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.detail-close:hover {
+  border-color: var(--gold-bright);
+  background: rgba(219, 181, 108, 0.14);
 }
 
 .hero-detail-head {
   display: flex;
   gap: 16px;
   align-items: flex-start;
+  padding-right: 34px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(219, 181, 108, 0.22);
+}
+
+.detail-actions {
+  justify-content: stretch;
+}
+
+.detail-actions .btn {
+  width: 100%;
+}
+
+/* ---------- 悬停说明 ---------- */
+
+.seat-info-wrap {
+  display: inline-flex;
+}
+
+.hover-card {
+  position: fixed;
+  z-index: 110;
+  width: 330px;
+  max-height: 70vh;
+  overflow: hidden;
+  pointer-events: none;
+  padding: 14px 16px;
+  border: 1px solid rgba(219, 181, 108, 0.55);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #4a3b2a, #2f261b);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.58);
+  color: var(--ink);
+  animation: fadeIn 0.12s ease;
+}
+
+.hover-hero-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hover-hero-head b {
+  font-family: var(--font-calligraphy);
+  font-size: 19px;
+  color: var(--gold-bright);
+  letter-spacing: 0.06em;
+}
+
+.hover-hero-title {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.hover-hero-meta {
+  display: flex;
+  gap: 12px;
+  margin: 7px 0 9px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hover-skills {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.hover-skill {
+  padding-top: 7px;
+  border-top: 1px solid rgba(219, 181, 108, 0.16);
+}
+
+.hover-skill:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.hover-skill-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hover-skill-head b {
+  font-family: var(--font-calligraphy);
+  font-size: 16px;
+  color: var(--gold-bright);
+  font-weight: 500;
+}
+
+.hover-tag {
+  font-size: 10px;
+  color: var(--muted);
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 2px;
+  padding: 0 4px;
+}
+
+.hover-skill p {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: rgba(247, 239, 221, 0.92);
+}
+
+.hover-foot {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(219, 181, 108, 0.2);
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .detail-emblem {
@@ -3241,9 +3405,17 @@ button {
 }
 
 @media (max-width: 720px) {
+  .detail-backdrop {
+    padding-top: 0;
+    background: transparent;
+  }
+
   .hero-detail {
-    width: 94vw;
-    padding: 16px;
+    width: 100vw;
+    margin-top: 46px;
+    height: calc(100% - 46px);
+    padding: 20px 16px;
+    border-left: none;
   }
 
   .detail-name {

@@ -1,12 +1,12 @@
 {
-  "version": "0.3.0",
-  "notes": "v0.3.0：补全 57 名武将，新增 1v1、斗地主、国战模式，支持自定义对局背景，并优化等待提示、出牌显示与整体可读性。",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.0.zip",
+  "version": "0.3.1",
+  "notes": "v0.3.1：武将技能改为鼠标悬停查看，点击打开右侧详情栏，不再遮挡牌桌中央；同时优化详情界面与操作提示。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.1.zip",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.0.zip",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.0.zip",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.0.zip",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.0.zip"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.1.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.1.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.1.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.1.zip"
   ],
-  "sha256": "76dec561c1e20bbf50df483600d75d80efc44a95e6b13d1a1908f282e571f3e5"
+  "sha256": "c0da849622389e8377cd11e9c8b3c5cd79d8498d9061128123b152d7846e6e86"
 }

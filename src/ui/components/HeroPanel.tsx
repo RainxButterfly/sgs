@@ -2,6 +2,7 @@ import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
 import { equipSlotText, shortCardName } from '../labels';
+import { EquipHover, HoverInfo, SkillHover } from './HoverInfo';
 
 interface Flash {
   id: number;
@@ -71,10 +72,15 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
             {[...new Set([...player.skills, ...player.extraSkills])].map((id) => {
               const skill = SKILL_MAP.get(id);
               return skill ? (
-                <div key={id} className={`skill-chip ${skill.lord ? 'lord' : ''}`} title={skill.desc}>
+                <HoverInfo
+                  as="div"
+                  key={id}
+                  className={`skill-chip ${skill.lord ? 'lord' : ''}`}
+                  content={<SkillHover skillId={id} />}
+                >
                   <span className="skill-name">{skill.name}</span>
                   <span className="skill-desc">{skill.desc}</span>
-                </div>
+                </HoverInfo>
               ) : null;
             })}
           </div>
@@ -83,11 +89,20 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
       <div className="hero-equips">
         {slots.map(({ key, label }) => {
           const card = player.equips[key];
-          return (
-            <div key={key} className={`equip-slot ${card ? 'filled' : ''}`}>
+          const body = (
+            <>
               <span className="equip-label">{label}</span>
               <span className="equip-name">{card ? shortCardName(card.name) : '—'}</span>
               {card && <span className="equip-slot-hint">{equipSlotText(card.equipSlot)}</span>}
+            </>
+          );
+          return card ? (
+            <HoverInfo key={key} as="div" className="equip-slot filled" content={<EquipHover name={card.name} />}>
+              {body}
+            </HoverInfo>
+          ) : (
+            <div key={key} className="equip-slot">
+              {body}
             </div>
           );
         })}

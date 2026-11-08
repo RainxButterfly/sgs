@@ -42,14 +42,14 @@ git push
 
 ```json
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "notes": "更新说明",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.0.zip",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.1.zip",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.0.zip",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.0.zip",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.0.zip",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.0.zip"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.1.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.1.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.1.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.1.zip"
   ],
   "sha256": "更新包的 SHA-256"
 }
