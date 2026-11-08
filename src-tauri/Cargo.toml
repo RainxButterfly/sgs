@@ -34,3 +34,6 @@ sha2 = "0.11"
 zip = "9"
 semver = "1"
 base64 = "0.22"
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+rfd = "0.18"

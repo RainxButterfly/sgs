@@ -70,6 +70,11 @@ export async function readDataDirInfo(): Promise<DataDirInfo | null> {
   return await invoke<DataDirInfo>('data_dir_info');
 }
 
+export async function pickDataDir(): Promise<string | null> {
+  if (!isTauri()) return null;
+  return await invoke<string | null>('pick_data_dir');
+}
+
 export async function applyDataDir(path: string): Promise<DataDirInfo> {
   if (!isTauri()) throw new Error('当前版本不支持修改数据目录');
   const info = await invoke<DataDirInfo>('set_data_dir', { path });

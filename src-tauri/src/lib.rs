@@ -565,6 +565,25 @@ async fn set_data_dir(app: tauri::AppHandle, path: String) -> Result<DataDirInfo
 }
 
 #[tauri::command]
+async fn pick_data_dir() -> Result<Option<String>, String> {
+    #[cfg(target_os = "android")]
+    {
+        return Err("手机端请使用应用默认数据目录".to_string());
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let path = tauri::async_runtime::spawn_blocking(|| {
+            rfd::FileDialog::new()
+                .set_title("选择数据保存目录")
+                .pick_folder()
+        })
+        .await
+        .map_err(|error| error.to_string())?;
+        Ok(path.map(|path| path.to_string_lossy().to_string()))
+    }
+}
+
+#[tauri::command]
 async fn write_data_snapshot(app: tauri::AppHandle, contents: String) -> Result<(), String> {
     let dir = current_data_dir(&app)?;
     std::fs::create_dir_all(&dir).map_err(|error| format!("无法创建数据目录：{error}"))?;
@@ -854,6 +873,7 @@ pub fn run() {
             android_battery,
             data_dir_info,
             set_data_dir,
+            pick_data_dir,
             write_data_snapshot,
             read_data_snapshot
         ]);

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
-import { isTauri } from '../../net/lan';
+import { isAndroidApp, isTauri } from '../../net/lan';
 import { prepareBackgroundImage } from '../background';
-import { applyDataDir, readDataDirInfo, writeDataSnapshot } from '../dataStorage';
+import { applyDataDir, pickDataDir, readDataDirInfo, writeDataSnapshot } from '../dataStorage';
 import { useGameStore } from '../store';
 
 export function SettingsModal() {
@@ -57,13 +57,31 @@ export function SettingsModal() {
     }
   };
 
+  const browseDir = async () => {
+    setDirBusy(true);
+    setDirError(null);
+    setDirMessage(null);
+    try {
+      const path = await pickDataDir();
+      if (!path) return;
+      const info = await applyDataDir(path);
+      setDataDir(info.path);
+      setDefaultDir(info.defaultPath);
+      setDirMessage('已切换，当前数据已写入新目录');
+    } catch (err) {
+      setDirError((err as Error).message);
+    } finally {
+      setDirBusy(false);
+    }
+  };
+
   const saveNow = async () => {
     setDirBusy(true);
     setDirError(null);
     setDirMessage(null);
     try {
       await writeDataSnapshot();
-      setDirMessage('数据已保存');
+      setDirMessage('已备份到当前目录');
     } catch (err) {
       setDirError((err as Error).message);
     } finally {
@@ -146,36 +164,34 @@ export function SettingsModal() {
           </p>
           {isTauri() ? (
             <>
-              <div className="settings-dir-row">
-                <input
-                  value={dataDir}
-                  onChange={(event) => setDataDir(event.target.value)}
-                  placeholder="输入文件夹路径"
-                  spellCheck={false}
-                />
-                <button
-                  type="button"
-                  className="btn ghost"
-                  disabled={dirBusy || !dataDir.trim()}
-                  onClick={() => void applyDir(dataDir.trim())}
-                >
-                  应用
-                </button>
+              <div className="settings-dir">
+                <span className="settings-dir-label">当前目录</span>
+                <code className="settings-dir-path" title={dataDir}>
+                  {dataDir || '读取中…'}
+                </code>
               </div>
               <div className="settings-actions">
+                {!isAndroidApp() && (
+                  <button type="button" className="btn ghost" disabled={dirBusy} onClick={() => void browseDir()}>
+                    {dirBusy ? '处理中…' : '浏览文件夹…'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn ghost"
                   disabled={dirBusy || !defaultDir}
                   onClick={() => void applyDir(defaultDir)}
                 >
-                  恢复默认
+                  使用默认目录
                 </button>
                 <button type="button" className="btn ghost" disabled={dirBusy} onClick={() => void saveNow()}>
-                  立即保存
+                  备份当前数据
                 </button>
               </div>
-              <div className="bg-setting-hint">默认位置：{defaultDir || '读取中…'}</div>
+              <div className="bg-setting-hint">
+                浏览并确认新目录后，当前数据会复制过去；「备份当前数据」只写入当前目录，不改变位置。
+                {isAndroidApp() ? ' 手机端受系统限制，固定使用应用数据目录。' : ` 默认目录：${defaultDir || '读取中…'}`}
+              </div>
               {dirMessage && <div className="settings-ok">{dirMessage}</div>}
               {dirError && <div className="net-error">{dirError}</div>}
             </>

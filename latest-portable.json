@@ -1,6 +1,6 @@
 {
   "version": "0.5.7",
-  "notes": "v0.5.7：选将页可查看详情；手牌居中扇形排布；更新检查并行返回并可手动复制地址；数据目录设置。",
+  "notes": "v0.5.7：对局布局改为移动版式，个人信息左下角并显示装备；手牌居中放大；数据目录支持浏览。",
   "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.7",
   "urls": [
     "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.7",
@@ -13,5 +13,5 @@
     "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.7",
     "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.7"
   ],
-  "sha256": "39a633ab2374a7a0a310e960913f812dd898b9ba9cbebd8c74d1d1f75949715c"
+  "sha256": "434b3e6908dacc9ae1486ceb3d2473d4646a80b9c05ea2ccf80cdcb1454bede6"
 }
