@@ -39,19 +39,26 @@ export function PickScreen() {
             <div className="pick-seat is-human">
               <span className="pick-seat-label">你</span>
               <span className="pick-seat-hero">{selected?.name ?? '待选择'}</span>
-              <span className="pick-seat-tag">{selected ? '已选择' : '选择中'}</span>
+              <span className="pick-seat-tag">
+                {preGame.lordIndex === 0 ? '主公 · 已亮将' : selected ? '已选择' : '选择中'}
+              </span>
             </div>
-            {preGame.bots.map((bot) => {
+            {preGame.bots.map((bot, index) => {
               const hero = HERO_MAP.get(bot.heroId);
+              const isLord = preGame.lordIndex === index + 1;
               return (
-                <div key={bot.name + bot.heroId} className="pick-seat">
+                <div key={bot.name + bot.heroId} className={`pick-seat ${isLord ? 'is-lord' : ''}`}>
                   <span className="pick-seat-label">电脑</span>
-                  <span className="pick-seat-hero">{hero?.name ?? '随机'}</span>
-                  <span className="pick-seat-tag">{bot.name}</span>
+                  <span className="pick-seat-hero">{isLord ? (hero?.name ?? '随机') : '未亮将'}</span>
+                  <span className="pick-seat-tag">{isLord ? '主公' : bot.name}</span>
                 </div>
               );
             })}
-            <div className="pick-seat-note">其余空位由电脑自动选择武将。</div>
+            <div className="pick-seat-note">
+              {preGame.lordIndex >= 0
+                ? '主公武将已经亮出，其余武将会在全部选择完成后亮出。'
+                : '其余空位由电脑自动选择武将。'}
+            </div>
           </section>
 
           <section className="pick-choice">

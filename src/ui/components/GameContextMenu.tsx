@@ -20,6 +20,8 @@ export function GameContextMenu({ onShowLog, onExit, onViewPlayer }: Props) {
 
   useEffect(() => {
     const onContextMenu = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('input, textarea, [contenteditable="true"]')) return;
       event.preventDefault();
       const element = document.elementFromPoint(event.clientX, event.clientY);
       const seat = element?.closest<HTMLElement>('[data-player-id]');

@@ -37,6 +37,13 @@ const ROLE_DIST: Record<number, Role[]> = {
   8: ['lord', 'loyalist', 'loyalist', 'rebel', 'rebel', 'rebel', 'rebel', 'traitor'],
 };
 
+export function buildRoles(count: number, mode: 'identity' | 'duel' | 'landlord' | 'guozhan'): Role[] {
+  if (mode === 'duel') return ['lord', 'rebel'];
+  if (mode === 'landlord') return ['lord', 'rebel', 'rebel'];
+  if (mode === 'guozhan') return Array.from({ length: count }, () => 'rebel' as Role);
+  return (ROLE_DIST[count] ?? ROLE_DIST[8]).slice();
+}
+
 const CARD_TYPE: Record<string, CardType> = {
   杀: 'basic',
   闪: 'basic',
@@ -78,6 +85,7 @@ export interface GameSetup {
   players: { name: string; heroId: string; isBot?: boolean }[];
   seed?: number;
   lordSeat?: number;
+  roles?: Role[];
   rules?: Partial<CustomRules>;
 }
 
@@ -100,11 +108,12 @@ export class Game {
     if (mode === 'landlord' && count !== 3) throw new Error('斗地主需要 3 名玩家');
     if (mode === 'guozhan' && count < 4) throw new Error('国战需要至少 4 名玩家');
     let roles: Role[];
-    if (mode === 'duel') roles = ['lord', 'rebel'];
-    else if (mode === 'landlord') roles = ['lord', 'rebel', 'rebel'];
-    else if (mode === 'guozhan') roles = Array.from({ length: count }, () => 'rebel' as Role);
-    else roles = ROLE_DIST[count].slice();
-    this.shuffle(roles);
+    if (setup.roles?.length === count) {
+      roles = setup.roles.slice();
+    } else {
+      roles = buildRoles(count, mode);
+      this.shuffle(roles);
+    }
 
     const guozhanCounts: Record<string, number> = { wei: 0, shu: 0, wu: 0, qun: 0 };
     const usedHeroes = new Set<string>();
@@ -125,7 +134,7 @@ export class Game {
       usedHeroes.add(heroId);
       const hero = HERO_MAP.get(heroId)!;
       if (mode === 'guozhan') guozhanCounts[hero.faction] += 1;
-      const isLord = roles[i] === 'lord';
+      const isLord = roles[i] === 'lord' && mode !== 'duel';
       const maxHp = Math.max(1, hero.hp + (isLord ? 1 : 0) + rules.hpModifier);
       return {
         id: i,
@@ -199,7 +208,9 @@ export class Game {
 
     for (const p of players) this.drawRaw(p, rules.initialHand);
     for (const p of players) {
-      if (p.role === 'lord') {
+      if (mode === 'duel') {
+        this.log(`【${p.name}】选择了武将【${p.heroName}】`, 'system');
+      } else if (p.role === 'lord') {
         this.log(`【${p.name}】以主公身份登场，选择武将【${p.heroName}】`, 'system');
       } else if (rules.revealRoles) {
         this.log(`【${p.name}】以【${ROLE_NAME[p.role]}】身份登场，选择武将【${p.heroName}】`, 'system');
@@ -1964,6 +1975,14 @@ export class Game {
       } else if (factions.length === 1) {
         const winner = factions[0];
         this.endGame(winner, `${FACTION_NAME[winner]}势力扫平群雄，取得了国战的胜利！`);
+      }
+      return;
+    }
+    if (this.state.rules.mode === 'duel') {
+      if (alive.length === 0) this.endGame('draw', '两败俱伤，单挑不分胜负。');
+      else if (alive.length === 1) {
+        const winner = alive[0];
+        this.endGame(winner.role === 'lord' ? 'lord' : 'rebel', `【${winner.name}】取得了单挑胜利！`);
       }
       return;
     }

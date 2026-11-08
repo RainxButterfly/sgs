@@ -160,6 +160,10 @@ export function LobbyScreen() {
               host={host}
               startCount={pickCount}
               code={lobby.room.code}
+              lordPlayerId={lobby.lordPlayerId}
+              lordSeat={lobby.lordSeat}
+              lordHeroId={lobby.lordHeroId}
+              revealed={lobby.revealed}
               onPick={pickLanHero}
               onStart={() => startLanGame(pickCount)}
               onCancel={cancelLanPick}
@@ -289,7 +293,7 @@ export function LobbyScreen() {
                     : gameMode === 'landlord'
                       ? '地主 1 · 农民 2'
                       : gameMode === 'duel'
-                        ? '主公 1 · 反贼 1'
+                        ? '1v1 单挑 · 双方没有身份'
                         : mode === 'custom'
                           ? '自定义规则对所有玩家生效'
                           : '主公 +1 体力，身份随机隐藏'}

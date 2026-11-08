@@ -23,13 +23,15 @@ interface Props {
 export function HeroPanel({ player, mode = 'identity', current, flash, handLimitModifier = 0, onDetail }: Props) {
   const hero = HERO_MAP.get(player.heroId);
   const roleLabel =
-    mode === 'guozhan'
-      ? `${FACTION_NAME[player.faction]}势力`
-      : mode === 'landlord'
-        ? player.role === 'lord'
-          ? '地主'
-          : '农民'
-        : ROLE_NAME[player.role];
+    mode === 'duel'
+      ? ''
+      : mode === 'guozhan'
+        ? `${FACTION_NAME[player.faction]}势力`
+        : mode === 'landlord'
+          ? player.role === 'lord'
+            ? '地主'
+            : '农民'
+          : ROLE_NAME[player.role];
   const pips = Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp);
   const showFlash = flash && flash.playerId === player.id ? flash : null;
   const slots = [
@@ -52,7 +54,7 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
         <div className="hero-identity">
           <div className="hero-name-row">
             <span className="hero-name">{hero?.name ?? player.heroName}</span>
-            <span className={`role-tag role-${player.role}`}>{roleLabel}</span>
+            {roleLabel && <span className={`role-tag role-${player.role}`}>{roleLabel}</span>}
             {onDetail && (
               <button type="button" className="hero-detail-btn" onClick={onDetail}>
                 详情

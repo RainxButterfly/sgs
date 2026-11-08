@@ -10,6 +10,11 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
   console.error('未处理的 Promise 异常', event.reason);
 });
+window.addEventListener('contextmenu', (event) => {
+  const target = event.target as HTMLElement | null;
+  if (target?.closest('input, textarea, [contenteditable="true"]')) return;
+  event.preventDefault();
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

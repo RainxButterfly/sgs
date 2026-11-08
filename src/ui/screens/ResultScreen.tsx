@@ -35,9 +35,11 @@ export function ResultScreen() {
         ? result.winner === 'lord'
           ? '地主获胜'
           : '农民获胜'
-        : WINNER_LABEL[result.winner] ?? '对局结束';
+        : mode === 'duel'
+          ? '单挑获胜'
+          : WINNER_LABEL[result.winner] ?? '对局结束';
   const roleLabel = (role: typeof human.role) => {
-    if (mode === 'guozhan') return '';
+    if (mode === 'guozhan' || mode === 'duel') return '';
     if (mode === 'landlord') return role === 'lord' ? '地主' : '农民';
     return ROLE_NAME[role];
   };

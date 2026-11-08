@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
-import { Game } from '../core/game';
+import { Game, buildRoles } from '../core/game';
 import { HEROES } from '../core/deck';
 import { botAction } from '../core/bot';
 import { smartBotAction } from '../core/smartBot';
-import type { AskRequest, GameAction, GameEvent, GameIO } from '../core/types';
+import type { AskRequest, GameAction, GameEvent, GameIO, Role } from '../core/types';
 import { DEFAULT_RULES, type CustomRules } from '../core/types';import {
   redactState,
   type GuestPayload,
@@ -122,6 +122,9 @@ export class LanHostManager {
   rules: CustomRules = { ...DEFAULT_RULES };
   picking = false;
   targetCount = 0;
+  roles: Role[] | null = null;
+  lordPlayerId: number | null = null;
+  lordBotHero: string | null = null;
   private readonly relay: RelayClient;
   private readonly hooks: HostHooks;
   private hostConnId = 0;
@@ -187,6 +190,17 @@ export class LanHostManager {
         choices: guest.choices,
       })),
     ];
+    const lordGuest =
+      this.lordPlayerId != null && this.lordPlayerId > 0
+        ? this.guests.find((guest) => guest.playerId === this.lordPlayerId)
+        : undefined;
+    const lordHeroId =
+      this.lordBotHero ??
+      (this.lordPlayerId === 0 ? this.hostHeroId : lordGuest?.heroId) ??
+      undefined;
+    const revealed =
+      this.picking && !!this.hostHeroId && this.guests.every((guest) => !!guest.heroId);
+    const lordSeat = this.lordPlayerId == null && this.lordBotHero ? this.roles?.indexOf('lord') : undefined;
     return {
       room: { ip: this.info.ip, ips: this.info.ips, port: this.info.port, code: this.info.code },
       hostName: this.hostName,
@@ -196,13 +210,42 @@ export class LanHostManager {
       rules: { ...this.rules },
       picking: this.picking,
       targetCount: this.targetCount || undefined,
+      lordPlayerId: this.lordPlayerId,
+      lordSeat,
+      lordHeroId,
+      revealed,
     };
   }
 
   beginPicking(count: number): void {
     if (this.started || this.picking) return;
+    const total = Math.max(2, Math.min(8, count));
+    const gameMode = this.rules.mode ?? 'identity';
+    const roles = buildRoles(total, gameMode);
+    for (let i = roles.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [roles[i], roles[j]] = [roles[j], roles[i]];
+    }
+    this.roles = roles;
+    const lordIndex = roles.indexOf('lord');
+    const humans = 1 + this.guests.length;
+    const visibleIdentity = gameMode === 'identity' || gameMode === 'landlord';
+    if (!visibleIdentity || lordIndex < 0) {
+      this.lordPlayerId = null;
+      this.lordBotHero = null;
+    } else if (lordIndex < humans) {
+      this.lordPlayerId = lordIndex;
+      this.lordBotHero = null;
+    } else {
+      const taken = new Set<string>();
+      if (this.hostHeroId) taken.add(this.hostHeroId);
+      for (const guest of this.guests) if (guest.heroId) taken.add(guest.heroId);
+      const pool = HEROES.filter((hero) => !taken.has(hero.id));
+      this.lordPlayerId = null;
+      this.lordBotHero = pool[Math.floor(Math.random() * pool.length)]?.id ?? HEROES[0].id;
+    }
     this.picking = true;
-    this.targetCount = Math.max(2, Math.min(8, count));
+    this.targetCount = total;
     this.refreshLobby();
   }
 
@@ -210,6 +253,9 @@ export class LanHostManager {
     if (!this.picking) return;
     this.picking = false;
     this.targetCount = 0;
+    this.roles = null;
+    this.lordPlayerId = null;
+    this.lordBotHero = null;
     this.refreshLobby();
   }
 
@@ -233,8 +279,8 @@ export class LanHostManager {
       return;
     }
     if (event.server === 'join') {
-      if (this.started) {
-        this.relay.send({ t: 'error', message: '对局已经开始，请等待下一局' } satisfies HostPayload, event.id);
+      if (this.started || this.picking) {
+        this.relay.send({ t: 'error', message: '选将或对局已经开始，请等待下一局' } satisfies HostPayload, event.id);
         return;
       }
       if (this.guests.some((g) => g.connId === event.id)) return;
@@ -296,6 +342,7 @@ export class LanHostManager {
 
   pickHostHero(heroId: string): void {
     if (this.started || !this.hostChoices.includes(heroId)) return;
+    if (heroId === this.lordBotHero) return;
     if (this.guests.some((guest) => guest.heroId === heroId)) return;
     this.hostHeroId = heroId;
     this.refreshLobby();
@@ -305,6 +352,7 @@ export class LanHostManager {
     if (this.started) return;
     const guest = this.guests.find((item) => item.connId === connId);
     if (!guest || !guest.choices.includes(heroId)) return;
+    if (heroId === this.lordBotHero) return;
     if (this.hostHeroId === heroId) return;
     if (this.guests.some((item) => item.connId !== connId && item.heroId === heroId)) return;
     guest.heroId = heroId;
@@ -413,11 +461,18 @@ export class LanHostManager {
       players.push({ name: botNames[(i - humans) % botNames.length], heroId: '', isBot: true });
     }
 
+    const roles = this.roles?.length === total ? this.roles : undefined;
+    if (roles && this.lordBotHero) {
+      const lordIndex = roles.indexOf('lord');
+      if (lordIndex >= 0 && lordIndex < players.length) players[lordIndex].heroId = this.lordBotHero;
+    }
+
     const box: { game: Game | null } = { game: null };
     const game = new Game(
       {
         players,
         seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
+        roles,
         rules: this.mode === 'custom' || gameMode !== 'identity' ? this.rules : { military: this.rules.military },
       },
       this.createIO(() => box.game),
@@ -442,6 +497,9 @@ export class LanHostManager {
     this.started = false;
     this.picking = false;
     this.targetCount = 0;
+    this.roles = null;
+    this.lordPlayerId = null;
+    this.lordBotHero = null;
     this.hostHeroId = null;
     this.hostChoices = this.rollChoices();
     for (const guest of this.guests) {

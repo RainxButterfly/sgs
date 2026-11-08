@@ -38,7 +38,7 @@ export function PlayerSeat({
 }: Props) {
   const hero = HERO_MAP.get(player.heroId);
   const roleLabel =
-    mode === 'guozhan'
+    mode === 'guozhan' || mode === 'duel'
       ? ''
       : mode === 'landlord'
         ? player.roleRevealed || !player.alive || player.role === 'lord'

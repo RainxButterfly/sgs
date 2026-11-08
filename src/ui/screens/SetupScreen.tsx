@@ -33,7 +33,7 @@ export function SetupScreen() {
             : Math.max(5, count);
   const roleHint =
     mode === 'duel'
-      ? '主公 1 · 反贼 1 · 单挑对决'
+      ? '1v1 单挑 · 双方没有身份，不额外增加体力'
       : mode === 'landlord'
         ? '地主 1 · 农民 2 · 3 人对局'
         : mode === 'guozhan'

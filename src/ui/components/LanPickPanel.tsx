@@ -10,14 +10,34 @@ interface Props {
   host: boolean;
   startCount: number;
   code: string;
+  lordPlayerId?: number | null;
+  lordSeat?: number;
+  lordHeroId?: string;
+  revealed?: boolean;
   onPick: (heroId: string) => void;
   onStart: () => void;
   onCancel: () => void;
 }
 
-export function LanPickPanel({ players, me, host, startCount, code, onPick, onStart, onCancel }: Props) {
+export function LanPickPanel({
+  players,
+  me,
+  host,
+  startCount,
+  code,
+  lordPlayerId,
+  lordSeat,
+  lordHeroId,
+  revealed,
+  onPick,
+  onStart,
+  onCancel,
+}: Props) {
   const allPicked = players.every((player) => player.heroId);
   const emptySlots = Math.max(0, startCount - players.length);
+  const lordReady = !lordPlayerId || !!lordHeroId;
+  const canPick = lordReady || me.playerId === lordPlayerId;
+  const lordBotHero = lordPlayerId == null && lordHeroId ? HERO_MAP.get(lordHeroId) : undefined;
 
   return (
     <div className="lan-pick">
@@ -37,42 +57,63 @@ export function LanPickPanel({ players, me, host, startCount, code, onPick, onSt
         <section className="pick-seats">
           <div className="room-card-title">座次与武将</div>
           {players.map((player) => {
-            const hero = player.heroId ? HERO_MAP.get(player.heroId) : undefined;
+            const isLord = lordPlayerId != null && player.playerId === lordPlayerId;
+            const showHero = isLord || revealed || player.connId === me.connId;
+            const hero = player.heroId && showHero ? HERO_MAP.get(player.heroId) : undefined;
             return (
-              <div key={player.connId} className={`pick-seat ${player.connId === me.connId ? 'is-human' : ''}`}>
-                <span className="pick-seat-label">{player.isHost ? '房主' : '玩家'}</span>
-                <span className="pick-seat-hero">{hero?.name ?? '选择中'}</span>
+              <div
+                key={player.connId}
+                className={`pick-seat ${player.connId === me.connId ? 'is-human' : ''} ${isLord ? 'is-lord' : ''}`}
+              >
+                <span className="pick-seat-label">{isLord ? '主公' : player.isHost ? '房主' : '玩家'}</span>
+                <span className="pick-seat-hero">
+                  {player.heroId ? (showHero ? (hero?.name ?? '已选择') : '未亮将') : '选择中'}
+                </span>
                 <span className="pick-seat-tag">{player.name}</span>
               </div>
             );
           })}
-          {Array.from({ length: emptySlots }, (_, index) => (
-            <div key={`empty-${index}`} className="pick-seat">
-              <span className="pick-seat-label">电脑</span>
-              <span className="pick-seat-hero">自动补足</span>
-              <span className="pick-seat-tag">空位</span>
-            </div>
-          ))}
-          <div className="pick-seat-note">其他玩家的选择会实时显示在这里。</div>
+          {Array.from({ length: emptySlots }, (_, index) => {
+            const seatIndex = players.length + index;
+            const isBotLord = !lordPlayerId && !!lordBotHero && lordSeat === seatIndex;
+            return (
+              <div key={`empty-${index}`} className={`pick-seat ${isBotLord ? 'is-lord' : ''}`}>
+                <span className="pick-seat-label">{isBotLord ? '主公' : '电脑'}</span>
+                <span className="pick-seat-hero">{isBotLord ? lordBotHero?.name : '自动补足'}</span>
+                <span className="pick-seat-tag">{isBotLord ? '电脑' : '空位'}</span>
+              </div>
+            );
+          })}
+          <div className="pick-seat-note">
+            {revealed ? '全部选择完成，所有武将已亮出。' : '主公武将先行亮出，其余武将等全部选择完成后亮出。'}
+          </div>
         </section>
 
         <section className="pick-choice">
           <div className="setup-row">
             <span className="setup-label">你的候选武将</span>
-            <span className="setup-hint">{me.heroId ? '可以重新选择' : '选择一名武将'}</span>
+            <span className="setup-hint">
+              {!lordReady && me.playerId !== lordPlayerId
+                ? '等待主公选择武将'
+                : me.heroId
+                  ? '可以重新选择'
+                  : '选择一名武将'}
+            </span>
           </div>
           <div className="lobby-hero-grid">
             {(me.choices ?? []).map((heroId) => {
               const hero = HERO_MAP.get(heroId);
               if (!hero) return null;
-              const taken = players.some((player) => player.connId !== me.connId && player.heroId === heroId);
+              const taken =
+                (heroId === lordHeroId && me.heroId !== heroId) ||
+                players.some((player) => player.connId !== me.connId && player.heroId === heroId);
               const picked = me.heroId === heroId;
               return (
                 <HoverInfo key={heroId} as="div" className="lobby-hero-wrap" content={<HeroDataHover hero={hero} />}>
                 <button
                   type="button"
                   className={`lobby-hero-card faction-${hero.faction} ${picked ? 'picked' : ''} ${taken ? 'taken' : ''}`}
-                  disabled={taken}
+                  disabled={taken || !canPick}
                   onClick={() => onPick(heroId)}
                 >
                   <div className="lobby-hero-top">

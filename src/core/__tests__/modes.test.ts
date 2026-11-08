@@ -42,6 +42,24 @@ describe('对局模式', () => {
     expect(game.state.over || io.stopped).toBe(true);
   }, 20000);
 
+  it('1v1 双方没有主公加成和主公技', () => {
+    const io = new SimIO();
+    const game = new Game(
+      {
+        players: [
+          { name: 'A', heroId: 'caocao', isBot: true },
+          { name: 'B', heroId: 'liubei', isBot: true },
+        ],
+        seed: 202603011,
+        rules: { mode: 'duel' },
+      },
+      io,
+    );
+    expect(game.state.players.map((p) => p.maxHp)).toEqual([4, 4]);
+    expect(game.state.players.some((p) => p.skills.includes('hujia'))).toBe(false);
+    expect(game.state.log.some((entry) => entry.text.includes('主公身份'))).toBe(false);
+  });
+
   it('斗地主为 1 地主 2 农民且可以正常结束', async () => {
     const { game, io } = await run(3, 20260302, 'landlord');
     expect(game.state.players).toHaveLength(3);

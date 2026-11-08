@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Game } from '../core/game';
+import { Game, buildRoles } from '../core/game';
 import { HEROES } from '../core/deck';
 import { botAction } from '../core/bot';
 import { smartBotAction } from '../core/smartBot';
@@ -16,6 +16,7 @@ import type {
   GameEvent,
   GameIO,
   GameState,
+  Role,
 } from '../core/types';
 
 type Screen = 'menu' | 'setup' | 'pick' | 'lan' | 'lobby' | 'gallery' | 'game' | 'result';
@@ -25,6 +26,9 @@ interface PreGame {
   rules?: Partial<CustomRules>;
   candidates: string[];
   bots: { name: string; heroId: string }[];
+  roles: Role[];
+  lordIndex: number;
+  lordHeroId: string | null;
 }
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0';
@@ -283,11 +287,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       name: botNames[i % botNames.length],
       heroId: pool.pop()!,
     }));
+    const mode = rules?.mode ?? 'identity';
+    const roles = buildRoles(count, mode);
+    roles.sort(() => Math.random() - 0.5);
+    const visibleLordIndex = mode === 'identity' || mode === 'landlord' ? roles.indexOf('lord') : -1;
+    const lordIndex = visibleLordIndex;
+    const lordHeroId = lordIndex > 0 ? bots[lordIndex - 1].heroId : null;
     set({
       screen: 'pick',
       game: null,
       suspended: false,
-      preGame: { count, rules, candidates: pool.slice(0, 5), bots },
+      preGame: { count, rules, candidates: pool.slice(0, 5), bots, roles, lordIndex, lordHeroId },
       humanId: 0,
       lanRole: null,
       lanHost: null,
@@ -324,6 +334,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       {
         players,
         seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
+        roles: preGame.roles,
         rules: preGame.rules,
       },
       io,
@@ -748,8 +759,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
         text: ev.text,
         reason: ev.reason,
       };
+      const lastHistory = state.cardHistory[state.cardHistory.length - 1];
+      const baseHistory =
+        lastHistory?.kind === 'reveal' &&
+        lastHistory.playerId === ev.playerId &&
+        lastHistory.cards.length === 1 &&
+        lastHistory.cards[0]?.id === ev.card.id
+          ? state.cardHistory.slice(0, -1)
+          : state.cardHistory;
       patch.cardHistory = [
-        ...state.cardHistory,
+        ...baseHistory,
         { id: eventSeq, kind: 'judge' as const, playerId: ev.playerId, cards: [ev.card], label: ev.reason },
       ].slice(-4);
     } else if (ev.type === 'discard' && ev.cards.length > 0) {

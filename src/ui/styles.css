@@ -773,6 +773,14 @@ button {
   background: rgba(219, 181, 108, 0.12);
 }
 
+.pick-seat.is-lord {
+  background: rgba(184, 69, 53, 0.12);
+}
+
+.pick-seat.is-lord .pick-seat-tag {
+  color: var(--gold-bright);
+}
+
 .pick-seat-label {
   color: var(--gold);
   min-width: 36px;
@@ -1136,7 +1144,7 @@ button {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   margin-bottom: 6px;
 }
 
@@ -1170,8 +1178,8 @@ button {
 
 .hp-text {
   margin-left: 4px;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 12px;
+  color: var(--ink);
 }
 
 .seat-equips {
@@ -1184,8 +1192,8 @@ button {
 .mini-equip,
 .mini-judge,
 .mini-skill {
-  font-size: 10.5px;
-  padding: 1px 5px;
+  font-size: 11.5px;
+  padding: 2px 6px;
   border-radius: 2px;
   border: 1px solid rgba(201, 163, 90, 0.22);
   color: rgba(201, 163, 90, 0.85);
@@ -1229,8 +1237,8 @@ button {
 }
 
 .seat-empty {
-  font-size: 10.5px;
-  color: rgba(205, 189, 162, 0.6);
+  font-size: 11.5px;
+  color: rgba(205, 189, 162, 0.7);
 }
 
 .dead-mask {
@@ -1338,9 +1346,9 @@ button {
 }
 
 .pile-label {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.1em;
-  color: rgba(205, 189, 162, 0.85);
+  color: rgba(205, 189, 162, 0.92);
 }
 
 .center-stage {
@@ -1373,7 +1381,7 @@ button {
 }
 
 .history-label {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--muted);
   white-space: nowrap;
   max-width: 180px;
@@ -1472,7 +1480,7 @@ button {
   display: flex;
   gap: 8px;
   align-items: center;
-  font-size: 12px;
+  font-size: 13px;
   padding: 5px 13px;
   border-radius: 20px;
   border: 1px solid rgba(219, 181, 108, 0.28);
@@ -1585,7 +1593,7 @@ button {
 }
 
 .hero-title {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   color: var(--muted);
   margin: 1px 0 4px;
@@ -1629,9 +1637,9 @@ button {
 }
 
 .skill-desc {
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: rgba(205, 189, 162, 0.92);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(205, 189, 162, 0.94);
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
@@ -1662,13 +1670,13 @@ button {
 }
 
 .equip-label {
-  font-size: 10px;
-  color: rgba(205, 189, 162, 0.75);
+  font-size: 11px;
+  color: rgba(205, 189, 162, 0.8);
   letter-spacing: 0.08em;
 }
 
 .equip-name {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--gold);
   white-space: nowrap;
   overflow: hidden;
@@ -1676,8 +1684,8 @@ button {
 }
 
 .equip-slot-hint {
-  font-size: 9.5px;
-  color: rgba(205, 189, 162, 0.55);
+  font-size: 10.5px;
+  color: rgba(205, 189, 162, 0.65);
 }
 
 .hero-judge {
@@ -1697,13 +1705,22 @@ button {
 
 .hero-foot {
   display: flex;
-  gap: 14px;
+  gap: 10px;
   align-items: center;
-  margin-top: 7px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(201, 163, 90, 0.2);
-  font-size: 11px;
-  color: rgba(205, 189, 162, 0.9);
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(201, 163, 90, 0.24);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.hero-foot > span:not(.turn-tag) {
+  padding: 2px 8px;
+  border: 1px solid rgba(219, 181, 108, 0.24);
+  border-radius: 10px;
+  background: rgba(219, 181, 108, 0.07);
+  white-space: nowrap;
 }
 
 .turn-tag {
@@ -1874,17 +1891,17 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  color: rgba(205, 189, 162, 0.8);
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  color: rgba(205, 189, 162, 0.9);
 }
 
 .hand-count {
-  color: var(--gold);
-  border: 1px solid rgba(219, 181, 108, 0.4);
-  padding: 0 6px;
-  border-radius: 8px;
-  font-size: 11px;
+  color: var(--gold-bright);
+  border: 1px solid rgba(219, 181, 108, 0.5);
+  padding: 1px 7px;
+  border-radius: 9px;
+  font-size: 12.5px;
 }
 
 .hand-cards {

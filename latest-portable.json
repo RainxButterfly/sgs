@@ -1,14 +1,14 @@
 {
-  "version": "0.4.1",
-  "notes": "v0.4.1：弃牌与展示牌进入中央记录，支持再次点击取消选牌、游戏右键菜单、弹窗收起查看牌桌、判定区悬停说明和对局回归；图标更新为閃。",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.1.zip",
+  "version": "0.4.2",
+  "notes": "v0.4.2：1v1 取消身份和主公体力加成；选将阶段先亮主公，其他武将等全部选完再亮出；右键改为游戏菜单，手牌上限制和各类信息字号放大。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.2.zip",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.1.zip",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.1.zip",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.1.zip",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.1.zip",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.1.zip",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.1.zip"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.2.zip",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.2.zip",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.2.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.2.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.2.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.2.zip"
   ],
-  "sha256": "a72ea6e46fb4fe63624ec52fff50b3201b925e2d6ad8efc6f09e7f94788903f5"
+  "sha256": "5bb8d5f3d70eb4d843a7af11880814820130a63b279fc391a49ce1cb264684b4"
 }

@@ -34,6 +34,10 @@ export interface LobbyState {
   rules: CustomRules;
   picking?: boolean;
   targetCount?: number;
+  lordPlayerId?: number | null;
+  lordSeat?: number;
+  lordHeroId?: string;
+  revealed?: boolean;
 }
 
 export type ServerEvent =
