@@ -65,6 +65,14 @@ interface FlashEvent {
   amount: number;
 }
 
+interface CardHistoryEntry {
+  id: number;
+  kind: 'discard' | 'reveal' | 'judge';
+  playerId?: number;
+  cards: Card[];
+  label: string;
+}
+
 interface GameStore {
   screen: Screen;
   game: GameLike | null;
@@ -75,6 +83,7 @@ interface GameStore {
   result: { text: string; winner: string } | null;
   lastPlay: PlayEvent | null;
   lastJudge: JudgeEvent | null;
+  cardHistory: CardHistoryEntry[];
   flash: FlashEvent | null;
   error: string | null;
   lanRole: 'host' | 'client' | null;
@@ -86,6 +95,7 @@ interface GameStore {
   lanPlayerId: number;
   lanConnId: number;
   joinPreset: { address: string; code: string } | null;
+  suspended: boolean;
   appVersion: string;
   updateInfo: AppUpdateInfo | null;
   updateState: UpdateState;
@@ -101,6 +111,7 @@ interface GameStore {
   asChooser: AsChooser | null;
   cardChoices: string[];
   reorderTop: string[];
+  modalMinimized: boolean;
 
   initLocal: (count: number, heroId: string, rules?: Partial<CustomRules>) => void;
   prepareLocal: (count: number, rules?: Partial<CustomRules>) => void;
@@ -115,6 +126,9 @@ interface GameStore {
   setLanRules: (mode: 'standard' | 'custom', rules: CustomRules) => void;
   pickLanHero: (heroId: string) => void;
   leaveLan: () => void;
+  suspendGame: () => void;
+  resumeGame: () => void;
+  quitSuspendedGame: () => void;
   checkUpdate: (manual?: boolean) => Promise<void>;
   installUpdate: () => Promise<void>;
   openUpdateModal: () => void;
@@ -141,6 +155,7 @@ interface GameStore {
   confirmReorder: () => void;
   chooseOption: (optionId: string) => void;
   closeAsChooser: () => void;
+  toggleModalMinimized: () => void;
 }
 
 let resolveAsk: ((action: GameAction) => void) | null = null;
@@ -171,6 +186,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   result: null,
   lastPlay: null,
   lastJudge: null,
+  cardHistory: [],
   flash: null,
   error: null,
   lanRole: null,
@@ -182,6 +198,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lanPlayerId: 0,
   lanConnId: -1,
   joinPreset: null,
+  suspended: false,
   appVersion: APP_VERSION,
   updateInfo: null,
   updateState: 'idle',
@@ -196,6 +213,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   asChooser: null,
   cardChoices: [],
   reorderTop: [],
+  modalMinimized: false,
 
   initLocal: (count, heroId, rules) => {
     if (get().game) get().game?.stop?.();
@@ -219,6 +237,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       screen: 'game',
       game,
       preGame: null,
+      suspended: false,
       humanId: 0,
       lanRole: null,
       lanHost: null,
@@ -232,6 +251,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       result: null,
       lastPlay: null,
       lastJudge: null,
+      cardHistory: [],
       flash: null,
       error: null,
       selected: null,
@@ -266,6 +286,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       screen: 'pick',
       game: null,
+      suspended: false,
       preGame: { count, rules, candidates: pool.slice(0, 5), bots },
       humanId: 0,
       lanRole: null,
@@ -280,6 +301,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       result: null,
       lastPlay: null,
       lastJudge: null,
+      cardHistory: [],
       flash: null,
       error: null,
       selected: null,
@@ -310,11 +332,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       screen: 'game',
       game,
       preGame: null,
+      suspended: false,
       humanId: 0,
       pending: null,
       result: null,
       lastPlay: null,
       lastJudge: null,
+      cardHistory: [],
       flash: null,
       error: null,
       selected: null,
@@ -353,8 +377,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanConnId: -1,
       lastPlay: null,
       lastJudge: null,
+      cardHistory: [],
       flash: null,
     });
+    set({ suspended: false });
   },
 
   restart: () => {
@@ -368,6 +394,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pending: null,
         lastPlay: null,
         lastJudge: null,
+        cardHistory: [],
         flash: null,
         selected: null,
         selectedTargets: [],
@@ -386,6 +413,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pending: null,
         lastPlay: null,
         lastJudge: null,
+        cardHistory: [],
         flash: null,
         version: get().version + 1,
       });
@@ -413,6 +441,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             result: null,
             lastPlay: null,
             lastJudge: null,
+            cardHistory: [],
             flash: null,
             selected: null,
             selectedTargets: [],
@@ -461,6 +490,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           game: null,
           lastPlay: null,
           lastJudge: null,
+          cardHistory: [],
           flash: null,
           version: get().version + 1,
         }),
@@ -474,6 +504,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           game: null,
           lastPlay: null,
           lastJudge: null,
+          cardHistory: [],
           flash: null,
           version: get().version + 1,
         }),
@@ -652,6 +683,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanConnId: -1,
       lastPlay: null,
       lastJudge: null,
+      cardHistory: [],
+      flash: null,
+      suspended: false,
+    });
+  },
+
+  suspendGame: () => {
+    const { lanRole, game } = get();
+    if (lanRole !== 'client' || !game || game.state.over) return;
+    set({ screen: 'menu', suspended: true });
+  },
+
+  resumeGame: () => {
+    const { suspended, game } = get();
+    if (!suspended || !game) return;
+    set({ screen: game.state.over ? 'result' : 'game', suspended: false });
+  },
+
+  quitSuspendedGame: () => {
+    get().lanClient?.leave();
+    resolveAsk = null;
+    set({
+      screen: 'menu',
+      game: null,
+      preGame: null,
+      pending: null,
+      result: null,
+      suspended: false,
+      lanRole: null,
+      lanClient: null,
+      lanHost: null,
+      room: null,
+      lobby: null,
+      netError: null,
+      lanPlayerId: 0,
+      lanConnId: -1,
+      lastPlay: null,
+      lastJudge: null,
+      cardHistory: [],
       flash: null,
     });
   },
@@ -678,6 +748,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
         text: ev.text,
         reason: ev.reason,
       };
+      patch.cardHistory = [
+        ...state.cardHistory,
+        { id: eventSeq, kind: 'judge' as const, playerId: ev.playerId, cards: [ev.card], label: ev.reason },
+      ].slice(-4);
+    } else if (ev.type === 'discard' && ev.cards.length > 0) {
+      eventSeq += 1;
+      patch.cardHistory = [
+        ...state.cardHistory,
+        {
+          id: eventSeq,
+          kind: 'discard' as const,
+          playerId: ev.playerId,
+          cards: ev.cards,
+          label: ev.reason ?? '弃置',
+        },
+      ].slice(-4);
+    } else if (ev.type === 'reveal' && ev.cards.length > 0) {
+      eventSeq += 1;
+      patch.cardHistory = [
+        ...state.cardHistory,
+        {
+          id: eventSeq,
+          kind: 'reveal' as const,
+          playerId: ev.playerId,
+          cards: ev.cards,
+          label: '展示',
+        },
+      ].slice(-4);
     } else if (ev.type === 'damage' || ev.type === 'heal') {
       eventSeq += 1;
       patch.flash = {
@@ -709,6 +807,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         asChooser: null,
         cardChoices: [],
         reorderTop: [],
+        modalMinimized: false,
         version: get().version + 1,
       });
     }),
@@ -724,6 +823,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         asChooser: null,
         cardChoices: [],
         reorderTop: [],
+        modalMinimized: false,
         version: get().version + 1,
       });
       return;
@@ -737,14 +837,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
       asChooser: null,
       cardChoices: [],
       reorderTop: [],
+      modalMinimized: false,
       version: get().version + 1,
     });
     resolve?.(action);
   },
 
   selectCard: (cardId) => {
-    const { pending, selectedTargets } = get();
+    const { pending, selected, asChooser } = get();
     if (!pending?.cardOptions) return;
+    if (selected?.cardId === cardId || asChooser?.cardId === cardId) {
+      set({ selected: null, selectedTargets: [], asChooser: null });
+      return;
+    }
     const options = pending.cardOptions.filter((o) => o.cardId === cardId);
     if (!options.length) return;
     if (options.length === 1) {
@@ -865,6 +970,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   chooseOption: (optionId) => get().submit({ type: 'chooseOption', optionId }),
+
+  toggleModalMinimized: () => set({ modalMinimized: !get().modalMinimized }),
 }));
 
 export function randomHeroChoices(n: number): string[] {

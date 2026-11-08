@@ -2,7 +2,7 @@ import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
 import { rankText, shortCardName } from '../labels';
-import { EquipHover, HeroHover, HoverInfo, SkillHover } from './HoverInfo';
+import { EquipHover, HeroHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
 interface Flash {
   id: number;
@@ -69,6 +69,7 @@ export function PlayerSeat({
         clickable ? 'seat-clickable' : '',
       ].join(' ')}
       style={style}
+      data-player-id={player.id}
       onClick={clickable ? onClick : undefined}
       role={clickable ? 'button' : undefined}
     >
@@ -128,9 +129,11 @@ export function PlayerSeat({
       {player.judgeZone.length > 0 && (
         <div className="seat-judge">
           {player.judgeZone.map((c) => (
-            <span key={c.id} className="mini-judge" title={c.name}>
-              {shortCardName(c.name)}
-            </span>
+            <HoverInfo key={c.id} content={<JudgeHover name={c.name} />}>
+              <span className="mini-judge" title={c.name}>
+                {shortCardName(c.name)}
+              </span>
+            </HoverInfo>
           ))}
         </div>
       )}

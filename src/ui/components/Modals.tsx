@@ -3,10 +3,28 @@ import { useGameStore } from '../store';
 import { CardView } from './CardView';
 
 function Overlay({ children, title }: { children: React.ReactNode; title: string }) {
+  const minimized = useGameStore((s) => s.modalMinimized);
+  const toggle = useGameStore((s) => s.toggleModalMinimized);
+  if (minimized) {
+    return (
+      <div className="modal-minimized">
+        <b>{title}</b>
+        <span>牌桌查看中</span>
+        <button type="button" className="btn primary small" onClick={toggle}>
+          展开
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="modal-backdrop">
       <div className="modal">
-        <div className="modal-title">{title}</div>
+        <div className="modal-head">
+          <div className="modal-title">{title}</div>
+          <button type="button" className="modal-minimize" onClick={toggle}>
+            收起查看牌桌
+          </button>
+        </div>
         {children}
       </div>
     </div>

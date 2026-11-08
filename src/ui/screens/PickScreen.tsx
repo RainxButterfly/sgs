@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME } from '../../core/types';
+import { HeroDataHover, HoverInfo } from '../components/HoverInfo';
 import { useGameStore } from '../store';
 
 export function PickScreen() {
@@ -63,8 +64,8 @@ export function PickScreen() {
                 const hero = HERO_MAP.get(id);
                 if (!hero) return null;
                 return (
+                  <HoverInfo key={id} as="div" className="pick-card-wrap" content={<HeroDataHover hero={hero} />}>
                   <button
-                    key={id}
                     type="button"
                     className={`hero-card faction-${hero.faction} ${picked === id ? 'picked' : ''}`}
                     onClick={() => setPicked(id)}
@@ -92,6 +93,7 @@ export function PickScreen() {
                     </div>
                     <div className="hero-card-quote">「{hero.quote}」</div>
                   </button>
+                  </HoverInfo>
                 );
               })}
             </div>

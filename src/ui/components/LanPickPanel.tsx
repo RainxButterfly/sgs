@@ -2,6 +2,7 @@ import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME } from '../../core/types';
 import type { LobbyPlayer } from '../../net/protocol';
+import { HeroDataHover, HoverInfo } from './HoverInfo';
 
 interface Props {
   players: LobbyPlayer[];
@@ -67,8 +68,8 @@ export function LanPickPanel({ players, me, host, startCount, code, onPick, onSt
               const taken = players.some((player) => player.connId !== me.connId && player.heroId === heroId);
               const picked = me.heroId === heroId;
               return (
+                <HoverInfo key={heroId} as="div" className="lobby-hero-wrap" content={<HeroDataHover hero={hero} />}>
                 <button
-                  key={heroId}
                   type="button"
                   className={`lobby-hero-card faction-${hero.faction} ${picked ? 'picked' : ''} ${taken ? 'taken' : ''}`}
                   disabled={taken}
@@ -86,6 +87,7 @@ export function LanPickPanel({ players, me, host, startCount, code, onPick, onSt
                   {taken && <span className="lobby-hero-flag">已被选择</span>}
                   {picked && <span className="lobby-hero-flag picked">已选择</span>}
                 </button>
+                </HoverInfo>
               );
             })}
           </div>

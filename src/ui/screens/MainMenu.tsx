@@ -4,6 +4,9 @@ import { useGameStore } from '../store';
 
 export function MainMenu() {
   const prepareLocal = useGameStore((s) => s.prepareLocal);
+  const suspended = useGameStore((s) => s.suspended);
+  const resumeGame = useGameStore((s) => s.resumeGame);
+  const quitSuspendedGame = useGameStore((s) => s.quitSuspendedGame);
   const appVersion = useGameStore((s) => s.appVersion);
   const updateInfo = useGameStore((s) => s.updateInfo);
   const updateState = useGameStore((s) => s.updateState);
@@ -23,6 +26,28 @@ export function MainMenu() {
             <i>◆</i>
             <span />
           </div>
+          {suspended && (
+            <div className="suspended-banner">
+              <div className="suspended-text">
+                <b>房间对局仍在进行</b>
+                <span>离开期间对局没有结束，可以随时回归。</span>
+              </div>
+              <div className="suspended-actions">
+                <button type="button" className="btn primary" onClick={resumeGame}>
+                  回归对局
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  onClick={() => {
+                    if (window.confirm('退出房间后本局将无法再回归，确定吗？')) quitSuspendedGame();
+                  }}
+                >
+                  退出房间
+                </button>
+              </div>
+            </div>
+          )}
           <div className="menu-actions">
             <button type="button" className="btn primary big" onClick={() => setScreen('setup')}>
               单机对战

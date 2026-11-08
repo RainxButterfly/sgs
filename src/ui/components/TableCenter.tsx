@@ -5,6 +5,7 @@ export function TableCenter() {
   const { game } = useGameSnapshot();
   const lastPlay = useGameStore((s) => s.lastPlay);
   const lastJudge = useGameStore((s) => s.lastJudge);
+  const cardHistory = useGameStore((s) => s.cardHistory);
   if (!game) return null;
   const playerName = (id: number) => game.state.players[id]?.name ?? '';
 
@@ -20,6 +21,22 @@ export function TableCenter() {
           <span className="pile-label">弃牌 {game.state.discardCount ?? game.state.discard.length}</span>
         </div>
       </div>
+      {cardHistory.length > 0 && (
+        <div className="card-history">
+          {cardHistory.map((entry) => (
+            <div key={entry.id} className={`history-entry history-${entry.kind}`}>
+              <span className="history-label">
+                {entry.playerId !== undefined ? playerName(entry.playerId) : '牌堆'} · {entry.label}
+              </span>
+              <div className="history-cards">
+                {entry.cards.map((card) => (
+                  <CardView key={card.id} card={card} size="sm" />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="center-stage">
         {lastPlay && (
           <div key={lastPlay.id} className="played">

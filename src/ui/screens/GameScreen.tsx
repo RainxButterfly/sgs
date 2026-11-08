@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { useGameSnapshot, useGameStore } from '../store';
+import { GameContextMenu } from '../components/GameContextMenu';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroPanel } from '../components/HeroPanel';
 import { Hand } from '../components/Hand';
@@ -78,8 +79,14 @@ export function GameScreen() {
   const m = Math.max(1, n - 1);
 
   const exit = () => {
+    const state = useGameStore.getState();
+    if (state.lanRole === 'client' && !game.state.over) {
+      if (!window.confirm('退出后对局仍会继续，你可以从主菜单重新回归。确定退出吗？')) return;
+      state.suspendGame();
+      return;
+    }
     if (!game.state.over && !window.confirm('确定要退出本局吗？')) return;
-    useGameStore.getState().backToMenu();
+    state.backToMenu();
   };
 
   return (
@@ -136,6 +143,7 @@ export function GameScreen() {
       </div>
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />
       <GameModals />
+      <GameContextMenu onShowLog={() => setLogOpen(true)} onExit={exit} onViewPlayer={setDetailPlayer} />
       {detailPlayer !== null && game.state.players[detailPlayer] && (
         <HeroDetailModal
           heroId={game.state.players[detailPlayer].heroId}

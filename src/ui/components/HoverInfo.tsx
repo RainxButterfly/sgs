@@ -62,6 +62,30 @@ export function SkillHover({ skillId }: { skillId: string }) {
   );
 }
 
+export function HeroDataHover({ hero }: { hero: HeroData }) {
+  const ids = [...hero.skillIds, ...(hero.lordSkillId ? [hero.lordSkillId] : [])];
+  return (
+    <div className="hover-hero">
+      <div className="hover-hero-head">
+        <span className={`faction-badge faction-${hero.faction}`}>{FACTION_NAME[hero.faction]}</span>
+        <b>{hero.name}</b>
+        <span className="hover-hero-title">{hero.title}</span>
+      </div>
+      <div className="hover-hero-meta">
+        <span>体力 {hero.hp}</span>
+        <span>{hero.gender === 'male' ? '男' : '女'}</span>
+        <span>{hero.quote ? `「${hero.quote}」` : ''}</span>
+      </div>
+      <div className="hover-skills">
+        {ids.map((id) => (
+          <SkillHover key={id} skillId={id} />
+        ))}
+      </div>
+      <div className="hover-foot">点击选择该武将</div>
+    </div>
+  );
+}
+
 export function HeroHover({ hero, player }: { hero?: HeroData; player: PlayerState }) {
   const ids = [...new Set([...player.skills, ...player.extraSkills])];
   return (
@@ -83,6 +107,24 @@ export function HeroHover({ hero, player }: { hero?: HeroData; player: PlayerSta
         ))}
       </div>
       <div className="hover-foot">点击「i」查看完整武将详情</div>
+    </div>
+  );
+}
+
+const JUDGE_DESC: Record<string, string> = {
+  乐不思蜀: '判定阶段进行判定：若结果不为红桃，跳过出牌阶段。',
+  兵粮寸断: '判定阶段进行判定：若结果不为梅花，跳过摸牌阶段。',
+  闪电: '判定阶段进行判定：若为黑桃 2–9，受到 3 点雷电伤害；否则移动到下一名角色的判定区。',
+};
+
+export function JudgeHover({ name }: { name: string }) {
+  return (
+    <div className="hover-skill">
+      <div className="hover-skill-head">
+        <b>{name}</b>
+        <span className="hover-tag">延时锦囊</span>
+      </div>
+      <p>{JUDGE_DESC[name] ?? '判定区里的延时锦囊。'}</p>
     </div>
   );
 }

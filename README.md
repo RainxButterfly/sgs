@@ -6,7 +6,7 @@
 
 Windows 版：
 
-https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.0.zip
+https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.1.zip
 
 解压后双击 `四国闪.bat` 启动。
 
@@ -19,8 +19,10 @@ https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win
 - 判定、出牌响应、濒死求桃、身份与阵营胜负结算
 - 视为技、锁定技、主公技、主动技、限定技、觉醒、拼点、翻面、不屈、屯田、化身、蛊惑
 - 鼠标悬停查看武将技能，点击打开侧边详情，不遮挡牌桌中央
+- 中央展示区显示弃牌、火攻展示、判定等牌，出牌记录不再只有使用牌
+- 右键打开游戏菜单，弹窗可以收起查看牌桌，判定区支持悬停说明
 - 联机大厅选将、武将详情、武将图鉴、人机对局
-- 局域网联机，断线后由电脑接管
+- 局域网联机，断线后由电脑接管；误退房间可以从主菜单回归对局
 - 手机浏览器扫码加入，支持添加到主屏幕
 - 进入对局后再选择武将，联机时能看到所有人的选择
 - 设置面板支持对局背景替换和遮罩调节

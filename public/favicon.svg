@@ -1,5 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="10" fill="#15110d"/>
-  <rect x="6" y="6" width="52" height="52" rx="4" fill="none" stroke="#a53b2e" stroke-width="2"/>
-  <text x="32" y="46" text-anchor="middle" font-family="KaiTi, STKaiti, SimSun, serif" font-size="38" fill="#e8c883">杀</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="seal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a84737" />
+      <stop offset="0.55" stop-color="#862f24" />
+      <stop offset="1" stop-color="#5b1d16" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff0c8" />
+      <stop offset="0.48" stop-color="#f0d193" />
+      <stop offset="1" stop-color="#c79a50" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.28" r="0.72">
+      <stop offset="0" stop-color="#d8694f" stop-opacity="0.5" />
+      <stop offset="1" stop-color="#5b1d16" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="182" fill="url(#seal)" />
+  <rect width="1024" height="1024" rx="182" fill="url(#glow)" />
+  <rect x="56" y="56" width="912" height="912" rx="142" fill="none" stroke="url(#gold)" stroke-width="18" />
+  <rect x="90" y="90" width="844" height="844" rx="114" fill="none" stroke="#f8e4b4" stroke-opacity="0.28" stroke-width="4" />
+  <text x="512" y="700" text-anchor="middle" font-family="KaiTi, STKaiti, SimSun, serif" font-size="552" font-weight="700" fill="url(#gold)">閃</text>
 </svg>

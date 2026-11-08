@@ -2,7 +2,7 @@ import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
 import { equipSlotText, shortCardName } from '../labels';
-import { EquipHover, HoverInfo, SkillHover } from './HoverInfo';
+import { EquipHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
 interface Flash {
   id: number;
@@ -111,9 +111,11 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
         <div className="hero-judge">
           <span className="hero-judge-label">判定区</span>
           {player.judgeZone.map((c) => (
-            <span key={c.id} className="mini-judge">
-              {shortCardName(c.name)}
-            </span>
+            <HoverInfo key={c.id} content={<JudgeHover name={c.name} />}>
+              <span className="mini-judge">
+                {shortCardName(c.name)}
+              </span>
+            </HoverInfo>
           ))}
         </div>
       )}
