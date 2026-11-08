@@ -87,7 +87,7 @@ export function HeroDataHover({ hero }: { hero: HeroData }) {
 }
 
 export function HeroHover({ hero, player }: { hero?: HeroData; player: PlayerState }) {
-  const ids = [...new Set([...player.skills, ...player.extraSkills])];
+  const ids = [...new Set([...player.skills, ...(player.extraSkills ?? [])])];
   return (
     <div className="hover-hero">
       <div className="hover-hero-head">

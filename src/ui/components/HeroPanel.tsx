@@ -34,6 +34,8 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
           : ROLE_NAME[player.role];
   const pips = Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp);
   const showFlash = flash && flash.playerId === player.id ? flash : null;
+  const fields = player.fields ?? [];
+  const skills = [...new Set([...player.skills, ...(player.extraSkills ?? [])])];
   const slots = [
     { key: 'weapon', label: '武器' },
     { key: 'armor', label: '防具' },
@@ -71,7 +73,7 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
             </span>
           </div>
           <div className="hero-skills">
-            {[...new Set([...player.skills, ...player.extraSkills])].map((id) => {
+            {skills.map((id) => {
               const skill = SKILL_MAP.get(id);
               return skill ? (
                 <HoverInfo
@@ -121,11 +123,11 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
           ))}
         </div>
       )}
-      {(player.flipped || player.unyu.length > 0 || player.chained || player.fields.length > 0) && (
+      {(player.flipped || player.unyu.length > 0 || player.chained || fields.length > 0) && (
         <div className="hero-status-row">
           {player.flipped && <span className="mini-status flipped">翻面</span>}
           {player.chained && <span className="mini-status chained">横置</span>}
-          {player.fields.map((c) => (
+          {fields.map((c) => (
             <span key={c.id} className="mini-unyu" title={`田：${c.name}`}>
               田 {c.name}
             </span>

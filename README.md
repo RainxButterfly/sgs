@@ -6,7 +6,7 @@
 
 Windows 版：
 
-https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.2.zip
+https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.3.zip
 
 解压后双击 `四国闪.bat` 启动。
 
@@ -22,7 +22,7 @@ https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win
 - 中央展示区显示弃牌、火攻展示、判定等牌，出牌记录不再只有使用牌
 - 右键打开游戏菜单，弹窗可以收起查看牌桌，判定区支持悬停说明
 - 联机大厅选将、武将详情、武将图鉴、人机对局
-- 局域网联机，断线后由电脑接管；误退房间可以从主菜单回归对局
+- 局域网联机，断线后由电脑接管；误退可以从主菜单回归，刷新或重开后可用原昵称重新加入
 - 手机浏览器扫码加入，支持添加到主屏幕
 - 进入对局后再选择武将；主公先亮将，其他武将等所有人选完再亮出
 - 设置面板支持对局背景替换和遮罩调节

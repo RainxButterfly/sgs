@@ -36,6 +36,7 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
     ]),
   ];
   const pips = player ? Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp) : [];
+  const fields = player?.fields ?? [];
 
   return (
     <div className="detail-backdrop" onClick={onClose}>
@@ -92,13 +93,13 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
           })}
         </div>
 
-        {player && (player.flipped || player.unyu.length > 0 || player.chained || player.fields.length > 0) && (
+        {player && (player.flipped || player.unyu.length > 0 || player.chained || fields.length > 0) && (
           <>
             <div className="detail-section-title">当前状态</div>
             <div className="detail-judge">
               {player.flipped && <span className="detail-tag">翻面</span>}
               {player.chained && <span className="mini-status chained">横置</span>}
-              {player.fields.map((card) => (
+              {fields.map((card) => (
                 <span key={card.id} className="mini-unyu">
                   田 {card.name}
                 </span>

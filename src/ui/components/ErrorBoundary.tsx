@@ -26,16 +26,16 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <div className="fatal-error">
           <div className="fatal-card">
             <h1>界面出错了</h1>
-            <p>可以重新加载，或回到主菜单重新开局。</p>
+            <p>可以重新加载界面继续当前对局。刷新整个页面会断开联机，并失去回归对局的机会。</p>
             <div className="fatal-actions">
               <button
                 type="button"
                 className="btn primary"
                 onClick={() => {
-                  window.location.reload();
+                  this.setState({ error: null });
                 }}
               >
-                重新加载
+                重新加载界面
               </button>
               <button
                 type="button"

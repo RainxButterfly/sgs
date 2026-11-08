@@ -1482,10 +1482,20 @@ export class Game {
     const victims = this.liangdaoVictims(target, user);
     if (!victims.length) return;
     if (await this.askWuxie('借刀杀人', target, user, `【${user.name}】对【${target.name}】使用借刀杀人`)) return;
-    const victim = await this.askPlayer(target, victims, '借刀杀人：选择一名角色，对其使用一张杀', '否则将武器交给使用者');
-    if (victim) {
-      const used = await this.useShaOn(target, victim, '借刀杀人');
-      if (used) return;
+    const hasSha = this.buildRespondOptions(target, '杀').some((option) => !option.cardId.startsWith('__'));
+    if (hasSha) {
+      const victim = await this.askPlayer(
+        target,
+        victims,
+        '借刀杀人：选择一名角色，对其使用一张杀',
+        '也可以取消，将武器交给使用者',
+      );
+      if (victim) {
+        const used = await this.useShaOn(target, victim, '借刀杀人');
+        if (used) return;
+      }
+    } else {
+      this.log(`【${target.name}】没有可用的杀，直接交出武器`, 'system');
     }
     const weapon = target.equips.weapon;
     if (weapon) {

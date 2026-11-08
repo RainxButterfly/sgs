@@ -279,8 +279,45 @@ export class LanHostManager {
       return;
     }
     if (event.server === 'join') {
+      const joinName = event.name || `玩家${event.id}`;
       if (this.started || this.picking) {
-        this.relay.send({ t: 'error', message: '选将或对局已经开始，请等待下一局' } satisfies HostPayload, event.id);
+        const rejoin = this.guests.find((guest) => !guest.connected && guest.name === joinName);
+        if (!rejoin) {
+          this.relay.send(
+            { t: 'error', message: '对局已经开始，只有掉线玩家可以用原昵称回归' } satisfies HostPayload,
+            event.id,
+          );
+          return;
+        }
+        rejoin.connId = event.id;
+        rejoin.connected = true;
+        if (this.started && this.game) {
+          const player = this.game.state.players[rejoin.playerId];
+          if (player) player.isBot = false;
+          this.sendTo(event.id, { t: 'start', playerId: rejoin.playerId });
+          this.sendTo(event.id, {
+            t: 'state',
+            state: redactState(this.game.state, rejoin.playerId),
+          });
+          const pending = this.pending.get(rejoin.playerId);
+          if (pending) {
+            this.sendTo(event.id, {
+              t: 'ask',
+              request: pending.request,
+              state: redactState(this.game.state, rejoin.playerId),
+            });
+          }
+          this.game.log(`【${rejoin.name}】重新连接`, 'system');
+          if (this.game.state.over) {
+            this.sendTo(event.id, {
+              t: 'end',
+              text: '对局已经结束',
+              winner: this.game.state.winner ?? 'draw',
+            });
+          }
+        } else {
+          this.refreshLobby();
+        }
         return;
       }
       if (this.guests.some((g) => g.connId === event.id)) return;

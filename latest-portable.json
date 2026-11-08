@@ -1,14 +1,14 @@
 {
-  "version": "0.4.2",
-  "notes": "v0.4.2：1v1 取消身份和主公体力加成；选将阶段先亮主公，其他武将等全部选完再亮出；右键改为游戏菜单，手牌上限制和各类信息字号放大。",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.2.zip",
+  "version": "0.4.3",
+  "notes": "v0.4.3：修复联机界面异常与重连，错误页可保留对局；掉线玩家可用原昵称重新加入；借刀杀人无杀时直接交出武器；兼容旧版本状态字段。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.3.zip",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.2.zip",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.2.zip",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.2.zip",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.2.zip",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.2.zip",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.2.zip"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.3.zip",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.3.zip",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.3.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.3.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.3.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.3.zip"
   ],
-  "sha256": "5bb8d5f3d70eb4d843a7af11880814820130a63b279fc391a49ce1cb264684b4"
+  "sha256": "f2e2e27318082485cefddfacd54e669314287c42c59e1eb9c8d0b124e1b9dbc2"
 }
