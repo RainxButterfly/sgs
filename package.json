@@ -1,7 +1,7 @@
 {
   "name": "siguoshan",
   "private": true,
-  "version": "0.4.3",
+  "version": "0.5.0",
   "type": "module",
   "author": "星河一叶Roxy <ck_xuv@vip.qq.com>",
   "scripts": {
@@ -15,7 +15,8 @@
     "desktop:build:portable": "tauri build --no-bundle",
     "android:init": "tauri android init",
     "android:build": "tauri android build",
-    "release:portable": "node tools/package-portable.mjs"
+    "release:portable": "node tools/package-portable.mjs",
+    "release:installer": "node tools/package-installer.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

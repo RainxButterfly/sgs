@@ -4,9 +4,15 @@
 
 ## 下载
 
-Windows 版：
+Windows 安装版：
 
-https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.3.zip
+https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-0.5.0-setup.exe
+
+运行安装程序，按提示安装，桌面和开始菜单会生成快捷方式。
+
+Windows 便携版：
+
+https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.0.zip
 
 解压后双击 `四国闪.bat` 启动。
 
@@ -26,6 +32,7 @@ https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win
 - 手机浏览器扫码加入，支持添加到主屏幕
 - 进入对局后再选择武将；主公先亮将，其他武将等所有人选完再亮出
 - 设置面板支持对局背景替换和遮罩调节
+- 电脑和手机使用两套独立对局布局，手机版针对触屏重新排布
 
 ## 联机
 
@@ -33,7 +40,7 @@ https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win
 
 房主选好模式与人数后点击「开始选将」，所有人在对局前从自己的三名候选武将里选择，选择结果会实时显示在座次列表里，房主再进入对局。
 
-手机和电脑连接同一个 WiFi，扫描大厅里的二维码，输入昵称即可加入。
+手机和电脑连接同一个 WiFi，扫描大厅里的二维码，输入昵称即可加入。手机端会自动切换到独立的触屏布局，横向滑动查看其他角色，点击手牌出牌。
 
 不在同一网络时，可以先用 ZeroTier、Radmin VPN 等工具组成虚拟局域网，再填写房主的虚拟地址；也可以在路由器上把房主端口转发到本机后填写公网地址。
 
@@ -49,7 +56,7 @@ https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win
 
 ## 背景
 
-对局右上角「背景」可以更换桌面图片，并调节遮罩深度。图片会压缩后保存在本机，不会上传。
+游戏内右上角「设置」可以更换桌面图片，并调节遮罩深度。图片会压缩后保存在本机，不会上传。
 
 ## 模式
 

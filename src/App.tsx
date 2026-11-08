@@ -7,13 +7,16 @@ import { HeroGallery } from './ui/screens/HeroGallery';
 import { LanScreen } from './ui/screens/LanScreen';
 import { LobbyScreen } from './ui/screens/LobbyScreen';
 import { MainMenu } from './ui/screens/MainMenu';
+import { MobileGameScreen } from './ui/screens/MobileGameScreen';
 import { PickScreen } from './ui/screens/PickScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { SetupScreen } from './ui/screens/SetupScreen';
+import { useIsMobile } from './ui/useIsMobile';
 
 export default function App() {
   const screen = useGameStore((s) => s.screen);
   const gameError = useGameStore((s) => s.error);
+  const mobile = useIsMobile();
 
   useEffect(() => {
     if (!import.meta.env.PROD) return;
@@ -33,7 +36,7 @@ export default function App() {
       {screen === 'lan' && <LanScreen />}
       {screen === 'lobby' && <LobbyScreen />}
       {screen === 'gallery' && <HeroGallery />}
-      {screen === 'game' && <GameScreen />}
+      {screen === 'game' && (mobile ? <MobileGameScreen /> : <GameScreen />)}
       {screen === 'result' && <ResultScreen />}
       {gameError && (
         <div className="fatal-error">
