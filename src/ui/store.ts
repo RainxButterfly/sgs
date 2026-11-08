@@ -3,7 +3,7 @@ import { Game, buildRoles } from '../core/game';
 import { HEROES } from '../core/deck';
 import { botAction } from '../core/bot';
 import { smartBotAction } from '../core/smartBot';
-import { LanClientManager, LanHostManager, createRoomInfo, isTauri, parseAddress } from '../net/lan';
+import { LanClientManager, LanHostManager, createRoomInfo, isAndroidApp, isTauri, parseAddress } from '../net/lan';
 import type { LobbyState, RoomInfo } from '../net/protocol';
 import { checkAppUpdate, installAppUpdate, type AppUpdateInfo } from './update';
 import { loadBackgroundSettings, saveBackgroundSettings } from './background';
@@ -613,6 +613,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   checkUpdate: async (manual = false) => {
+    if (isAndroidApp()) return;
     if (!isTauri()) {
       if (manual) {
         set({

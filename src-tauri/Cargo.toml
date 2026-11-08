@@ -9,7 +9,7 @@ rust-version = "1.90"
 
 [lib]
 name = "app_lib"
-crate-type = ["rlib"]
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.7.4", features = [] }
@@ -29,7 +29,7 @@ rand = "0.9"
 if-addrs = "0.13"
 rust-embed = "8"
 mime_guess = "2"
-reqwest = { version = "0.13", default-features = false, features = ["native-tls"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
 sha2 = "0.11"
 zip = "9"
 semver = "1"

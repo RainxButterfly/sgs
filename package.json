@@ -16,7 +16,8 @@
     "android:init": "tauri android init",
     "android:build": "tauri android build",
     "release:portable": "node tools/package-portable.mjs",
-    "release:installer": "node tools/package-installer.mjs"
+    "release:installer": "node tools/package-installer.mjs",
+    "release:android": "node tools/package-android.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",

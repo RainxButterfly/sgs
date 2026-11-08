@@ -18,6 +18,10 @@ export function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
+export function isAndroidApp(): boolean {
+  return typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+}
+
 export async function createRoomInfo(): Promise<RoomInfo> {
   if (isTauri()) return await invoke<RoomInfo>('start_room');
   return { ip: '127.0.0.1', port: 8787, code: 'DEV', secret: 'dev' };

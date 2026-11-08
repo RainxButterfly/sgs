@@ -1,5 +1,6 @@
 import { HEROES } from '../../core/deck';
 import { FACTION_NAME } from '../../core/types';
+import { isAndroidApp } from '../../net/lan';
 import { useGameStore } from '../store';
 
 export function MainMenu() {
@@ -99,17 +100,21 @@ export function MainMenu() {
             >
               设置
             </button>
-            <button
-              type="button"
-              className={`menu-update ${updateInfo ? 'has-update' : ''}`}
-              onClick={openUpdateModal}
-            >
-              {updateState === 'checking'
-                ? '正在检查更新…'
-                : updateInfo
-                  ? `发现新版本 v${updateInfo.version} · 查看`
-                  : `检查更新 · v${appVersion}`}
-            </button>
+            {isAndroidApp() ? (
+              <span className="menu-update">手机版 v{appVersion}</span>
+            ) : (
+              <button
+                type="button"
+                className={`menu-update ${updateInfo ? 'has-update' : ''}`}
+                onClick={openUpdateModal}
+              >
+                {updateState === 'checking'
+                  ? '正在检查更新…'
+                  : updateInfo
+                    ? `发现新版本 v${updateInfo.version} · 查看`
+                    : `检查更新 · v${appVersion}`}
+              </button>
+            )}
           </div>
         </div>
         <div className="menu-side">
