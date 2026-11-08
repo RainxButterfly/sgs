@@ -52,10 +52,13 @@ const manifest = {
   url: jsdelivr,
   urls: [
     jsdelivr,
+    `https://testingcf.jsdelivr.net/gh/${repo}@main/updates/${zipName}${cacheBust}`,
     gcore,
     fastly,
+    `https://jsd.onmicrosoft.cn/gh/${repo}@main/updates/${zipName}${cacheBust}`,
     `https://ghfast.top/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
     `https://ghproxy.net/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
+    `https://gh-proxy.com/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
     `https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
   ],
   sha256,

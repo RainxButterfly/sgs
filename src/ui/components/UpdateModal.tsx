@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { MANUAL_UPDATE_URL } from '../update';
 import { useGameStore } from '../store';
 
 function formatBytes(value: number): string {
@@ -22,9 +23,9 @@ export function UpdateModal() {
   if (!open) return null;
 
   const copyUrl = async () => {
-    if (!info) return;
+    const url = info?.raw.urls?.[0] ?? info?.raw.url ?? MANUAL_UPDATE_URL;
     try {
-      await navigator.clipboard.writeText(info.raw.urls?.[0] ?? info.raw.url);
+      await navigator.clipboard.writeText(url);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -123,11 +124,9 @@ export function UpdateModal() {
             </>
           ) : state === 'error' ? (
             <>
-              {info?.android && (
-                <button type="button" className="btn ghost" onClick={() => void copyUrl()}>
-                  {copied ? '已复制' : '复制下载链接'}
-                </button>
-              )}
+              <button type="button" className="btn ghost" onClick={() => void copyUrl()}>
+                {copied ? '已复制' : '复制下载链接'}
+              </button>
               <button type="button" className="btn ghost" onClick={close}>
                 关闭
               </button>

@@ -1,14 +1,17 @@
 {
   "version": "0.5.7",
-  "notes": "v0.5.7：大厅只给房主显示地址选择；选将可查看武将详情；出牌记录按最新优先；设置可修改数据保存目录。",
-  "url": "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
+  "notes": "v0.5.7：修复主菜单回归横幅布局；新增更多更新镜像；APK 裁剪符号减小体积；错误时可复制下载链接；设置支持数据目录。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
   "urls": [
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
+    "https://testingcf.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
+    "https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
     "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
     "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7"
+    "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7"
   ],
-  "sha256": "004b6bfa4b07556cbeabb9cb34f044f9dd14fc7212310587ef0401f3ffb4781f"
+  "sha256": "b1c33db94e51e927cd3c2c7d67e8c25086d98932653c93f1097c0c892fc8249d"
 }

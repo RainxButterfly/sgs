@@ -1,6 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { isTauri } from '../net/lan';
+import { isAndroidApp, isTauri } from '../net/lan';
+
+export const MANUAL_UPDATE_URL = isAndroidApp()
+  ? 'https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk'
+  : 'https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-setup.exe';
 
 export interface PortableUpdateInfo {
   version: string;

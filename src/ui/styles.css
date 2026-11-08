@@ -237,9 +237,9 @@ button {
   position: relative;
   height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 4vh 4vw;
+  padding: max(3vh, 18px) 4vw 4vh;
   overflow-y: auto;
 }
 
@@ -258,9 +258,8 @@ button {
 }
 
 .menu-seal {
-  position: absolute;
-  left: -8px;
-  top: -52px;
+  position: static;
+  margin-bottom: 10px;
   width: 52px;
   height: 52px;
   border: 2px solid rgba(165, 59, 46, 0.8);
@@ -6101,7 +6100,11 @@ button {
   }
 
   .menu-seal {
-    display: none;
+    display: flex;
+    width: 34px;
+    height: 34px;
+    margin-bottom: 4px;
+    font-size: 14px;
   }
 
   .menu-title {
@@ -6639,4 +6642,41 @@ button {
   margin-top: 4px;
   font-size: 12px;
   color: #a9e6b9;
+}
+
+@media (max-height: 820px) {
+  .menu-side {
+    display: none;
+  }
+
+  .menu-content {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(680px, 100%);
+    gap: 0;
+  }
+
+  .menu-title {
+    font-size: clamp(44px, 7vw, 76px);
+  }
+
+  .menu-divider {
+    margin: 10px 0 12px;
+  }
+
+  .menu-actions {
+    gap: 6px;
+  }
+
+  .suspended-banner {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+  }
+
+  .suspended-text b {
+    font-size: 14px;
+  }
+
+  .suspended-text span {
+    font-size: 10px;
+  }
 }

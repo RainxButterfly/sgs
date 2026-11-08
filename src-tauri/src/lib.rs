@@ -48,9 +48,12 @@ fn manifest_urls(name: &str) -> Vec<String> {
         .map(|duration| duration.as_secs())
         .unwrap_or(0);
     vec![
+        format!("https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
+        format!("https://testingcf.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
         format!("https://gcore.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
         format!("https://fastly.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
-        format!("https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
+        format!("https://jsd.onmicrosoft.cn/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
+        format!("https://jsd.cdn.zzko.cn/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
         format!("https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@master/{name}?t={stamp}"),
         format!("https://gcore.jsdelivr.net/gh/{UPDATE_REPO}@master/{name}?t={stamp}"),
         format!(
@@ -58,6 +61,15 @@ fn manifest_urls(name: &str) -> Vec<String> {
         ),
         format!(
             "https://ghproxy.net/https://raw.githubusercontent.com/{UPDATE_REPO}/main/{name}?t={stamp}"
+        ),
+        format!(
+            "https://gh-proxy.com/https://raw.githubusercontent.com/{UPDATE_REPO}/main/{name}?t={stamp}"
+        ),
+        format!(
+            "https://ghproxy.cc/https://raw.githubusercontent.com/{UPDATE_REPO}/main/{name}?t={stamp}"
+        ),
+        format!(
+            "https://gh.llkk.cc/https://raw.githubusercontent.com/{UPDATE_REPO}/main/{name}?t={stamp}"
         ),
         format!("https://raw.githubusercontent.com/{UPDATE_REPO}/main/{name}?t={stamp}"),
     ]
@@ -90,7 +102,10 @@ async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>,
             (url, response)
         }
     });
-    for (url, response) in join_all(requests).await {
+    let results = tokio::time::timeout(Duration::from_secs(9), join_all(requests))
+        .await
+        .map_err(|_| "检查更新超时".to_string())?;
+    for (url, response) in results {
         match response {
             Ok(response) if response.status().is_success() => {
                 match response.json::<PortableUpdateInfo>().await {
