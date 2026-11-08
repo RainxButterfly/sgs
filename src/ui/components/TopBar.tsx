@@ -16,8 +16,8 @@ export function TopBar({ logOpen, onToggleLog, onExit }: Props) {
   return (
     <header className="topbar">
       <div className="brand">
-        <span className="brand-seal">杀</span>
-        <span className="brand-text">三國殺 · 星河</span>
+        <span className="brand-seal">閃</span>
+        <span className="brand-text">四國閃 · 星河</span>
       </div>
       <div className={`turn-info ${mine ? 'turn-mine' : ''}`}>
         <span className="turn-round">第 {game.state.turn} 回合</span>
@@ -27,8 +27,8 @@ export function TopBar({ logOpen, onToggleLog, onExit }: Props) {
         <span className={`phase-pill phase-${game.state.phase}`}>{PHASE_NAME[game.state.phase]}</span>
       </div>
       <div className="top-actions">
-        <button type="button" className="btn ghost small" onClick={() => useGameStore.getState().openBgPanel()}>
-          背景
+        <button type="button" className="btn ghost small" onClick={() => useGameStore.getState().openSettings()}>
+          设置
         </button>
         <button type="button" className={`btn ghost small ${logOpen ? 'on' : ''}`} onClick={onToggleLog}>
           战报

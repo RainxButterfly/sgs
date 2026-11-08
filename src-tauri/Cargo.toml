@@ -1,7 +1,7 @@
 [package]
 name = "sanguosha"
-version = "0.3.1"
-description = "三国杀 · 星河"
+version = "0.4.0"
+description = "四国闪 · 星河"
 authors = ["星河一叶Roxy <ck_xuv@vip.qq.com>"]
 license = "Apache-2.0"
 edition = "2021"

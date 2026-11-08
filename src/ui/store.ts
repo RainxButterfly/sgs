@@ -18,7 +18,14 @@ import type {
   GameState,
 } from '../core/types';
 
-type Screen = 'menu' | 'setup' | 'lan' | 'lobby' | 'gallery' | 'game' | 'result';
+type Screen = 'menu' | 'setup' | 'pick' | 'lan' | 'lobby' | 'gallery' | 'game' | 'result';
+
+interface PreGame {
+  count: number;
+  rules?: Partial<CustomRules>;
+  candidates: string[];
+  bots: { name: string; heroId: string }[];
+}
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0';
 
@@ -61,6 +68,7 @@ interface FlashEvent {
 interface GameStore {
   screen: Screen;
   game: GameLike | null;
+  preGame: PreGame | null;
   humanId: number;
   version: number;
   pending: AskRequest | null;
@@ -86,7 +94,7 @@ interface GameStore {
   updateModalOpen: boolean;
   bgImage: string | null;
   bgDim: number;
-  bgPanelOpen: boolean;
+  settingsOpen: boolean;
 
   selected: { cardId: string; as: string; skillId?: string; element?: 'fire' | 'thunder' } | null;
   selectedTargets: number[];
@@ -95,11 +103,15 @@ interface GameStore {
   reorderTop: string[];
 
   initLocal: (count: number, heroId: string, rules?: Partial<CustomRules>) => void;
+  prepareLocal: (count: number, rules?: Partial<CustomRules>) => void;
+  confirmLocalPick: (heroId: string) => void;
   backToMenu: () => void;
   restart: () => void;
   createLanRoom: (name: string) => Promise<void>;
   joinLanRoom: (address: string, code: string, name: string) => Promise<void>;
   startLanGame: (count: number) => void;
+  startLanPick: (count: number) => void;
+  cancelLanPick: () => void;
   setLanRules: (mode: 'standard' | 'custom', rules: CustomRules) => void;
   pickLanHero: (heroId: string) => void;
   leaveLan: () => void;
@@ -107,8 +119,8 @@ interface GameStore {
   installUpdate: () => Promise<void>;
   openUpdateModal: () => void;
   closeUpdateModal: () => void;
-  openBgPanel: () => void;
-  closeBgPanel: () => void;
+  openSettings: () => void;
+  closeSettings: () => void;
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
   event: (ev: GameEvent) => void;
@@ -152,6 +164,7 @@ const io: GameIO = {
 export const useGameStore = create<GameStore>((set, get) => ({
   screen: 'menu',
   game: null,
+  preGame: null,
   humanId: 0,
   version: 0,
   pending: null,
@@ -177,7 +190,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   updateModalOpen: false,
   bgImage: initialBackground.image,
   bgDim: initialBackground.dim,
-  bgPanelOpen: false,
+  settingsOpen: false,
   selected: null,
   selectedTargets: [],
   asChooser: null,
@@ -205,6 +218,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       screen: 'game',
       game,
+      preGame: null,
       humanId: 0,
       lanRole: null,
       lanHost: null,
@@ -234,6 +248,89 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }, 0);
   },
 
+  prepareLocal: (count, rules) => {
+    if (get().game) get().game?.stop?.();
+    get().lanHost?.close();
+    get().lanClient?.close();
+    resolveAsk = null;
+    const botNames = ['电脑·孟德', '电脑·玄德', '电脑·仲谋', '电脑·奉孝', '电脑·子龙', '电脑·公瑾', '电脑·翼德'];
+    const pool = HEROES.map((hero) => hero.id);
+    for (let i = pool.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const bots = Array.from({ length: Math.max(0, count - 1) }, (_, i) => ({
+      name: botNames[i % botNames.length],
+      heroId: pool.pop()!,
+    }));
+    set({
+      screen: 'pick',
+      game: null,
+      preGame: { count, rules, candidates: pool.slice(0, 5), bots },
+      humanId: 0,
+      lanRole: null,
+      lanHost: null,
+      lanClient: null,
+      room: null,
+      lobby: null,
+      netError: null,
+      lanPlayerId: 0,
+      lanConnId: -1,
+      pending: null,
+      result: null,
+      lastPlay: null,
+      lastJudge: null,
+      flash: null,
+      error: null,
+      selected: null,
+      selectedTargets: [],
+      asChooser: null,
+      cardChoices: [],
+      reorderTop: [],
+      version: get().version + 1,
+    });
+  },
+
+  confirmLocalPick: (heroId) => {
+    const preGame = get().preGame;
+    if (!preGame || !preGame.candidates.includes(heroId)) return;
+    const players = [
+      { name: '你', heroId, isBot: false },
+      ...preGame.bots.map((bot) => ({ ...bot, isBot: true })),
+    ];
+    const game = new Game(
+      {
+        players,
+        seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
+        rules: preGame.rules,
+      },
+      io,
+    );
+    set({
+      screen: 'game',
+      game,
+      preGame: null,
+      humanId: 0,
+      pending: null,
+      result: null,
+      lastPlay: null,
+      lastJudge: null,
+      flash: null,
+      error: null,
+      selected: null,
+      selectedTargets: [],
+      asChooser: null,
+      cardChoices: [],
+      reorderTop: [],
+      version: get().version + 1,
+    });
+    setTimeout(() => {
+      game.begin().catch((err) => {
+        set({ error: `对局异常：${(err as Error).message}` });
+      });
+    }, 0);
+  },
+
   backToMenu: () => {
     get().game?.stop?.();
     get().lanHost?.close();
@@ -242,6 +339,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       screen: 'menu',
       game: null,
+      preGame: null,
       pending: null,
       result: null,
       error: null,
@@ -294,7 +392,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     game?.stop?.();
-    set({ screen: 'setup', game: null, result: null, pending: null, version: get().version + 1 });
+    set({ screen: 'setup', game: null, preGame: null, result: null, pending: null, version: get().version + 1 });
   },
 
   createLanRoom: async (name) => {
@@ -431,6 +529,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     get().lanHost?.startGame(count);
   },
 
+  startLanPick: (count) => {
+    get().lanHost?.beginPicking(count);
+  },
+
+  cancelLanPick: () => {
+    get().lanHost?.cancelPicking();
+  },
+
   setLanRules: (mode, rules) => {
     get().lanHost?.setRules(mode, rules);
   },
@@ -514,8 +620,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   closeUpdateModal: () => set({ updateModalOpen: false }),
 
-  openBgPanel: () => set({ bgPanelOpen: true }),
-  closeBgPanel: () => set({ bgPanelOpen: false }),
+  openSettings: () => set({ settingsOpen: true }),
+  closeSettings: () => set({ settingsOpen: false }),
   setBgImage: (image) => {
     set({ bgImage: image });
     saveBackgroundSettings({ image, dim: get().bgDim });
@@ -533,6 +639,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       screen: 'menu',
       game: null,
+      preGame: null,
       pending: null,
       result: null,
       lanRole: null,

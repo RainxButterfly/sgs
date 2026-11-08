@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BackgroundSettings } from './ui/components/BackgroundSettings';
+import { SettingsModal } from './ui/components/SettingsModal';
 import { UpdateModal } from './ui/components/UpdateModal';
 import { useGameStore } from './ui/store';
 import { GameScreen } from './ui/screens/GameScreen';
@@ -7,6 +7,7 @@ import { HeroGallery } from './ui/screens/HeroGallery';
 import { LanScreen } from './ui/screens/LanScreen';
 import { LobbyScreen } from './ui/screens/LobbyScreen';
 import { MainMenu } from './ui/screens/MainMenu';
+import { PickScreen } from './ui/screens/PickScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { SetupScreen } from './ui/screens/SetupScreen';
 
@@ -28,6 +29,7 @@ export default function App() {
     <div className="app-root">
       {screen === 'menu' && <MainMenu />}
       {screen === 'setup' && <SetupScreen />}
+      {screen === 'pick' && <PickScreen />}
       {screen === 'lan' && <LanScreen />}
       {screen === 'lobby' && <LobbyScreen />}
       {screen === 'gallery' && <HeroGallery />}
@@ -46,7 +48,7 @@ export default function App() {
           </div>
         </div>
       )}
-      <BackgroundSettings />
+      <SettingsModal />
       <UpdateModal />
     </div>
   );

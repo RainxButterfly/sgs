@@ -120,6 +120,8 @@ export class LanHostManager {
   started = false;
   mode: 'standard' | 'custom' = 'standard';
   rules: CustomRules = { ...DEFAULT_RULES };
+  picking = false;
+  targetCount = 0;
   private readonly relay: RelayClient;
   private readonly hooks: HostHooks;
   private hostConnId = 0;
@@ -192,11 +194,27 @@ export class LanHostManager {
       maxPlayers: this.rules.mode === 'duel' ? 2 : this.rules.mode === 'landlord' ? 3 : 8,
       mode: this.mode,
       rules: { ...this.rules },
+      picking: this.picking,
+      targetCount: this.targetCount || undefined,
     };
   }
 
+  beginPicking(count: number): void {
+    if (this.started || this.picking) return;
+    this.picking = true;
+    this.targetCount = Math.max(2, Math.min(8, count));
+    this.refreshLobby();
+  }
+
+  cancelPicking(): void {
+    if (!this.picking) return;
+    this.picking = false;
+    this.targetCount = 0;
+    this.refreshLobby();
+  }
+
   setRules(mode: 'standard' | 'custom', rules: CustomRules): void {
-    if (this.started) return;
+    if (this.started || this.picking) return;
     this.mode = mode;
     this.rules = { ...rules };
     this.refreshLobby();
@@ -370,6 +388,8 @@ export class LanHostManager {
   startGame(count: number): void {
     if (this.started) return;
     if (!this.hostHeroId || this.guests.some((guest) => !guest.heroId)) return;
+    this.picking = false;
+    this.targetCount = 0;
     const humans = 1 + this.guests.length;
     const gameMode = this.rules.mode ?? 'identity';
     const minPlayers =
@@ -420,6 +440,14 @@ export class LanHostManager {
     this.game?.stop();
     this.game = null;
     this.started = false;
+    this.picking = false;
+    this.targetCount = 0;
+    this.hostHeroId = null;
+    this.hostChoices = this.rollChoices();
+    for (const guest of this.guests) {
+      guest.heroId = null;
+      guest.choices = this.rollChoices();
+    }
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timer);
       pending.resolve(botAction(pending.request));

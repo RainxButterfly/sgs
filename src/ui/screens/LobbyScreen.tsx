@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { toDataURL } from 'qrcode';
 import { HERO_MAP } from '../../core/deck';
-import { SKILL_MAP } from '../../core/skills';
-import { DEFAULT_RULES, FACTION_NAME } from '../../core/types';
+import { DEFAULT_RULES } from '../../core/types';
+import { LanPickPanel } from '../components/LanPickPanel';
 import { RulesEditor } from '../components/RulesEditor';
 import { useGameStore } from '../store';
 
@@ -11,6 +11,8 @@ export function LobbyScreen() {
   const lanRole = useGameStore((s) => s.lanRole);
   const netError = useGameStore((s) => s.netError);
   const startLanGame = useGameStore((s) => s.startLanGame);
+  const startLanPick = useGameStore((s) => s.startLanPick);
+  const cancelLanPick = useGameStore((s) => s.cancelLanPick);
   const setLanRules = useGameStore((s) => s.setLanRules);
   const leaveLan = useGameStore((s) => s.leaveLan);
   const pickLanHero = useGameStore((s) => s.pickLanHero);
@@ -85,6 +87,8 @@ export function LobbyScreen() {
             ? [2, 3, 4, 5, 6, 7, 8]
             : [5, 6, 7, 8];
   const startCount = Math.max(minPlayers, Math.min(8, Math.max(count, players.length)));
+  const picking = lobby.picking === true;
+  const pickCount = Math.max(lobby.targetCount ?? startCount, players.length);
   const gameModeLabel =
     gameMode === 'duel'
       ? '1v1 单挑'
@@ -136,7 +140,11 @@ export function LobbyScreen() {
             <div className="setup-kicker">局域网联机</div>
             <h2 className="setup-title">聚 義 廳</h2>
             <p className="setup-desc">
-              {host ? '等待朋友加入，所有人到齐后开始。' : '已进入房间，等待房主开始对局。'}
+              {lobby.picking
+                ? '所有人选择武将后，由房主进入对局。'
+                : host
+                  ? '等待朋友加入，到齐后点击「开始选将」。'
+                  : '已进入房间，等待房主开始选将。'}
             </p>
           </div>
           <button type="button" className="btn ghost" onClick={leaveLan}>
@@ -144,6 +152,21 @@ export function LobbyScreen() {
           </button>
         </div>
 
+        {picking ? (
+          me ? (
+            <LanPickPanel
+              players={players}
+              me={me}
+              host={host}
+              startCount={pickCount}
+              code={lobby.room.code}
+              onPick={pickLanHero}
+              onStart={() => startLanGame(pickCount)}
+              onCancel={cancelLanPick}
+            />
+          ) : null
+        ) : (
+          <>
         <div className="lobby-grid">
           <section className="room-card">
             <div className="room-card-title">房间信息</div>
@@ -175,7 +198,7 @@ export function LobbyScreen() {
               </div>
             )}
             <div className="room-hint">
-              同一 WiFi 下，输入以上地址与房间码即可加入。开局前各自选择武将，身份随机隐藏。
+              同一 WiFi 下，输入以上地址与房间码即可加入。进入选将后各自选择武将，身份随机隐藏。
               首次创建房间若出现 Windows 防火墙提示，请允许“专用网络”访问。
             </div>
             {host && (
@@ -217,50 +240,6 @@ export function LobbyScreen() {
             </div>
           </section>
         </div>
-
-        {me && (
-          <div className="lobby-hero-pick">
-            <div className="lobby-hero-head">
-              <span className="room-card-title">选择武将</span>
-              <span className="setup-hint">
-                {me.heroId
-                  ? `已选 ${HERO_MAP.get(me.heroId)?.name ?? ''}，开局前可以更换`
-                  : '从下面三名武将中选择一名'}
-              </span>
-            </div>
-            <div className="lobby-hero-grid">
-              {(me.choices ?? []).map((heroId) => {
-                const hero = HERO_MAP.get(heroId);
-                if (!hero) return null;
-                const taken = players.some(
-                  (player) => player.connId !== me.connId && player.heroId === heroId,
-                );
-                const picked = me.heroId === heroId;
-                return (
-                  <button
-                    key={heroId}
-                    type="button"
-                    className={`lobby-hero-card faction-${hero.faction} ${picked ? 'picked' : ''} ${taken ? 'taken' : ''}`}
-                    disabled={taken}
-                    onClick={() => pickLanHero(heroId)}
-                  >
-                    <div className="lobby-hero-top">
-                      <span className="faction-badge">{FACTION_NAME[hero.faction]}</span>
-                      <span className="lobby-hero-name">{hero.name}</span>
-                      <span className="lobby-hero-hp">♥ {hero.hp}</span>
-                    </div>
-                    <div className="lobby-hero-title">{hero.title}</div>
-                    <div className="lobby-hero-skills">
-                      {hero.skillIds.map((skillId) => SKILL_MAP.get(skillId)?.name).filter(Boolean).join(' · ')}
-                    </div>
-                    {taken && <span className="lobby-hero-flag">已被选择</span>}
-                    {picked && <span className="lobby-hero-flag picked">已选择</span>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {host ? (
           <>
@@ -343,10 +322,10 @@ export function LobbyScreen() {
               <button
                 type="button"
                 className="btn primary big"
-                disabled={players.some((p) => !p.connected || !p.heroId)}
-                onClick={() => startLanGame(startCount)}
+                disabled={players.some((p) => !p.connected)}
+                onClick={() => startLanPick(startCount)}
               >
-                开始对局
+                开始选将
               </button>
             </div>
           </>
@@ -358,8 +337,10 @@ export function LobbyScreen() {
             </div>
             <div className="start-row waiting-row">
               <span className="waiting-dot" />
-              <span>等待房主开始对局…</span>
+              <span>等待房主开始选将…</span>
             </div>
+          </>
+        )}
           </>
         )}
 

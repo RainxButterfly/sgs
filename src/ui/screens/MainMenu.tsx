@@ -3,7 +3,7 @@ import { FACTION_NAME } from '../../core/types';
 import { useGameStore } from '../store';
 
 export function MainMenu() {
-  const initLocal = useGameStore((s) => s.initLocal);
+  const prepareLocal = useGameStore((s) => s.prepareLocal);
   const appVersion = useGameStore((s) => s.appVersion);
   const updateInfo = useGameStore((s) => s.updateInfo);
   const updateState = useGameStore((s) => s.updateState);
@@ -16,8 +16,8 @@ export function MainMenu() {
       <div className="menu-content">
         <div className="menu-title-block">
           <div className="menu-seal">星河</div>
-          <h1 className="menu-title">三國殺</h1>
-          <p className="menu-subtitle">标准包 · 身份场 · 与友同乐</p>
+          <h1 className="menu-title">四國閃</h1>
+          <p className="menu-subtitle">标准包 · 多种模式 · 与友同乐</p>
           <div className="menu-divider">
             <span />
             <i>◆</i>
@@ -38,7 +38,7 @@ export function MainMenu() {
               type="button"
               className="btn ghost big"
               onClick={() => {
-                initLocal(8, HEROES[Math.floor(Math.random() * HEROES.length)].id);
+                prepareLocal(8, { mode: 'identity' });
               }}
             >
               快速开局
@@ -54,29 +54,31 @@ export function MainMenu() {
           <div className="menu-foot">
             <span>武将 {HEROES.length}</span>
             <span>牌堆 160</span>
-            <span>5–8 人身份场</span>
+            <span>身份 · 1v1 · 斗地主 · 国战</span>
           </div>
           <div className="menu-author">
             作者 星河一叶Roxy · 维护邮箱 ck_xuv@vip.qq.com
           </div>
-          <button
-            type="button"
-            className="menu-update"
-            onClick={() => useGameStore.getState().openBgPanel()}
-          >
-            对局背景设置
-          </button>
-          <button
-            type="button"
-            className={`menu-update ${updateInfo ? 'has-update' : ''}`}
-            onClick={openUpdateModal}
-          >
-            {updateState === 'checking'
-              ? '正在检查更新…'
-              : updateInfo
-                ? `发现新版本 v${updateInfo.version} · 查看`
-                : `检查更新 · v${appVersion}`}
-          </button>
+          <div className="menu-utility">
+            <button
+              type="button"
+              className="btn ghost small menu-settings-btn"
+              onClick={() => useGameStore.getState().openSettings()}
+            >
+              设置
+            </button>
+            <button
+              type="button"
+              className={`menu-update ${updateInfo ? 'has-update' : ''}`}
+              onClick={openUpdateModal}
+            >
+              {updateState === 'checking'
+                ? '正在检查更新…'
+                : updateInfo
+                  ? `发现新版本 v${updateInfo.version} · 查看`
+                  : `检查更新 · v${appVersion}`}
+            </button>
+          </div>
         </div>
         <div className="menu-side">
           <div className="menu-side-title">武 将 名 录</div>

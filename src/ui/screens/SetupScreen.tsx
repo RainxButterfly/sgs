@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { HERO_MAP } from '../../core/deck';
-import { SKILL_MAP } from '../../core/skills';
-import { DEFAULT_RULES, FACTION_NAME, type CustomRules } from '../../core/types';
-import { randomHeroChoices, useGameStore } from '../store';
+import { DEFAULT_RULES, type CustomRules } from '../../core/types';
+import { useGameStore } from '../store';
 import { RulesEditor } from '../components/RulesEditor';
 
 type SetupMode = 'identity' | 'duel' | 'landlord' | 'guozhan' | 'custom';
@@ -11,15 +9,7 @@ export function SetupScreen() {
   const [count, setCount] = useState(8);
   const [mode, setMode] = useState<SetupMode>('identity');
   const [rules, setRules] = useState<CustomRules>({ ...DEFAULT_RULES });
-  const [choices, setChoices] = useState(() => randomHeroChoices(5));
-  const [picked, setPicked] = useState<string>(choices[0]);
-  const initLocal = useGameStore((s) => s.initLocal);
-
-  const reroll = () => {
-    const next = randomHeroChoices(5);
-    setChoices(next);
-    setPicked(next[0]);
-  };
+  const prepareLocal = useGameStore((s) => s.prepareLocal);
 
   const counts =
     mode === 'duel'
@@ -77,7 +67,7 @@ export function SetupScreen() {
             <div className="setup-kicker">单机对战 · {modeTitle}</div>
             <h2 className="setup-title">调 兵 遣 将</h2>
             <p className="setup-desc">
-              选择你的武将，其余席位由电脑补足。身份随机分配，主公额外获得 1 点体力。
+              设置好人数和规则后进入选将，其余席位由电脑补足。身份随机分配，主公额外获得 1 点体力。
               自定义模式可以调整手牌、体力、身份公开和卡牌范围。
             </p>
           </div>
@@ -150,54 +140,9 @@ export function SetupScreen() {
 
         {mode === 'custom' && <RulesEditor rules={rules} onChange={setRules} />}
 
-        <div className="setup-row">
-          <span className="setup-label">选择武将</span>
-          <button type="button" className="btn ghost small" onClick={reroll}>
-            换一批
-          </button>
-        </div>
-
-        <div className="hero-grid">
-          {choices.map((id) => {
-            const hero = HERO_MAP.get(id);
-            if (!hero) return null;
-            return (
-              <button
-                key={id}
-                type="button"
-                className={`hero-card faction-${hero.faction} ${picked === id ? 'picked' : ''}`}
-                onClick={() => setPicked(id)}
-              >
-                <div className="hero-card-top">
-                  <span className="faction-badge">{FACTION_NAME[hero.faction]}</span>
-                  <span className="hero-card-name">{hero.name}</span>
-                  <span className={`gender-badge ${hero.gender}`}>{hero.gender === 'male' ? '♂' : '♀'}</span>
-                </div>
-                <div className="hero-card-title">{hero.title}</div>
-                <div className="hero-card-hp">
-                  <span className="hp-icon">♥</span>
-                  <span>{hero.hp}</span>
-                </div>
-                <div className="hero-card-skills">
-                  {hero.skillIds.map((sid) => {
-                    const skill = SKILL_MAP.get(sid);
-                    return skill ? (
-                      <div key={sid} className="hero-skill-line">
-                        <b>{skill.name}</b>
-                        <span>{skill.desc}</span>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-                <div className="hero-card-quote">「{hero.quote}」</div>
-              </button>
-            );
-          })}
-        </div>
-
         <div className="setup-actions">
           <span className="setup-picked">
-            已选：<b>{HERO_MAP.get(picked)?.name ?? '—'}</b>
+            下一步：选择出战武将
             {mode === 'custom' && (
               <span className="setup-rule-summary">
                 {' '}
@@ -209,18 +154,16 @@ export function SetupScreen() {
           <button
             type="button"
             className="btn primary big"
-            disabled={!picked}
             onClick={() =>
-              initLocal(
+              prepareLocal(
                 effectiveCount,
-                picked,
                 mode === 'custom'
                   ? { ...rules, mode: 'identity' }
                   : { military: rules.military, mode: mode === 'identity' ? 'identity' : mode },
               )
             }
           >
-            开始对局
+            进入选将
           </button>
         </div>
       </div>

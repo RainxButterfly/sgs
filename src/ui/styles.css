@@ -80,7 +80,7 @@ button {
 }
 
 .ink-bg::before {
-  content: "殺";
+  content: "閃";
   position: absolute;
   right: 4vw;
   bottom: -12vh;
@@ -660,6 +660,135 @@ button {
   font-family: var(--font-calligraphy);
   font-size: 18px;
   font-weight: 500;
+}
+
+/* ---------- 进入对局后选将 ---------- */
+
+.pick-screen {
+  position: relative;
+  height: 100%;
+  overflow-y: auto;
+  padding: 4vh 4vw;
+}
+
+.pick-panel {
+  width: min(1280px, 100%);
+}
+
+.pick-panel .setup-actions {
+  position: sticky;
+  bottom: 8px;
+  z-index: 6;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(64, 53, 39, 0.98), rgba(38, 31, 23, 0.98));
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.pick-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 20px;
+  align-items: start;
+}
+
+.pick-seats {
+  padding: 16px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(64, 53, 39, 0.78), rgba(38, 31, 23, 0.88));
+}
+
+.pick-seat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 6px;
+  border-bottom: 1px solid rgba(219, 181, 108, 0.14);
+  font-size: 14px;
+}
+
+.pick-seat.is-human {
+  margin: 4px -6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(219, 181, 108, 0.45);
+  border-radius: 5px;
+  background: rgba(219, 181, 108, 0.12);
+}
+
+.pick-seat-label {
+  color: var(--gold);
+  min-width: 36px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.pick-seat-hero {
+  flex: 1;
+  font-family: var(--font-calligraphy);
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.pick-seat-tag {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.pick-seat-note {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.pick-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pick-hero-grid .hero-card {
+  min-height: 100%;
+}
+
+@media (max-width: 1180px) {
+  .pick-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pick-seats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 18px;
+  }
+
+  .pick-seats .room-card-title,
+  .pick-seat-note {
+    grid-column: 1 / -1;
+  }
+
+  .pick-seat.is-human {
+    margin: 4px 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .pick-screen {
+    padding: 2vh 3vw;
+  }
+
+  .pick-seats {
+    grid-template-columns: 1fr;
+  }
+
+  .pick-hero-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ---------- 游戏桌面 ---------- */
@@ -3601,8 +3730,52 @@ button {
   width: min(560px, 92vw);
 }
 
-.bg-settings {
-  width: min(680px, 94vw);
+.settings-modal {
+  width: min(720px, 94vw);
+}
+
+.settings-section {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(219, 181, 108, 0.28);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.settings-section-title {
+  font-family: var(--font-calligraphy);
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+}
+
+.settings-section-desc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.menu-settings-btn {
+  flex: 0 0 auto;
+}
+
+.menu-utility {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.menu-utility .menu-update {
+  margin-top: 0;
 }
 
 .bg-preview {
@@ -3817,6 +3990,33 @@ button {
   border: 1px solid rgba(219, 181, 108, 0.3);
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(64, 53, 39, 0.72), rgba(38, 31, 23, 0.85));
+}
+
+.lan-pick {
+  margin-top: 22px;
+}
+
+.lan-pick-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lan-pick-head .room-card-title {
+  margin-bottom: 4px;
+}
+
+.lan-pick-head .setup-hint {
+  font-size: 13px;
+}
+
+.lobby-status.waiting {
+  color: var(--gold);
+}
+
+.lan-pick-actions {
+  flex-wrap: wrap;
 }
 
 .lobby-hero-head {

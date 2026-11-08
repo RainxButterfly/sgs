@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "sanguosha",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "identifier": "com.rainxbutterfly.sanguosha",
   "build": {
     "frontendDist": "../dist",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "三国杀 · 星河",
+        "title": "四国闪 · 星河",
         "width": 1440,
         "height": 900,
         "minWidth": 1120,

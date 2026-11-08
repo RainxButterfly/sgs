@@ -32,6 +32,8 @@ export interface LobbyState {
   maxPlayers: number;
   mode: 'standard' | 'custom';
   rules: CustomRules;
+  picking?: boolean;
+  targetCount?: number;
 }
 
 export type ServerEvent =

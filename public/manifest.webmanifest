@@ -1,7 +1,7 @@
 {
-  "name": "三国杀 · 星河",
-  "short_name": "三国杀",
-  "description": "三国杀桌面对战，局域网点开即玩。",
+  "name": "四国闪 · 星河",
+  "short_name": "四国闪",
+  "description": "四国闪桌面对战，局域网点开即玩。",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

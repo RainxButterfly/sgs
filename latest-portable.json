@@ -1,12 +1,14 @@
 {
-  "version": "0.3.1",
-  "notes": "v0.3.1：武将技能改为鼠标悬停查看，点击打开右侧详情栏，不再遮挡牌桌中央；同时优化详情界面与操作提示。",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.1.zip",
+  "version": "0.4.0",
+  "notes": "v0.4.0：更名为四国闪，改为进入对局后选将，新增设置面板、悬停武将说明和右侧详情栏。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.0.zip",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.1.zip",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.1.zip",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.1.zip",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.1.zip"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.0.zip",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.0.zip",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.4.0.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.0.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.0.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64-0.4.0.zip"
   ],
-  "sha256": "c0da849622389e8377cd11e9c8b3c5cd79d8498d9061128123b152d7846e6e86"
+  "sha256": "3be6a37c22cb0a36642467b415ffdac5fa551db8b762ad26ec2e73b8ce4005e4"
 }
