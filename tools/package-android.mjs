@@ -324,15 +324,15 @@ const argNotes =
 const notes = process.env.UPDATE_NOTES || argNotes || `四国闪 · 星河 v${version}`;
 const cacheBust = `?v=${version}`;
 const urls = [
+  `https://ghfast.top/https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
+  `https://ghproxy.net/https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
+  `https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
   `https://cdn.jsdelivr.net/gh/${repo}@main/updates/${updateName}${cacheBust}`,
   `https://testingcf.jsdelivr.net/gh/${repo}@main/updates/${updateName}${cacheBust}`,
   `https://gcore.jsdelivr.net/gh/${repo}@main/updates/${updateName}${cacheBust}`,
   `https://fastly.jsdelivr.net/gh/${repo}@main/updates/${updateName}${cacheBust}`,
   `https://jsd.onmicrosoft.cn/gh/${repo}@main/updates/${updateName}${cacheBust}`,
-  `https://ghfast.top/https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
-  `https://ghproxy.net/https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
   `https://gh-proxy.com/https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
-  `https://raw.githubusercontent.com/${repo}/main/updates/${updateName}${cacheBust}`,
 ];
 fs.writeFileSync(
   'latest-android.json',

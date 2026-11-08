@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { isAndroidApp, isTauri } from '../net/lan';
 
 export const MANUAL_UPDATE_URL = isAndroidApp()
-  ? 'https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk'
+  ? 'https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk'
   : 'https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-setup.exe';
 
 export interface PortableUpdateInfo {
