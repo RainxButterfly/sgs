@@ -10,6 +10,11 @@ export const EQUIP_SKILL_ID: Record<string, string> = {
   麒麟弓: 'qilin',
   八卦阵: 'bagua',
   仁王盾: 'renwang',
+  古锭刀: 'guding',
+  朱雀羽扇: 'zhuque',
+  藤甲: 'tengjia',
+  白银狮子: 'baiyin',
+  骅骝: 'hualiu',
 };
 
 export function equipSkillId(cardName: string): string | undefined {

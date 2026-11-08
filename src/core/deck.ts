@@ -1,4 +1,4 @@
-import type { Card, CardType, EquipSlot, HeroData, Suit } from './types';
+import type { Card, CardType, Element, EquipSlot, HeroData, Suit } from './types';
 
 let seq = 0;
 
@@ -9,9 +9,10 @@ function card(
   type: CardType,
   equipSlot?: EquipSlot,
   range?: number,
+  element?: Element,
 ): Card {
   seq += 1;
-  return { id: `c${seq}`, name, suit, rank, type, equipSlot, range };
+  return { id: `c${seq}`, name, suit, rank, type, equipSlot, range, element };
 }
 
 function cards(name: string, suit: Suit, ranks: number[]): Card[] {
@@ -96,6 +97,75 @@ export function buildStandardDeck(): Card[] {
     equip('紫骍', 'diamond', 13, 'horseMinus'),
   ];
   return deck;
+}
+
+export function buildMilitaryDeck(): Card[] {
+  const deck: Card[] = [
+    // 红桃
+    card('无懈可击', 'heart', 1, 'trick'),
+    card('火攻', 'heart', 2, 'trick'),
+    card('火攻', 'heart', 3, 'trick'),
+    card('杀', 'heart', 4, 'basic', undefined, undefined, 'fire'),
+    card('桃', 'heart', 5, 'basic'),
+    card('桃', 'heart', 6, 'basic'),
+    card('杀', 'heart', 7, 'basic', undefined, undefined, 'fire'),
+    card('闪', 'heart', 8, 'basic'),
+    card('闪', 'heart', 9, 'basic'),
+    card('杀', 'heart', 10, 'basic', undefined, undefined, 'fire'),
+    card('闪', 'heart', 11, 'basic'),
+    card('闪', 'heart', 12, 'basic'),
+    card('无懈可击', 'heart', 13, 'trick'),
+
+    // 梅花
+    card('白银狮子', 'club', 1, 'equip', 'armor'),
+    card('藤甲', 'club', 2, 'equip', 'armor'),
+    card('酒', 'club', 3, 'basic'),
+    card('兵粮寸断', 'club', 4, 'delayed'),
+    card('杀', 'club', 5, 'basic', undefined, undefined, 'thunder'),
+    card('杀', 'club', 6, 'basic', undefined, undefined, 'thunder'),
+    card('杀', 'club', 7, 'basic', undefined, undefined, 'thunder'),
+    card('杀', 'club', 8, 'basic', undefined, undefined, 'thunder'),
+    card('酒', 'club', 9, 'basic'),
+    card('铁索连环', 'club', 10, 'trick'),
+    card('铁索连环', 'club', 11, 'trick'),
+    card('铁索连环', 'club', 12, 'trick'),
+    card('铁索连环', 'club', 13, 'trick'),
+
+    // 黑桃
+    card('古锭刀', 'spade', 1, 'equip', 'weapon', 2),
+    card('藤甲', 'spade', 2, 'equip', 'armor'),
+    card('酒', 'spade', 3, 'basic'),
+    card('杀', 'spade', 4, 'basic', undefined, undefined, 'thunder'),
+    card('杀', 'spade', 5, 'basic', undefined, undefined, 'thunder'),
+    card('杀', 'spade', 6, 'basic', undefined, undefined, 'thunder'),
+    card('杀', 'spade', 7, 'basic', undefined, undefined, 'thunder'),
+    card('杀', 'spade', 8, 'basic', undefined, undefined, 'thunder'),
+    card('酒', 'spade', 9, 'basic'),
+    card('兵粮寸断', 'spade', 10, 'delayed'),
+    card('铁索连环', 'spade', 11, 'trick'),
+    card('铁索连环', 'spade', 12, 'trick'),
+    card('无懈可击', 'spade', 13, 'trick'),
+
+    // 方块
+    card('朱雀羽扇', 'diamond', 1, 'equip', 'weapon', 4),
+    card('桃', 'diamond', 2, 'basic'),
+    card('桃', 'diamond', 3, 'basic'),
+    card('杀', 'diamond', 4, 'basic', undefined, undefined, 'fire'),
+    card('杀', 'diamond', 5, 'basic', undefined, undefined, 'fire'),
+    card('闪', 'diamond', 6, 'basic'),
+    card('闪', 'diamond', 7, 'basic'),
+    card('闪', 'diamond', 8, 'basic'),
+    card('酒', 'diamond', 9, 'basic'),
+    card('火攻', 'diamond', 10, 'trick'),
+    card('骅骝', 'diamond', 11, 'equip', 'horsePlus'),
+    card('闪', 'diamond', 12, 'basic'),
+    card('闪', 'diamond', 13, 'basic'),
+  ];
+  return deck;
+}
+
+export function buildGameDeck(military: boolean): Card[] {
+  return military ? [...buildStandardDeck(), ...buildMilitaryDeck()] : buildStandardDeck();
 }
 
 export const HEROES: HeroData[] = [
@@ -522,6 +592,161 @@ export const HEROES: HeroData[] = [
     title: '异乡的孤女',
     skillIds: ['beige', 'duanchang'],
     quote: '胡笳十八拍，声声断人肠。',
+  },
+  {
+    id: 'xiahouyuan',
+    name: '夏侯渊',
+    faction: 'wei',
+    gender: 'male',
+    hp: 4,
+    title: '疾行猎豹',
+    skillIds: ['shensu'],
+    quote: '兵贵神速，出其不意。',
+  },
+  {
+    id: 'pangtong',
+    name: '庞统',
+    faction: 'shu',
+    gender: 'male',
+    hp: 3,
+    title: '凤雏',
+    skillIds: ['lianhuan', 'niepan'],
+    quote: '卧龙凤雏，得一可安天下。',
+  },
+  {
+    id: 'yuanshao',
+    name: '袁绍',
+    faction: 'qun',
+    gender: 'male',
+    hp: 4,
+    title: '乱世枭雄',
+    skillIds: ['luanji'],
+    lordSkillId: 'xueyi',
+    quote: '四世三公，门生故吏遍天下。',
+  },
+  {
+    id: 'wolong',
+    name: '卧龙诸葛亮',
+    faction: 'shu',
+    gender: 'male',
+    hp: 3,
+    title: '卧龙',
+    skillIds: ['bazhen', 'huoji', 'kanpo'],
+    quote: '足不出户，已知天下三分。',
+  },
+  {
+    id: 'caopi',
+    name: '曹丕',
+    faction: 'wei',
+    gender: 'male',
+    hp: 3,
+    title: '魏文帝',
+    skillIds: ['xingshang', 'fangzhu'],
+    lordSkillId: 'songwei',
+    quote: '天命在吾，何须多言。',
+  },
+  {
+    id: 'xuhuang',
+    name: '徐晃',
+    faction: 'wei',
+    gender: 'male',
+    hp: 4,
+    title: '周亚夫之风',
+    skillIds: ['duanliang'],
+    quote: '粮道一断，敌军自乱。',
+  },
+  {
+    id: 'dongzhuo',
+    name: '董卓',
+    faction: 'qun',
+    gender: 'male',
+    hp: 8,
+    title: '魔王',
+    skillIds: ['jiuchi', 'roulin', 'benghuai'],
+    lordSkillId: 'baonue',
+    quote: '顺我者昌，逆我者亡。',
+  },
+  {
+    id: 'jiaxu',
+    name: '贾诩',
+    faction: 'qun',
+    gender: 'male',
+    hp: 3,
+    title: '毒士',
+    skillIds: ['wansha', 'luanwu', 'weimu'],
+    quote: '天下大乱，正是用武之时。',
+  },
+  {
+    id: 'zhanghe',
+    name: '张郃',
+    faction: 'wei',
+    gender: 'male',
+    hp: 4,
+    title: '巧变将军',
+    skillIds: ['qiaobian'],
+    quote: '用兵之道，变化无穷。',
+  },
+  {
+    id: 'dengai',
+    name: '邓艾',
+    faction: 'wei',
+    gender: 'male',
+    hp: 4,
+    title: '偷渡阴平',
+    skillIds: ['tuntian', 'zaoxian'],
+    quote: '屯田日久，当建奇功。',
+  },
+  {
+    id: 'liushan',
+    name: '刘禅',
+    faction: 'shu',
+    gender: 'male',
+    hp: 3,
+    title: '安乐公',
+    skillIds: ['xiangle', 'fangquan'],
+    lordSkillId: 'ruoyu',
+    quote: '此间乐，不思蜀。',
+  },
+  {
+    id: 'sunce',
+    name: '孙策',
+    faction: 'wu',
+    gender: 'male',
+    hp: 4,
+    title: '江东小霸王',
+    skillIds: ['jiang', 'hunzi'],
+    lordSkillId: 'zhiba',
+    quote: '江东子弟，何惧于天下！',
+  },
+  {
+    id: 'zhangzhaozhanghong',
+    name: '张昭张纮',
+    faction: 'wu',
+    gender: 'male',
+    hp: 3,
+    title: '江东二张',
+    skillIds: ['zhijian', 'guzheng'],
+    quote: '文臣安邦，武将定国。',
+  },
+  {
+    id: 'zuoci',
+    name: '左慈',
+    faction: 'qun',
+    gender: 'male',
+    hp: 3,
+    title: '迷之仙人',
+    skillIds: ['huashen', 'xinsheng'],
+    quote: '大道无形，万法归一。',
+  },
+  {
+    id: 'yuji',
+    name: '于吉',
+    faction: 'qun',
+    gender: 'male',
+    hp: 3,
+    title: '太平道人',
+    skillIds: ['guhuo'],
+    quote: '信我者可得太平。',
   },
 ];
 

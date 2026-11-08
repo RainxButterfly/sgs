@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import defaultBg from '../../assets/bg-default.jpg';
 import { useGameSnapshot, useGameStore } from '../store';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroPanel } from '../components/HeroPanel';
@@ -17,12 +18,43 @@ export function GameScreen() {
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
   const flash = useGameStore((s) => s.flash);
+  const bgImage = useGameStore((s) => s.bgImage);
+  const bgDim = useGameStore((s) => s.bgDim);
   const selectedCardId = selected?.cardId;
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
 
-  if (!game) return null;
+  if (!game) {
+    return (
+      <div className="fatal-error">
+        <div className="fatal-card">
+          <h1>对局状态丢失</h1>
+          <p>房间可能已经关闭或连接中断。</p>
+          <div className="fatal-actions">
+            <button type="button" className="btn primary" onClick={() => useGameStore.getState().backToMenu()}>
+              返回主菜单
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const human = game.state.players[humanId];
+  if (!human) {
+    return (
+      <div className="fatal-error">
+        <div className="fatal-card">
+          <h1>找不到你的座位</h1>
+          <p>对局数据不完整，请返回主菜单重开。</p>
+          <div className="fatal-actions">
+            <button type="button" className="btn primary" onClick={() => useGameStore.getState().backToMenu()}>
+              返回主菜单
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const n = game.state.players.length;
   const currentId = game.state.current;
 
@@ -52,6 +84,8 @@ export function GameScreen() {
 
   return (
     <div className="game-screen">
+      <div className="game-bg" style={{ backgroundImage: `url(${bgImage ?? defaultBg})` }} />
+      <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
       <TopBar logOpen={logOpen} onToggleLog={() => setLogOpen((v) => !v)} onExit={exit} />
       <div className="table-area">
         <div className="ring">
@@ -64,6 +98,7 @@ export function GameScreen() {
               <PlayerSeat
                 key={player.id}
                 player={player}
+                mode={game.state.rules.mode}
                 current={player.id === currentId}
                 targetable={targetable.has(player.id)}
                 selected={selectedTargets.includes(player.id)}
@@ -82,6 +117,7 @@ export function GameScreen() {
         <div className="own-area">
           <HeroPanel
             player={human}
+            mode={game.state.rules.mode}
             current={human.id === currentId}
             flash={flash}
             handLimitModifier={game.state.rules?.handLimitModifier ?? 0}

@@ -31,6 +31,12 @@ export function equipSlotText(slot?: EquipSlot): string {
   return { weapon: '武器', armor: '防具', horsePlus: '+1马', horseMinus: '-1马' }[slot];
 }
 
+export function cardDisplayName(card: Card): string {
+  if (card.element === 'fire') return '火杀';
+  if (card.element === 'thunder') return '雷杀';
+  return card.name;
+}
+
 export function shortCardName(name: string): string {
   if (name === '雌雄双股剑') return '雌雄剑';
   if (name === '青龙偃月刀') return '青龙刀';

@@ -116,6 +116,10 @@ export function LanScreen() {
         {!canCreate && (
           <div className="lan-dev-hint">手机 / 浏览器端通过房主电脑创建的房间加入，不能自行建房。</div>
         )}
+        <div className="lan-dev-hint">
+          异地联机：先用 ZeroTier、Radmin VPN 等工具组成虚拟局域网，再填写房主的虚拟地址；也可以在路由器把房主端口转发后填写公网地址。
+          手机浏览器打开房间地址后，可以「添加到主屏幕」，像 App 一样直接进入。
+        </div>
         {!desktop && import.meta.env.DEV && (
           <div className="lan-dev-hint">
             开发模式：请另开终端运行 <code>npm run dev:relay</code>，然后使用 127.0.0.1:8787 / DEV 测试联机。

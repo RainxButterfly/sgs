@@ -1,4 +1,5 @@
 import { SKILL_MAP } from '../../core/skills';
+import { PHASE_NAME } from '../../core/types';
 import { useGameStore, useGameSnapshot } from '../store';
 
 export function PromptBar() {
@@ -10,11 +11,18 @@ export function PromptBar() {
 
   if (!game || !pending) {
     const current = game?.state.players[game.state.current];
+    const mine = current?.id === humanId;
     return (
-      <div className="prompt-bar idle">
+      <div className={`prompt-bar idle ${mine ? 'mine' : ''}`}>
+        <span className={`prompt-turn-dot ${mine ? 'mine' : ''}`} />
         <span className="prompt-idle">
-          {current ? `等待 ${current.name}（${current.heroName}）行动…` : '等待对局开始'}
+          {current ? (mine ? '轮到你行动' : `等待 ${current.name} 行动`) : '等待对局开始'}
         </span>
+        {current && (
+          <span className="prompt-idle-sub">
+            {current.heroName} · {PHASE_NAME[game.state.phase]}
+          </span>
+        )}
       </div>
     );
   }
@@ -49,7 +57,9 @@ export function PromptBar() {
             {selected ? (
               <>
                 已选 <b>{selected.as === '杀' ? '杀' : `【${selected.as}】`}</b>
-                {selected.skillId ? `（${SKILL_MAP.get(selected.skillId)?.name ?? selected.skillId}）` : ''}
+                {selected.skillId
+                  ? `（${selected.skillId === 'recast' ? '重铸' : SKILL_MAP.get(selected.skillId)?.name ?? selected.skillId}）`
+                  : ''}
                 {option && option.targetMax > 0 ? (
                   <span>
                     {' '}
@@ -64,6 +74,15 @@ export function PromptBar() {
           </div>
         </div>
         <div className="prompt-actions">
+          {option?.validTargets.includes(humanId) && (
+            <button
+              type="button"
+              className={`btn ghost skill-btn ${selectedTargets.includes(humanId) ? 'on' : ''}`}
+              onClick={() => useGameStore.getState().seatClick(humanId)}
+            >
+              选择自己
+            </button>
+          )}
           {skills.map((skill) => (
             <button
               key={skill.id}

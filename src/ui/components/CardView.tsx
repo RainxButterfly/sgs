@@ -1,5 +1,5 @@
 import type { Card } from '../../core/types';
-import { cardTypeText, isRedCard, rankText, SUIT_CHAR } from '../labels';
+import { cardDisplayName, cardTypeText, isRedCard, rankText, SUIT_CHAR } from '../labels';
 
 interface Props {
   card: Card;
@@ -20,6 +20,7 @@ export function CardView({ card, size = 'md', selected, disabled, dimmed, onClic
         'card',
         `card-${size}`,
         `card-${card.type}`,
+        card.element ? `card-${card.element}` : '',
         red ? 'card-red' : 'card-black',
         selected ? 'card-selected' : '',
         disabled ? 'card-disabled' : '',
@@ -28,14 +29,14 @@ export function CardView({ card, size = 'md', selected, disabled, dimmed, onClic
       ].join(' ')}
       onClick={onClick}
       disabled={disabled}
-      title={`${card.name} ${SUIT_CHAR[card.suit]}${rankText(card.rank)}`}
+      title={`${cardDisplayName(card)} ${SUIT_CHAR[card.suit]}${rankText(card.rank)}`}
     >
       <span className="card-corner card-corner-tl">
         {SUIT_CHAR[card.suit]}
         {rankText(card.rank)}
       </span>
       <span className="card-body">
-        <span className="card-name">{card.name}</span>
+        <span className="card-name">{cardDisplayName(card)}</span>
         {size !== 'sm' && <span className="card-kind">{cardTypeText(card)}</span>}
         {card.equipSlot && size !== 'sm' && (
           <span className="card-kind card-range">

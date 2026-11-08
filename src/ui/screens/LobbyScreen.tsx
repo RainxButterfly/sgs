@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { toDataURL } from 'qrcode';
-import { DEFAULT_RULES } from '../../core/types';
+import { HERO_MAP } from '../../core/deck';
+import { SKILL_MAP } from '../../core/skills';
+import { DEFAULT_RULES, FACTION_NAME } from '../../core/types';
 import { RulesEditor } from '../components/RulesEditor';
 import { useGameStore } from '../store';
 
@@ -11,6 +13,8 @@ export function LobbyScreen() {
   const startLanGame = useGameStore((s) => s.startLanGame);
   const setLanRules = useGameStore((s) => s.setLanRules);
   const leaveLan = useGameStore((s) => s.leaveLan);
+  const pickLanHero = useGameStore((s) => s.pickLanHero);
+  const lanConnId = useGameStore((s) => s.lanConnId);
   const [count, setCount] = useState(8);
   const [copied, setCopied] = useState<string | null>(null);
   const host = lanRole === 'host';
@@ -64,16 +68,38 @@ export function LobbyScreen() {
     .map((ip) => `${ip}:${lobby.room.port}`);
   const players = lobby.players;
   const maxTotal = lobby.maxPlayers;
+  const me = host ? players.find((player) => player.isHost) : players.find((player) => player.connId === lanConnId);
   const mode = lobby.mode ?? 'standard';
   const rules = lobby.rules ?? DEFAULT_RULES;
-  const minPlayers = mode === 'custom' ? 2 : 5;
-  const counts = mode === 'custom' ? [2, 3, 4, 5, 6, 7, 8] : [5, 6, 7, 8];
+  const gameMode = rules.mode ?? 'identity';
+  const minPlayers =
+    gameMode === 'duel' ? 2 : gameMode === 'landlord' ? 3 : gameMode === 'guozhan' ? 4 : mode === 'custom' ? 2 : 5;
+  const counts =
+    gameMode === 'duel'
+      ? [2]
+      : gameMode === 'landlord'
+        ? [3]
+        : gameMode === 'guozhan'
+          ? [4, 5, 6, 7, 8]
+          : mode === 'custom'
+            ? [2, 3, 4, 5, 6, 7, 8]
+            : [5, 6, 7, 8];
   const startCount = Math.max(minPlayers, Math.min(8, Math.max(count, players.length)));
+  const gameModeLabel =
+    gameMode === 'duel'
+      ? '1v1 单挑'
+      : gameMode === 'landlord'
+        ? '斗地主'
+        : gameMode === 'guozhan'
+          ? '国战'
+          : mode === 'custom'
+            ? '自定义对局'
+            : '标准身份场';
   const ruleSummary = `初始手牌 ${rules.initialHand} · 摸牌 ${rules.drawCount} · 体力 ${
     rules.hpModifier >= 0 ? '+' : ''
   }${rules.hpModifier} · 手牌上限 ${rules.handLimitModifier >= 0 ? '+' : ''}${rules.handLimitModifier} · 身份${
     rules.revealRoles ? '公开' : '隐藏'
-  } · 技能${rules.skillsEnabled ? '开启' : '关闭'}`;
+  } · 技能${rules.skillsEnabled ? '开启' : '关闭'} · 军争${rules.military ? '开启' : '关闭'}`;
 
   const copy = async (text: string, key: string) => {
     const done = () => {
@@ -149,7 +175,7 @@ export function LobbyScreen() {
               </div>
             )}
             <div className="room-hint">
-              同一 WiFi 下，输入以上地址与房间码即可加入。武将随机分配，身份随机隐藏。
+              同一 WiFi 下，输入以上地址与房间码即可加入。开局前各自选择武将，身份随机隐藏。
               首次创建房间若出现 Windows 防火墙提示，请允许“专用网络”访问。
             </div>
             {host && (
@@ -175,6 +201,9 @@ export function LobbyScreen() {
                 <div key={player.connId} className={`lobby-player ${player.isHost ? 'is-host' : ''}`}>
                   <span className="lobby-seat">{player.isHost ? '房主' : '玩家'}</span>
                   <span className="lobby-name">{player.name}</span>
+                  <span className="lobby-hero-tag">
+                    {player.heroId ? `已选 · ${HERO_MAP.get(player.heroId)?.name ?? ''}` : '待选将'}
+                  </span>
                   <span className="lobby-status">{player.connected ? '已入座' : '掉线'}</span>
                 </div>
               ))}
@@ -189,29 +218,102 @@ export function LobbyScreen() {
           </section>
         </div>
 
+        {me && (
+          <div className="lobby-hero-pick">
+            <div className="lobby-hero-head">
+              <span className="room-card-title">选择武将</span>
+              <span className="setup-hint">
+                {me.heroId
+                  ? `已选 ${HERO_MAP.get(me.heroId)?.name ?? ''}，开局前可以更换`
+                  : '从下面三名武将中选择一名'}
+              </span>
+            </div>
+            <div className="lobby-hero-grid">
+              {(me.choices ?? []).map((heroId) => {
+                const hero = HERO_MAP.get(heroId);
+                if (!hero) return null;
+                const taken = players.some(
+                  (player) => player.connId !== me.connId && player.heroId === heroId,
+                );
+                const picked = me.heroId === heroId;
+                return (
+                  <button
+                    key={heroId}
+                    type="button"
+                    className={`lobby-hero-card faction-${hero.faction} ${picked ? 'picked' : ''} ${taken ? 'taken' : ''}`}
+                    disabled={taken}
+                    onClick={() => pickLanHero(heroId)}
+                  >
+                    <div className="lobby-hero-top">
+                      <span className="faction-badge">{FACTION_NAME[hero.faction]}</span>
+                      <span className="lobby-hero-name">{hero.name}</span>
+                      <span className="lobby-hero-hp">♥ {hero.hp}</span>
+                    </div>
+                    <div className="lobby-hero-title">{hero.title}</div>
+                    <div className="lobby-hero-skills">
+                      {hero.skillIds.map((skillId) => SKILL_MAP.get(skillId)?.name).filter(Boolean).join(' · ')}
+                    </div>
+                    {taken && <span className="lobby-hero-flag">已被选择</span>}
+                    {picked && <span className="lobby-hero-flag picked">已选择</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {host ? (
           <>
             <div className="lobby-rules">
               <div className="lobby-rules-head">
                 <span className="setup-label">对局模式</span>
                 <div className="count-group">
-                  <button
-                    type="button"
-                    className={`count-btn ${mode === 'standard' ? 'on' : ''}`}
-                    onClick={() => setLanRules('standard', rules)}
-                  >
-                    标准身份场
-                  </button>
-                  <button
-                    type="button"
-                    className={`count-btn ${mode === 'custom' ? 'on' : ''}`}
-                    onClick={() => setLanRules('custom', rules)}
-                  >
-                    自定义对局
-                  </button>
+                  {([
+                    ['identity', '身份场'],
+                    ['duel', '1v1'],
+                    ['landlord', '斗地主'],
+                    ['guozhan', '国战'],
+                    ['custom', '自定义'],
+                  ] as const).map(([id, label]) => {
+                    const active =
+                      id === 'identity'
+                        ? gameMode === 'identity' && mode === 'standard'
+                        : id === 'custom'
+                          ? mode === 'custom' && gameMode === 'identity'
+                          : gameMode === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`count-btn ${active ? 'on' : ''}`}
+                        onClick={() => {
+                          if (id === 'custom') setLanRules('custom', { ...rules, mode: 'identity' });
+                          else if (id === 'identity') setLanRules('standard', { ...rules, mode: 'identity' });
+                          else setLanRules('custom', { ...rules, mode: id });
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
+                <button
+                  type="button"
+                  className={`count-btn ${rules.military ? 'on' : ''}`}
+                  onClick={() => setLanRules(mode, { ...rules, military: !rules.military })}
+                >
+                  军争篇
+                </button>
                 <span className="setup-hint">
-                  {mode === 'custom' ? '自定义规则对所有玩家生效' : '主公 +1 体力，身份随机隐藏'}
+                  {gameMode === 'guozhan'
+                    ? '魏蜀吴群阵营团战，存活到最后的势力获胜'
+                    : gameMode === 'landlord'
+                      ? '地主 1 · 农民 2'
+                      : gameMode === 'duel'
+                        ? '主公 1 · 反贼 1'
+                        : mode === 'custom'
+                          ? '自定义规则对所有玩家生效'
+                          : '主公 +1 体力，身份随机隐藏'}
                 </span>
               </div>
               {mode === 'custom' && (
@@ -241,7 +343,7 @@ export function LobbyScreen() {
               <button
                 type="button"
                 className="btn primary big"
-                disabled={players.some((p) => !p.connected)}
+                disabled={players.some((p) => !p.connected || !p.heroId)}
                 onClick={() => startLanGame(startCount)}
               >
                 开始对局
@@ -251,8 +353,8 @@ export function LobbyScreen() {
         ) : (
           <>
             <div className="lobby-rules-summary">
-              模式：{mode === 'custom' ? '自定义对局' : '标准身份场'}
-              {mode === 'custom' ? ` · ${ruleSummary}` : ' · 5–8 人'}
+              模式：{gameModeLabel}
+              {mode === 'custom' || gameMode !== 'identity' ? ` · ${ruleSummary}` : ' · 5–8 人'}
             </div>
             <div className="start-row waiting-row">
               <span className="waiting-dot" />

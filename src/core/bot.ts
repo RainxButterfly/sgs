@@ -40,6 +40,7 @@ export function botAction(req: AskRequest): GameAction {
         targets,
         skillId: option.skillId,
         extraCardIds: option.extraCardIds,
+        element: option.element,
       };
     }
     case 'respond': {

@@ -1,6 +1,6 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
-import { FACTION_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
+import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
 import { rankText, shortCardName } from '../labels';
 
 interface Flash {
@@ -12,6 +12,7 @@ interface Flash {
 
 interface Props {
   player: PlayerState;
+  mode?: GameMode;
   current: boolean;
   targetable?: boolean;
   selected?: boolean;
@@ -22,10 +23,33 @@ interface Props {
   onClick?: () => void;
 }
 
-export function PlayerSeat({ player, current, targetable, selected, clickable, flash, style, onDetail, onClick }: Props) {
+export function PlayerSeat({
+  player,
+  mode = 'identity',
+  current,
+  targetable,
+  selected,
+  clickable,
+  flash,
+  style,
+  onDetail,
+  onClick,
+}: Props) {
   const hero = HERO_MAP.get(player.heroId);
   const roleLabel =
-    player.roleRevealed || !player.alive ? ROLE_NAME[player.role] : player.role === 'lord' ? '主公' : '';
+    mode === 'guozhan'
+      ? ''
+      : mode === 'landlord'
+        ? player.roleRevealed || !player.alive || player.role === 'lord'
+          ? player.role === 'lord'
+            ? '地主'
+            : '农民'
+          : ''
+        : player.roleRevealed || !player.alive
+          ? ROLE_NAME[player.role]
+          : player.role === 'lord'
+            ? '主公'
+            : '';
   const pips = Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp);
   const equips = (['weapon', 'armor', 'horsePlus', 'horseMinus'] as const)
     .map((slot) => player.equips[slot])
@@ -57,6 +81,7 @@ export function PlayerSeat({ player, current, targetable, selected, clickable, f
         <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
         <span className="seat-hero">{hero?.name ?? player.heroName}</span>
         {roleLabel && <span className={`role-badge role-${player.role}`}>{roleLabel}</span>}
+        {current && <span className="seat-turn-tag">行动中</span>}
         {player.isBot && <span className="ai-badge">AI</span>}
         {onDetail && (
           <button
@@ -104,9 +129,11 @@ export function PlayerSeat({ player, current, targetable, selected, clickable, f
           ))}
         </div>
       )}
-      {(player.flipped || player.unyu.length > 0) && (
+      {(player.flipped || player.unyu.length > 0 || player.chained || player.fields.length > 0) && (
         <div className="seat-status-row">
           {player.flipped && <span className="mini-status flipped">翻面</span>}
+          {player.chained && <span className="mini-status chained">横置</span>}
+          {player.fields.length > 0 && <span className="mini-unyu">田 {player.fields.length}</span>}
           {player.unyu.map((c) => (
             <span key={c.id} className="mini-unyu" title={`不屈：${c.name}`}>
               创{rankText(c.rank)}
@@ -115,7 +142,7 @@ export function PlayerSeat({ player, current, targetable, selected, clickable, f
         </div>
       )}
       <div className="seat-skills">
-        {player.skills.map((id) => {
+        {[...new Set([...player.skills, ...player.extraSkills])].map((id) => {
           const skill = SKILL_MAP.get(id);
           return skill ? (
             <span key={id} className={`mini-skill ${skill.lord ? 'lord' : ''}`} title={skill.desc}>

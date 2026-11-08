@@ -6,6 +6,7 @@ import { smartBotAction } from '../core/smartBot';
 import { LanClientManager, LanHostManager, createRoomInfo, isTauri, parseAddress } from '../net/lan';
 import type { LobbyState, RoomInfo } from '../net/protocol';
 import { checkAppUpdate, installAppUpdate, type AppUpdateInfo } from './update';
+import { loadBackgroundSettings, saveBackgroundSettings } from './background';
 import type {
   AskRequest,
   Card,
@@ -75,6 +76,7 @@ interface GameStore {
   lobby: LobbyState | null;
   netError: string | null;
   lanPlayerId: number;
+  lanConnId: number;
   joinPreset: { address: string; code: string } | null;
   appVersion: string;
   updateInfo: AppUpdateInfo | null;
@@ -82,8 +84,11 @@ interface GameStore {
   updateProgress: { downloaded: number; total: number };
   updateError: string | null;
   updateModalOpen: boolean;
+  bgImage: string | null;
+  bgDim: number;
+  bgPanelOpen: boolean;
 
-  selected: { cardId: string; as: string; skillId?: string } | null;
+  selected: { cardId: string; as: string; skillId?: string; element?: 'fire' | 'thunder' } | null;
   selectedTargets: number[];
   asChooser: AsChooser | null;
   cardChoices: string[];
@@ -96,11 +101,16 @@ interface GameStore {
   joinLanRoom: (address: string, code: string, name: string) => Promise<void>;
   startLanGame: (count: number) => void;
   setLanRules: (mode: 'standard' | 'custom', rules: CustomRules) => void;
+  pickLanHero: (heroId: string) => void;
   leaveLan: () => void;
   checkUpdate: (manual?: boolean) => Promise<void>;
   installUpdate: () => Promise<void>;
   openUpdateModal: () => void;
   closeUpdateModal: () => void;
+  openBgPanel: () => void;
+  closeBgPanel: () => void;
+  setBgImage: (image: string | null) => void;
+  setBgDim: (dim: number) => void;
   event: (ev: GameEvent) => void;
   ask: (req: AskRequest) => Promise<GameAction>;
   submit: (action: GameAction) => void;
@@ -123,6 +133,7 @@ interface GameStore {
 
 let resolveAsk: ((action: GameAction) => void) | null = null;
 let eventSeq = 0;
+const initialBackground = loadBackgroundSettings();
 
 const io: GameIO = {
   emit: (ev) => useGameStore.getState().event(ev),
@@ -156,6 +167,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lobby: null,
   netError: null,
   lanPlayerId: 0,
+  lanConnId: -1,
   joinPreset: null,
   appVersion: APP_VERSION,
   updateInfo: null,
@@ -163,6 +175,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   updateProgress: { downloaded: 0, total: 0 },
   updateError: null,
   updateModalOpen: false,
+  bgImage: initialBackground.image,
+  bgDim: initialBackground.dim,
+  bgPanelOpen: false,
   selected: null,
   selectedTargets: [],
   asChooser: null,
@@ -198,6 +213,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lobby: null,
       netError: null,
       lanPlayerId: 0,
+      lanConnId: -1,
       pending: null,
       result: null,
       lastPlay: null,
@@ -236,6 +252,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lobby: null,
       netError: null,
       lanPlayerId: 0,
+      lanConnId: -1,
       lastPlay: null,
       lastJudge: null,
       flash: null,
@@ -313,6 +330,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lanRole: 'host',
         lanHost: host,
         lanClient: null,
+        lanConnId: 0,
         room: info,
         lobby: host.lobby,
         screen: 'lobby',
@@ -335,6 +353,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     const client = new LanClientManager(ip, port, cleanCode, name.trim() || '玩家', {
+      onWelcome: (connId) => set({ lanConnId: connId }),
       onLobby: (lobby) =>
         set({
           lobby,
@@ -396,6 +415,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanRole: 'client',
       lanClient: client,
       lanHost: null,
+      lanConnId: -1,
       room: { ip, port, code: cleanCode, secret: '' },
       lobby: null,
       screen: 'lobby',
@@ -413,6 +433,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setLanRules: (mode, rules) => {
     get().lanHost?.setRules(mode, rules);
+  },
+
+  pickLanHero: (heroId) => {
+    const { lanRole, lanHost, lanClient } = get();
+    if (lanRole === 'host') lanHost?.pickHostHero(heroId);
+    else if (lanRole === 'client') lanClient?.pickHero(heroId);
   },
 
   checkUpdate: async (manual = false) => {
@@ -488,6 +514,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   closeUpdateModal: () => set({ updateModalOpen: false }),
 
+  openBgPanel: () => set({ bgPanelOpen: true }),
+  closeBgPanel: () => set({ bgPanelOpen: false }),
+  setBgImage: (image) => {
+    set({ bgImage: image });
+    saveBackgroundSettings({ image, dim: get().bgDim });
+  },
+  setBgDim: (dim) => {
+    const next = Math.min(90, Math.max(0, Math.round(dim)));
+    set({ bgDim: next });
+    saveBackgroundSettings({ image: get().bgImage, dim: next });
+  },
+
   leaveLan: () => {
     get().lanHost?.close();
     get().lanClient?.leave();
@@ -504,6 +542,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lobby: null,
       netError: null,
       lanPlayerId: 0,
+      lanConnId: -1,
       lastPlay: null,
       lastJudge: null,
       flash: null,
@@ -608,7 +647,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         return;
       }
       set({
-        selected: { cardId, as: option.as, skillId: option.skillId },
+        selected: { cardId, as: option.as, skillId: option.skillId, element: option.element },
         selectedTargets: [],
         asChooser: null,
       });
@@ -626,7 +665,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     const option = asChooser.options.find((o) => o.as === as && (o.skillId ?? '') === (skillId ?? ''));
     set({
-      selected: { cardId: asChooser.cardId, as, skillId: option?.skillId },
+      selected: { cardId: asChooser.cardId, as, skillId: option?.skillId, element: option?.element },
       asChooser: null,
       selectedTargets: [],
     });
@@ -678,6 +717,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       as: option.as,
       targets: selectedTargets,
       skillId: option.skillId,
+      element: selected.element,
     });
   },
 

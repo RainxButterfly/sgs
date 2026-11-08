@@ -28,11 +28,17 @@ export function AsChooserModal() {
             className="as-option"
             onClick={() => chooseAs(option.as, option.skillId)}
           >
-            <span className="as-name">视为【{option.as}】</span>
-            {option.skillId && (
+            <span className="as-name">{option.label ?? `视为【${option.as}】`}</span>
+            {option.skillId && option.skillId !== 'recast' && (
               <span className="as-skill">
                 {SKILL_MAP.get(option.skillId)?.name ?? option.skillId}
                 <em>{SKILL_MAP.get(option.skillId)?.desc}</em>
+              </span>
+            )}
+            {option.skillId === 'recast' && (
+              <span className="as-skill">
+                重铸
+                <em>弃置此牌，摸一张牌</em>
               </span>
             )}
           </button>

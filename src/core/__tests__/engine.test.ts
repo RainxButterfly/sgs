@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../game';
 import { SimIO } from '../bot';
-import { buildStandardDeck, HEROES } from '../deck';
+import { buildGameDeck, buildMilitaryDeck, buildStandardDeck, HEROES } from '../deck';
 
 describe('标准牌堆', () => {
   it('包含 108 张牌且花色点数合法', () => {

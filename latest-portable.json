@@ -1,12 +1,12 @@
 {
-  "version": "0.1.0",
-  "notes": "首发版本：42 名武将、自定义规则、手机扫码加入与内置便携自动更新。",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.1.0.zip",
+  "version": "0.3.0",
+  "notes": "v0.3.0：补全 57 名武将，新增 1v1、斗地主、国战模式，支持自定义对局背景，并优化等待提示、出牌显示与整体可读性。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.0.zip",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.1.0.zip",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.1.0.zip",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.1.0.zip",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.1.0.zip"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/sanguosha-xinghe-win64-0.3.0.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.0.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.0.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/sanguosha-xinghe-win64-0.3.0.zip"
   ],
-  "sha256": "000203fd82c4430ea3221095021dd41d65eac716156856ee06d5e3f5b5bcf4e8"
+  "sha256": "76dec561c1e20bbf50df483600d75d80efc44a95e6b13d1a1908f282e571f3e5"
 }

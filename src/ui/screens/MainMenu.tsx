@@ -52,13 +52,20 @@ export function MainMenu() {
             </button>
           </div>
           <div className="menu-foot">
-            <span>武将 42</span>
-            <span>牌堆 108</span>
+            <span>武将 {HEROES.length}</span>
+            <span>牌堆 160</span>
             <span>5–8 人身份场</span>
           </div>
           <div className="menu-author">
             作者 星河一叶Roxy · 维护邮箱 ck_xuv@vip.qq.com
           </div>
+          <button
+            type="button"
+            className="menu-update"
+            onClick={() => useGameStore.getState().openBgPanel()}
+          >
+            对局背景设置
+          </button>
           <button
             type="button"
             className={`menu-update ${updateInfo ? 'has-update' : ''}`}

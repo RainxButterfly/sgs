@@ -4,6 +4,8 @@ export type EquipSlot = 'weapon' | 'armor' | 'horsePlus' | 'horseMinus';
 export type Gender = 'male' | 'female';
 export type Faction = 'wei' | 'shu' | 'wu' | 'qun';
 export type Role = 'lord' | 'loyalist' | 'rebel' | 'traitor';
+export type GameMode = 'identity' | 'duel' | 'landlord' | 'guozhan';
+export type Element = 'fire' | 'thunder';
 export type Phase = 'prepare' | 'judge' | 'draw' | 'play' | 'discard' | 'finish';
 
 export const PHASES: Phase[] = ['prepare', 'judge', 'draw', 'play', 'discard', 'finish'];
@@ -52,6 +54,7 @@ export interface Card {
   type: CardType;
   equipSlot?: EquipSlot;
   range?: number;
+  element?: Element;
 }
 
 export interface PlayerState {
@@ -74,8 +77,11 @@ export interface PlayerState {
   usedThisTurn: Record<string, number>;
   skipPhases: Phase[];
   skills: string[];
+  extraSkills: string[];
+  fields: Card[];
   flipped: boolean;
   unyu: Card[];
+  chained: boolean;
   isBot: boolean;
 }
 
@@ -93,7 +99,7 @@ export interface GameState {
   turn: number;
   phase: Phase;
   over: boolean;
-  winner: 'lord' | 'rebel' | 'traitor' | 'draw' | null;
+  winner: Role | Faction | 'draw' | null;
   log: LogEntry[];
   seed: number;
   deckCount?: number;
@@ -102,6 +108,7 @@ export interface GameState {
 }
 
 export interface CustomRules {
+  mode: GameMode;
   initialHand: number;
   drawCount: number;
   hpModifier: number;
@@ -111,9 +118,11 @@ export interface CustomRules {
   allowDelayed: boolean;
   allowNullification: boolean;
   allowEquipment: boolean;
+  military: boolean;
 }
 
 export const DEFAULT_RULES: CustomRules = {
+  mode: 'identity',
   initialHand: 4,
   drawCount: 2,
   hpModifier: 0,
@@ -123,6 +132,7 @@ export const DEFAULT_RULES: CustomRules = {
   allowDelayed: true,
   allowNullification: true,
   allowEquipment: true,
+  military: true,
 };
 
 export interface CardOption {
@@ -131,6 +141,7 @@ export interface CardOption {
   skillId?: string;
   label?: string;
   extraCardIds?: string[];
+  element?: Element;
   validTargets: number[];
   targetMin: number;
   targetMax: number;
@@ -170,6 +181,7 @@ export type GameAction =
       targets: number[];
       skillId?: string;
       extraCardIds?: string[];
+      element?: Element;
     }
   | {
       type: 'respondCard';
@@ -194,7 +206,7 @@ export type GameEvent =
   | { type: 'draw'; playerId: number; count: number; cardIds: string[] }
   | { type: 'gain'; playerId: number; cards: Card[]; from?: number; public: boolean }
   | { type: 'discard'; playerId: number; cards: Card[]; reason?: string }
-  | { type: 'damage'; sourceId?: number; targetId: number; amount: number; hp: number; card?: Card }
+  | { type: 'damage'; sourceId?: number; targetId: number; amount: number; hp: number; card?: Card; element?: Element }
   | { type: 'heal'; sourceId?: number; targetId: number; amount: number; hp: number }
   | { type: 'loseHp'; targetId: number; amount: number; hp: number }
   | { type: 'judge'; playerId: number; card: Card; text: string; reason: string; success: boolean }
@@ -203,7 +215,7 @@ export type GameEvent =
   | { type: 'equip'; playerId: number; slot: EquipSlot; card?: Card }
   | { type: 'skill'; playerId: number; name: string; text?: string }
   | { type: 'reveal'; playerId?: number; cards: Card[] }
-  | { type: 'gameOver'; text: string; winner: 'lord' | 'rebel' | 'traitor' | 'draw' }
+  | { type: 'gameOver'; text: string; winner: Role | Faction | 'draw' }
   | { type: 'state' };
 
 export interface GameIO {

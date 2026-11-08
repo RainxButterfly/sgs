@@ -114,6 +114,14 @@ function scorePlay(state: GameState, me: PlayerState, option: NonNullable<AskReq
     }
     case '闪电':
       return 0;
+    case '酒':
+      return me.hand.some((card) => card.name === '杀') ? 80 : 0;
+    case '火攻':
+      return enemyTargets.length ? 55 : 0;
+    case '兵粮寸断':
+      return enemyTargets.length ? 50 : 0;
+    case '铁索连环':
+      return 20;
     default: {
       const card = cardInHand(me, option.cardId);
       if (card?.equipSlot) {
@@ -135,7 +143,7 @@ function pickTargets(
   if (!option.targetMax) return [];
   const pool = option.validTargets.map((id) => state.players[id]).filter((p) => p?.alive);
   const enemies = pool.filter((p) => isEnemy(state, me, p));
-  const harmful = ['杀', '决斗', '过河拆桥', '顺手牵羊', '乐不思蜀', '借刀杀人'].includes(option.as);
+  const harmful = ['杀', '决斗', '过河拆桥', '顺手牵羊', '乐不思蜀', '借刀杀人', '火攻', '兵粮寸断'].includes(option.as);
   let chosen = enemies;
   if (!chosen.length) {
     if (harmful) return [];
@@ -327,6 +335,7 @@ export function smartBotAction(state: GameState, req: AskRequest): GameAction {
         as: best.as,
         targets,
         skillId: best.skillId,
+        element: best.element,
       };
     }
     case 'respond':

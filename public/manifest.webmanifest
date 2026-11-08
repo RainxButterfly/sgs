@@ -1,0 +1,16 @@
+{
+  "name": "三国杀 · 星河",
+  "short_name": "三国杀",
+  "description": "三国杀桌面对战，局域网点开即玩。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#1d1813",
+  "theme_color": "#2a2219",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/icon-256.png", "sizes": "256x256", "type": "image/png" }
+  ]
+}

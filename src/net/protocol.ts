@@ -21,6 +21,8 @@ export interface LobbyPlayer {
   name: string;
   isHost: boolean;
   connected: boolean;
+  heroId?: string;
+  choices?: string[];
 }
 
 export interface LobbyState {
@@ -49,6 +51,7 @@ export type HostPayload =
 
 export type GuestPayload =
   | { t: 'action'; action: GameAction }
+  | { t: 'pickHero'; heroId: string }
   | { t: 'leave' };
 
 function hiddenCard(playerId: number, index: number): Card {

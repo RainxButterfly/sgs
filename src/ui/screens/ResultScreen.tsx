@@ -18,16 +18,35 @@ export function ResultScreen() {
   if (!game || !result) return null;
 
   const human = game.state.players[humanId];
+  const mode = game.state.rules.mode;
   const humanWon =
-    (result.winner === 'lord' && (human.role === 'lord' || human.role === 'loyalist')) ||
-    (result.winner === 'rebel' && human.role === 'rebel') ||
-    (result.winner === 'traitor' && human.role === 'traitor');
+    mode === 'guozhan'
+      ? result.winner === human.faction
+      : mode === 'landlord'
+        ? (result.winner === 'lord' && human.role === 'lord') ||
+          (result.winner === 'rebel' && human.role !== 'lord')
+        : (result.winner === 'lord' && (human.role === 'lord' || human.role === 'loyalist')) ||
+          (result.winner === 'rebel' && human.role === 'rebel') ||
+          (result.winner === 'traitor' && human.role === 'traitor');
+  const winnerLabel =
+    mode === 'guozhan' && result.winner in FACTION_NAME
+      ? `${FACTION_NAME[result.winner as keyof typeof FACTION_NAME]}势力获胜`
+      : mode === 'landlord'
+        ? result.winner === 'lord'
+          ? '地主获胜'
+          : '农民获胜'
+        : WINNER_LABEL[result.winner] ?? '对局结束';
+  const roleLabel = (role: typeof human.role) => {
+    if (mode === 'guozhan') return '';
+    if (mode === 'landlord') return role === 'lord' ? '地主' : '农民';
+    return ROLE_NAME[role];
+  };
 
   return (
     <div className={`result-screen ${humanWon ? 'win' : 'lose'}`}>
       <div className="ink-bg" />
       <div className="result-panel">
-        <div className="result-kicker">{WINNER_LABEL[result.winner] ?? '对局结束'}</div>
+        <div className="result-kicker">{winnerLabel}</div>
         <h1 className="result-title">{humanWon ? '胜 利' : '败 北'}</h1>
         <p className="result-text">{result.text}</p>
         <div className="result-table">
@@ -46,7 +65,9 @@ export function ResultScreen() {
                 <span className="faction-badge">{FACTION_NAME[p.faction]}</span>
                 <span className="result-hero">{hero?.name ?? p.heroName}</span>
                 <span className="result-player">{p.name}</span>
-                <span className={`role-tag role-${p.role}`}>{ROLE_NAME[p.role]}</span>
+                {roleLabel(p.role) && (
+                  <span className={`role-tag role-${p.role}`}>{roleLabel(p.role)}</span>
+                )}
                 <span className="result-status">{p.alive ? `${Math.max(0, p.hp)} 体力` : '阵亡'}</span>
               </div>
             );

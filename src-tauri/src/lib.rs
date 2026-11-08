@@ -48,20 +48,24 @@ fn update_manifest_urls() -> Vec<String> {
             urls.push(custom);
         }
     }
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .unwrap_or(0);
     urls.push(format!(
-        "https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@main/latest-portable.json"
+        "https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@main/latest-portable.json?t={stamp}"
     ));
     urls.push(format!(
-        "https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@master/latest-portable.json"
+        "https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@master/latest-portable.json?t={stamp}"
     ));
     urls.push(format!(
-        "https://ghfast.top/https://raw.githubusercontent.com/{UPDATE_REPO}/main/latest-portable.json"
+        "https://ghfast.top/https://raw.githubusercontent.com/{UPDATE_REPO}/main/latest-portable.json?t={stamp}"
     ));
     urls.push(format!(
-        "https://ghproxy.net/https://raw.githubusercontent.com/{UPDATE_REPO}/main/latest-portable.json"
+        "https://ghproxy.net/https://raw.githubusercontent.com/{UPDATE_REPO}/main/latest-portable.json?t={stamp}"
     ));
     urls.push(format!(
-        "https://raw.githubusercontent.com/{UPDATE_REPO}/main/latest-portable.json"
+        "https://raw.githubusercontent.com/{UPDATE_REPO}/main/latest-portable.json?t={stamp}"
     ));
     urls
 }

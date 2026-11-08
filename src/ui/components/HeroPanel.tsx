@@ -1,6 +1,6 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
-import { FACTION_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
+import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
 import { equipSlotText, shortCardName } from '../labels';
 
 interface Flash {
@@ -12,14 +12,23 @@ interface Flash {
 
 interface Props {
   player: PlayerState;
+  mode?: GameMode;
   current: boolean;
   flash?: Flash | null;
   handLimitModifier?: number;
   onDetail?: () => void;
 }
 
-export function HeroPanel({ player, current, flash, handLimitModifier = 0, onDetail }: Props) {
+export function HeroPanel({ player, mode = 'identity', current, flash, handLimitModifier = 0, onDetail }: Props) {
   const hero = HERO_MAP.get(player.heroId);
+  const roleLabel =
+    mode === 'guozhan'
+      ? `${FACTION_NAME[player.faction]}势力`
+      : mode === 'landlord'
+        ? player.role === 'lord'
+          ? '地主'
+          : '农民'
+        : ROLE_NAME[player.role];
   const pips = Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp);
   const showFlash = flash && flash.playerId === player.id ? flash : null;
   const slots = [
@@ -42,7 +51,7 @@ export function HeroPanel({ player, current, flash, handLimitModifier = 0, onDet
         <div className="hero-identity">
           <div className="hero-name-row">
             <span className="hero-name">{hero?.name ?? player.heroName}</span>
-            <span className={`role-tag role-${player.role}`}>{ROLE_NAME[player.role]}</span>
+            <span className={`role-tag role-${player.role}`}>{roleLabel}</span>
             {onDetail && (
               <button type="button" className="hero-detail-btn" onClick={onDetail}>
                 详情
@@ -59,7 +68,7 @@ export function HeroPanel({ player, current, flash, handLimitModifier = 0, onDet
             </span>
           </div>
           <div className="hero-skills">
-            {player.skills.map((id) => {
+            {[...new Set([...player.skills, ...player.extraSkills])].map((id) => {
               const skill = SKILL_MAP.get(id);
               return skill ? (
                 <div key={id} className={`skill-chip ${skill.lord ? 'lord' : ''}`} title={skill.desc}>
@@ -93,9 +102,15 @@ export function HeroPanel({ player, current, flash, handLimitModifier = 0, onDet
           ))}
         </div>
       )}
-      {(player.flipped || player.unyu.length > 0) && (
+      {(player.flipped || player.unyu.length > 0 || player.chained || player.fields.length > 0) && (
         <div className="hero-status-row">
           {player.flipped && <span className="mini-status flipped">翻面</span>}
+          {player.chained && <span className="mini-status chained">横置</span>}
+          {player.fields.map((c) => (
+            <span key={c.id} className="mini-unyu" title={`田：${c.name}`}>
+              田 {c.name}
+            </span>
+          ))}
           {player.unyu.map((c) => (
             <span key={c.id} className="mini-unyu">
               创 {c.name}

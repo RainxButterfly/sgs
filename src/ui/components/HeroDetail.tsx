@@ -20,7 +20,13 @@ const SLOTS = [
 export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
   const hero = HERO_MAP.get(heroId);
   if (!hero) return null;
-  const skillIds = [...hero.skillIds, ...(hero.lordSkillId ? [hero.lordSkillId] : [])];
+  const skillIds = [
+    ...new Set([
+      ...hero.skillIds,
+      ...(hero.lordSkillId ? [hero.lordSkillId] : []),
+      ...(player?.extraSkills ?? []),
+    ]),
+  ];
   const pips = player ? Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp) : [];
 
   return (
@@ -70,11 +76,17 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
           })}
         </div>
 
-        {player && (player.flipped || player.unyu.length > 0) && (
+        {player && (player.flipped || player.unyu.length > 0 || player.chained || player.fields.length > 0) && (
           <>
             <div className="detail-section-title">当前状态</div>
             <div className="detail-judge">
               {player.flipped && <span className="detail-tag">翻面</span>}
+              {player.chained && <span className="mini-status chained">横置</span>}
+              {player.fields.map((card) => (
+                <span key={card.id} className="mini-unyu">
+                  田 {card.name}
+                </span>
+              ))}
               {player.unyu.map((card) => (
                 <span key={card.id} className="mini-unyu">
                   创 {card.name}

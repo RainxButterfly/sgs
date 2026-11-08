@@ -25,9 +25,11 @@ export function TableCenter() {
           <div key={lastPlay.id} className="played">
             <CardView card={lastPlay.card} size="lg" className="played-card" />
             <div className="played-caption">
-              <span>{playerName(lastPlay.playerId)}</span>
+              <span className="played-user">{playerName(lastPlay.playerId)}</span>
               <span className="played-as">
-                {lastPlay.as === lastPlay.card.name ? '使用' : `视为【${lastPlay.as}】`}
+                {lastPlay.as === lastPlay.card.name
+                  ? `使用【${lastPlay.card.name}】`
+                  : `将【${lastPlay.card.name}】当【${lastPlay.as}】使用`}
               </span>
               {lastPlay.targets.length > 0 && (
                 <span className="played-targets">→ {lastPlay.targets.map(playerName).join('、')}</span>
