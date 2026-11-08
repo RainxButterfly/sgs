@@ -102,8 +102,14 @@ export function UpdateModal() {
             <div className="update-hint">
               {info?.android
                 ? '如果系统安装器没有弹出，可以复制下载链接，在手机浏览器里手动下载安装。'
-                : '如果当前网络无法访问镜像，可以稍后再试，或者让朋友把新的便携包发给你。'}
+                : '如果当前网络无法访问镜像，可以稍后再试，或者复制下面的安装包链接手动下载。'}
             </div>
+            <input
+              className="update-manual-url"
+              readOnly
+              value={info?.raw.urls?.[0] ?? info?.raw.url ?? MANUAL_UPDATE_URL}
+              onFocus={(event) => event.currentTarget.select()}
+            />
           </>
         )}
 

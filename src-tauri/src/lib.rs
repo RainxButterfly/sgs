@@ -9,7 +9,7 @@ use axum::{
     Router,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use futures_util::{future::join_all, SinkExt, StreamExt};
+use futures_util::{stream::FuturesUnordered, SinkExt, StreamExt};
 use rand::{distr::Alphanumeric, Rng};
 use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
@@ -92,27 +92,43 @@ async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>,
         .user_agent("sanguosha-xinghe-updater/0.1")
         .build()
         .map_err(|error| error.to_string())?;
+    let current = semver::Version::parse(env!("CARGO_PKG_VERSION"))
+        .map_err(|error| error.to_string())?;
     let mut errors = Vec::new();
     let mut best: Option<PortableUpdateInfo> = None;
     let mut succeeded = false;
-    let requests = urls.into_iter().map(|url| {
+    let mut pending = FuturesUnordered::new();
+    for url in urls {
         let client = client.clone();
-        async move {
-            let response = client.get(&url).send().await;
-            (url, response)
-        }
-    });
-    let results = tokio::time::timeout(Duration::from_secs(9), join_all(requests))
-        .await
-        .map_err(|_| "检查更新超时".to_string())?;
-    for (url, response) in results {
-        match response {
-            Ok(response) if response.status().is_success() => {
-                match response.json::<PortableUpdateInfo>().await {
+        pending.push(async move {
+            let result = async {
+                let response = client
+                    .get(&url)
+                    .send()
+                    .await
+                    .map_err(|error| error.to_string())?;
+                if !response.status().is_success() {
+                    return Err(format!("HTTP {}", response.status()));
+                }
+                response
+                    .json::<PortableUpdateInfo>()
+                    .await
+                    .map_err(|error| error.to_string())
+            }
+            .await;
+            (url, result)
+        });
+    }
+    let deadline = tokio::time::sleep(Duration::from_secs(8));
+    tokio::pin!(deadline);
+    loop {
+        tokio::select! {
+            _ = &mut deadline => break,
+            item = pending.next() => {
+                let Some((url, result)) = item else { break; };
+                match result {
                     Ok(info) => {
                         succeeded = true;
-                        let current = semver::Version::parse(env!("CARGO_PKG_VERSION"))
-                            .map_err(|error| error.to_string())?;
                         let next = match semver::Version::parse(&info.version) {
                             Ok(next) => next,
                             Err(error) => {
@@ -137,8 +153,6 @@ async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>,
                     Err(error) => errors.push(format!("{url}: {error}")),
                 }
             }
-            Ok(response) => errors.push(format!("{url}: HTTP {}", response.status())),
-            Err(error) => errors.push(format!("{url}: {error}")),
         }
     }
     if best.is_some() {

@@ -1,6 +1,6 @@
 {
   "version": "0.5.7",
-  "notes": "v0.5.7：修复主菜单回归横幅布局；新增更多更新镜像；设置支持自定义数据保存目录。",
+  "notes": "v0.5.7：选将页可查看详情；手牌居中扇形排布；更新检查并行返回并可手动复制地址；数据目录设置。",
   "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.7",
   "urls": [
     "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.7",
@@ -13,5 +13,5 @@
     "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.7",
     "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.7"
   ],
-  "sha256": "288641765a5c7e515a54d6662046f4f1ace0b31a520e0e7f5bed0cd13bc9bf55"
+  "sha256": "39a633ab2374a7a0a310e960913f812dd898b9ba9cbebd8c74d1d1f75949715c"
 }

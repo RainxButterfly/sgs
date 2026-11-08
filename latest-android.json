@@ -1,6 +1,6 @@
 {
   "version": "0.5.7",
-  "notes": "v0.5.7：修复主菜单回归横幅布局；新增更多更新镜像；APK 裁剪符号减小体积；错误时可复制下载链接；设置支持数据目录。",
+  "notes": "v0.5.7：选将页可查看详情；手牌居中扇形排布；更新检查并行返回并可手动复制地址；数据目录设置。",
   "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
   "urls": [
     "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
@@ -13,5 +13,5 @@
     "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7",
     "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.7"
   ],
-  "sha256": "b1c33db94e51e927cd3c2c7d67e8c25086d98932653c93f1097c0c892fc8249d"
+  "sha256": "fd9f67db2f60e2004b982efa03cf2e9a082c5d851147ec51f4a377fc9fb142b0"
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME } from '../../core/types';
+import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroDataHover, HoverInfo } from '../components/HoverInfo';
 import { useGameStore } from '../store';
 
@@ -9,6 +10,7 @@ export function PickScreen() {
   const preGame = useGameStore((s) => s.preGame);
   const confirm = useGameStore((s) => s.confirmLocalPick);
   const [picked, setPicked] = useState(() => preGame?.candidates[0] ?? '');
+  const [detailHero, setDetailHero] = useState<string | null>(null);
   if (!preGame) return null;
   const selected = HERO_MAP.get(picked);
 
@@ -100,6 +102,24 @@ export function PickScreen() {
                     </div>
                     <div className="hero-card-quote">「{hero.quote}」</div>
                   </button>
+                  <span
+                    className="hero-card-info"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="查看武将信息"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setDetailHero(id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.stopPropagation();
+                        setDetailHero(id);
+                      }
+                    }}
+                  >
+                    i
+                  </span>
                   </HoverInfo>
                 );
               })}
@@ -116,6 +136,13 @@ export function PickScreen() {
           </button>
         </div>
       </div>
+      {detailHero && (
+        <HeroDetailModal
+          heroId={detailHero}
+          showRole={false}
+          onClose={() => setDetailHero(null)}
+        />
+      )}
     </div>
   );
 }
