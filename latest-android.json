@@ -1,14 +1,14 @@
 {
-  "version": "0.5.5",
-  "notes": "v0.5.5：修复网页端战报、武将选择和锦囊选择弹窗；手机全屏显示时间电量；房间显示 ZeroTier 地址并支持重进。",
-  "url": "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.5",
+  "version": "0.5.6",
+  "notes": "v0.5.6：可切换联机地址并区分 ZeroTier/局域网；出牌记录和装备直接显示；修复检查更新卡住。",
+  "url": "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.6",
   "urls": [
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.5",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.5",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.5",
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.5",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.5",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.5"
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.6",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.6",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk?v=0.5.6",
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.6",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.6",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk?v=0.5.6"
   ],
-  "sha256": "d61d12fca58f8fd30be8461eeaa704cddf8f5e2295882d06e9a3294ecf63ee77"
+  "sha256": "ecb76a6fd6d94470fbbccb600beb784e6417a43456356e3cf28fd2f2253c9e1a"
 }

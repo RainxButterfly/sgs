@@ -20,6 +20,12 @@ function roleText(player: PlayerState, mode: string, self = false): string {
   return '';
 }
 
+function equipNames(player: PlayerState): string[] {
+  return (['weapon', 'armor', 'horsePlus', 'horseMinus'] as const)
+    .map((slot) => player.equips[slot]?.name)
+    .filter((name): name is string => !!name);
+}
+
 export function MobileGameScreen() {
   const { game } = useGameSnapshot();
   const humanId = useGameStore((s) => s.humanId);
@@ -90,6 +96,7 @@ export function MobileGameScreen() {
   const humanSkills = [...new Set([...human.skills, ...(human.extraSkills ?? [])])]
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
+  const humanEquips = equipNames(human);
   const recent = cardHistory.slice(-3);
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
@@ -155,6 +162,7 @@ export function MobileGameScreen() {
             .map((id) => SKILL_MAP.get(id)?.name)
             .filter(Boolean)
             .slice(0, 3);
+          const equips = equipNames(player);
           return (
             <div
               key={player.id}
@@ -193,6 +201,7 @@ export function MobileGameScreen() {
                 {player.chained && <span className="m-tag">横置</span>}
                 {player.flipped && <span className="m-tag">翻面</span>}
               </div>
+              <div className="m-seat-equips">装备 {equips.join(' · ') || '无'}</div>
               <div className="m-seat-skills">{skills.join(' · ') || '无技能'}</div>
               {player.id === currentId && <span className="m-current">行动中</span>}
               {canTarget && <span className="m-target-hint">可选中</span>}
@@ -222,23 +231,28 @@ export function MobileGameScreen() {
                 {lastPlay.as === cardDisplayName(lastPlay.card)
                   ? `【${cardDisplayName(lastPlay.card)}】`
                   : `【${cardDisplayName(lastPlay.card)}】当【${lastPlay.as}】`}
-                {lastPlay.targets.length > 0 && ` → ${lastPlay.targets.map(targetName).join('、')}`}
+                {lastPlay.targets.length > 0 && (
+                  <em className="m-last-target">
+                    → {lastPlay.targets.map(targetName).join('、')}
+                  </em>
+                )}
               </span>
             </div>
           ) : (
             <span className="m-stage-empty">牌桌暂无声响</span>
           )}
-          <div className="m-history">
-            {recent.map((entry) => (
-              <div key={entry.id} className="m-history-item">
-                <em>{entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'}</em>
-                <span>{actionText(entry)}</span>
-                {entry.targets && entry.targets.length > 0 && (
-                  <i>→ {entry.targets.map(targetName).join('、')}</i>
-                )}
-              </div>
-            ))}
-          </div>
+        </div>
+        <div className="m-history">
+          {recent.map((entry, index) => (
+            <div key={entry.id} className="m-history-item">
+              <span className="m-history-index">{index + 1}</span>
+              <em>{entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'}</em>
+              <span>{actionText(entry)}</span>
+              {entry.targets && entry.targets.length > 0 && (
+                <i>→ {entry.targets.map(targetName).join('、')}</i>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -251,6 +265,7 @@ export function MobileGameScreen() {
             {Math.max(0, human.hp)}/{human.maxHp}
           </span>
           <span className="m-self-limit">手牌上限 {handLimit}</span>
+          <span className="m-self-equips">装备 {humanEquips.join(' · ') || '无'}</span>
           <span className="m-self-skills">{humanSkills.join(' · ') || '无技能'}</span>
         </button>
         <button type="button" className="m-detail-btn" onClick={() => setDetailPlayer(human.id)}>

@@ -1,14 +1,14 @@
 {
-  "version": "0.5.5",
-  "notes": "v0.5.5：修复网页端战报、武将选择和锦囊弹窗；房间显示 ZeroTier 地址；支持重进未结束的房间；手机全屏显示时间电量。",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.5",
+  "version": "0.5.6",
+  "notes": "v0.5.6：可切换 ZeroTier/局域网联机地址；移动端出牌记录与装备直显；武将详情改为侧边面板；修复检查更新卡住。",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.6",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.5",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.5",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.5",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.5",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.5",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.5"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.6",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.6",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.5.6",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.6",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.6",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.5.6"
   ],
-  "sha256": "323c32239430dbf42655cfd5dc9a07ac8773f09562abc3d493fcc54a64194811"
+  "sha256": "98867eaf6a7629d1939b79a442adb2bf151f35db1e7197c5341465595cd20061"
 }

@@ -74,6 +74,22 @@ function clearSavedLanSession(): void {
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0';
 
 type UpdateState = 'idle' | 'checking' | 'available' | 'downloading' | 'installing' | 'latest' | 'error';
@@ -690,7 +706,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     set({ updateState: 'checking', updateError: null });
     try {
-      const info = isAndroidApp() ? await checkAndroidUpdate() : await checkAppUpdate();
+      const info = await withTimeout(
+        isAndroidApp() ? checkAndroidUpdate() : checkAppUpdate(),
+        12000,
+        '检查更新超时，请稍后重试',
+      );
       if (info) {
         set({
           updateInfo: info,

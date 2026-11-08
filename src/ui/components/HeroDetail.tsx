@@ -75,6 +75,29 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
 
         <div className="detail-quote">「{hero.quote}」</div>
 
+        {player && (
+          <>
+            <div className="detail-section-title">当前装备</div>
+            <div className="detail-equip-summary">
+              {SLOTS.map(({ key, label }) => {
+                const card = player.equips[key];
+                return (
+                  <span key={key} className={card ? 'filled' : ''}>
+                    <i>{label}</i>
+                    {card ? card.name : '—'}
+                  </span>
+                );
+              })}
+              {player.judgeZone.length > 0 && (
+                <span className="filled">
+                  <i>判定区</i>
+                  {player.judgeZone.map((card) => card.name).join('、')}
+                </span>
+              )}
+            </div>
+          </>
+        )}
+
         <div className="detail-section-title">武将技能</div>
         <div className="detail-skills">
           {skillIds.map((id) => {
