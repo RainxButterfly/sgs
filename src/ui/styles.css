@@ -240,6 +240,7 @@ button {
   align-items: center;
   justify-content: center;
   padding: 4vh 4vw;
+  overflow-y: auto;
 }
 
 .menu-content {
@@ -5096,6 +5097,359 @@ button {
 
 .m-hand .card-selected {
   transform: translateY(-6px) !important;
+}
+
+/* ---------- 对局记录 ---------- */
+
+.history-modal {
+  position: relative;
+  width: min(1180px, 96vw);
+  height: min(82vh, 780px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px 22px 18px;
+}
+
+.history-close {
+  top: 14px;
+  right: 14px;
+}
+
+.history-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 210px 280px minmax(0, 1fr);
+  margin-top: 12px;
+  border: 1px solid rgba(219, 181, 108, 0.24);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.history-groups {
+  min-height: 0;
+  padding: 10px;
+  overflow-y: auto;
+  border-right: 1px solid rgba(219, 181, 108, 0.18);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.history-side-title {
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.history-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 5px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.history-group:hover,
+.history-group.active {
+  border-color: rgba(219, 181, 108, 0.38);
+  background: rgba(219, 181, 108, 0.09);
+}
+
+.history-group.active {
+  color: var(--gold-bright);
+}
+
+.history-group em {
+  flex: 0 0 auto;
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.history-list {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border-right: 1px solid rgba(219, 181, 108, 0.18);
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.history-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.history-name-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 4px;
+  background: rgba(20, 16, 12, 0.55);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  user-select: text;
+}
+
+.history-name-row input:focus {
+  border-color: var(--gold);
+}
+
+.history-name-row > span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.history-match-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.history-match {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin-bottom: 5px;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.history-match:hover,
+.history-match.active {
+  border-color: rgba(219, 181, 108, 0.4);
+  background: rgba(219, 181, 108, 0.1);
+}
+
+.history-result {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.history-result.win {
+  background: rgba(106, 168, 120, 0.22);
+  color: #a9e6b9;
+}
+
+.history-result.lose {
+  background: rgba(184, 69, 53, 0.22);
+  color: #f0ada1;
+}
+
+.history-result.draw {
+  background: rgba(219, 181, 108, 0.16);
+  color: var(--gold-bright);
+}
+
+.history-result.big {
+  width: 40px;
+  height: 40px;
+  font-size: 17px;
+}
+
+.history-match-mode {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.history-match-hero {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--gold-bright);
+}
+
+.history-match-time {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.history-detail {
+  min-height: 0;
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+.history-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.history-detail-head b {
+  display: block;
+  font-family: var(--font-calligraphy);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--gold-bright);
+}
+
+.history-detail-head span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.history-first {
+  margin: 12px 0 8px;
+  padding: 7px 10px;
+  border: 1px solid rgba(219, 181, 108, 0.22);
+  border-radius: 4px;
+  background: rgba(219, 181, 108, 0.06);
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.history-first b {
+  color: var(--gold-bright);
+  font-weight: 600;
+}
+
+.history-players {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.history-player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(219, 181, 108, 0.16);
+  border-left: 2px solid color-mix(in srgb, var(--faction, var(--gold)) 70%, transparent);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 12px;
+}
+
+.history-player-hero {
+  font-family: var(--font-calligraphy);
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.history-player-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.history-player-dead {
+  color: #f0ada1;
+  font-size: 10px;
+}
+
+.history-log-title {
+  margin: 12px 0 5px;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+}
+
+.history-log {
+  max-height: 240px;
+  padding: 8px 10px;
+  overflow-y: auto;
+  border: 1px solid rgba(219, 181, 108, 0.18);
+  border-radius: 4px;
+  background: rgba(20, 16, 12, 0.35);
+}
+
+.history-detail-empty,
+.history-empty {
+  padding: 30px 10px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 860px) {
+  .history-modal {
+    height: 88vh;
+    padding: 14px;
+  }
+
+  .history-layout {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .history-groups {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: none;
+    border-bottom: 1px solid rgba(219, 181, 108, 0.18);
+  }
+
+  .history-side-title {
+    display: none;
+  }
+
+  .history-group {
+    flex: 0 0 auto;
+    width: auto;
+    margin: 0;
+  }
+
+  .history-list {
+    max-height: 220px;
+    border-right: none;
+    border-bottom: 1px solid rgba(219, 181, 108, 0.18);
+  }
+
+  .history-detail {
+    overflow: visible;
+  }
+
+  .history-players {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ---------- 游戏右键菜单 ---------- */

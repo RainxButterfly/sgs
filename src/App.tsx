@@ -7,6 +7,7 @@ import { HeroGallery } from './ui/screens/HeroGallery';
 import { LanScreen } from './ui/screens/LanScreen';
 import { LobbyScreen } from './ui/screens/LobbyScreen';
 import { MainMenu } from './ui/screens/MainMenu';
+import { MatchHistoryModal } from './ui/components/MatchHistoryModal';
 import { MobileGameScreen } from './ui/screens/MobileGameScreen';
 import { PickScreen } from './ui/screens/PickScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
@@ -52,6 +53,7 @@ export default function App() {
         </div>
       )}
       <SettingsModal />
+      <MatchHistoryModal />
       <UpdateModal />
     </div>
   );

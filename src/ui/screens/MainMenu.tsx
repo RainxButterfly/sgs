@@ -75,6 +75,13 @@ export function MainMenu() {
             >
               武将图鉴
             </button>
+            <button
+              type="button"
+              className="btn ghost big"
+              onClick={() => useGameStore.getState().openHistory()}
+            >
+              对局记录
+            </button>
           </div>
           <div className="menu-foot">
             <span>武将 {HEROES.length}</span>

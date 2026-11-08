@@ -79,6 +79,13 @@ export function ResultScreen() {
           <button type="button" className="btn primary big" onClick={restart}>
             再来一局
           </button>
+          <button
+            type="button"
+            className="btn ghost big"
+            onClick={() => useGameStore.getState().openHistory()}
+          >
+            查看战绩
+          </button>
           <button type="button" className="btn ghost big" onClick={back}>
             返回主菜单
           </button>

@@ -6,13 +6,13 @@
 
 Windows 安装版：
 
-https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-0.5.3-setup.exe
+https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-0.5.4-setup.exe
 
 运行安装程序，按提示安装，桌面和开始菜单会生成快捷方式。
 
 Windows 便携版：
 
-https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.3.zip
+https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64-0.5.4.zip
 
 解压后双击 `四国闪.bat` 启动。
 
@@ -33,6 +33,8 @@ https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win
 - 进入对局后再选择武将；主公先亮将，其他武将等所有人选完再亮出
 - 设置面板支持对局背景替换和遮罩调节
 - 电脑和手机使用两套独立对局布局，手机版针对触屏重新排布
+- 本地保存对局记录，按日期分组，可改名、查看身份、武将、胜负、首出和完整战报
+- 再来一局会重新选将，并避开上一局已经使用的武将
 
 ## 联机
 

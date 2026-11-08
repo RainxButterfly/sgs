@@ -505,8 +505,9 @@ const SKILLS: SkillDef[] = [
     active: {
       usable: (_g, owner) => owner.alive,
       run: async (game, owner) => {
-        await game.loseHp(owner, 1);
-        if (owner.alive) game.drawCards(owner, 2, '苦肉');
+        await game.loseHp(owner, 1, undefined, { deferDying: true });
+        game.drawCards(owner, 2, '苦肉');
+        if (owner.alive && owner.hp <= 0) await game.dying(owner);
       },
     },
   },

@@ -7,6 +7,7 @@ import { LanClientManager, LanHostManager, createRoomInfo, isTauri, parseAddress
 import type { LobbyState, RoomInfo } from '../net/protocol';
 import { checkAppUpdate, installAppUpdate, type AppUpdateInfo } from './update';
 import { loadBackgroundSettings, saveBackgroundSettings } from './background';
+import { addMatchRecord, localDateKey } from './history';
 import type {
   AskRequest,
   Card,
@@ -112,6 +113,8 @@ interface GameStore {
   bgImage: string | null;
   bgDim: number;
   settingsOpen: boolean;
+  historyOpen: boolean;
+  firstPlayerId: number | null;
 
   selected: { cardId: string; as: string; skillId?: string; element?: 'fire' | 'thunder' } | null;
   selectedTargets: number[];
@@ -121,7 +124,7 @@ interface GameStore {
   modalMinimized: boolean;
 
   initLocal: (count: number, heroId: string, rules?: Partial<CustomRules>) => void;
-  prepareLocal: (count: number, rules?: Partial<CustomRules>) => void;
+  prepareLocal: (count: number, rules?: Partial<CustomRules>, excludeHeroIds?: string[]) => void;
   confirmLocalPick: (heroId: string) => void;
   backToMenu: () => void;
   restart: () => void;
@@ -142,6 +145,8 @@ interface GameStore {
   closeUpdateModal: () => void;
   openSettings: () => void;
   closeSettings: () => void;
+  openHistory: () => void;
+  closeHistory: () => void;
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
   event: (ev: GameEvent) => void;
@@ -167,6 +172,7 @@ interface GameStore {
 
 let resolveAsk: ((action: GameAction) => void) | null = null;
 let eventSeq = 0;
+let recordedGame: GameLike | null = null;
 const initialBackground = loadBackgroundSettings();
 
 const io: GameIO = {
@@ -215,6 +221,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   bgImage: initialBackground.image,
   bgDim: initialBackground.dim,
   settingsOpen: false,
+  historyOpen: false,
+  firstPlayerId: null,
   selected: null,
   selectedTargets: [],
   asChooser: null,
@@ -246,6 +254,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       preGame: null,
       suspended: false,
       humanId: 0,
+      firstPlayerId: null,
       lanRole: null,
       lanHost: null,
       lanClient: null,
@@ -275,13 +284,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }, 0);
   },
 
-  prepareLocal: (count, rules) => {
+  prepareLocal: (count, rules, excludeHeroIds) => {
     if (get().game) get().game?.stop?.();
     get().lanHost?.close();
     get().lanClient?.close();
     resolveAsk = null;
     const botNames = ['电脑·孟德', '电脑·玄德', '电脑·仲谋', '电脑·奉孝', '电脑·子龙', '电脑·公瑾', '电脑·翼德'];
-    const pool = HEROES.map((hero) => hero.id);
+    const excluded = new Set(excludeHeroIds ?? []);
+    const pool = HEROES.map((hero) => hero.id).filter((id) => !excluded.has(id));
     for (let i = pool.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -303,6 +313,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       suspended: false,
       preGame: { count, rules, candidates: pool.slice(0, 5), bots, roles, lordIndex, lordHeroId },
       humanId: 0,
+      firstPlayerId: null,
       lanRole: null,
       lanHost: null,
       lanClient: null,
@@ -349,6 +360,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       preGame: null,
       suspended: false,
       humanId: 0,
+      firstPlayerId: null,
       pending: null,
       result: null,
       lastPlay: null,
@@ -434,7 +446,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
       return;
     }
-    game?.stop?.();
+    if (game) {
+      const snapshot = game.state;
+      const previousHeroes = snapshot.players.map((player) => player.heroId);
+      game.stop?.();
+      get().prepareLocal(snapshot.players.length, snapshot.rules, previousHeroes);
+      return;
+    }
     set({ screen: 'setup', game: null, preGame: null, result: null, pending: null, version: get().version + 1 });
   },
 
@@ -451,6 +469,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             game,
             screen: 'game',
             humanId: 0,
+            firstPlayerId: null,
             lanPlayerId: 0,
             pending: null,
             result: null,
@@ -668,6 +687,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   openSettings: () => set({ settingsOpen: true }),
   closeSettings: () => set({ settingsOpen: false }),
+  openHistory: () => set({ historyOpen: true }),
+  closeHistory: () => set({ historyOpen: false }),
   setBgImage: (image) => {
     set({ bgImage: image });
     saveBackgroundSettings({ image, dim: get().bgDim });
@@ -744,6 +765,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   event: (ev) => {
     const state = get();
     const patch: Partial<GameStore> = { version: state.version + 1 };
+    if (ev.type === 'turn' && state.firstPlayerId === null) {
+      patch.firstPlayerId = ev.playerId;
+    }
     if (ev.type === 'playCard' || ev.type === 'respond') {
       eventSeq += 1;
       const isResponse = ev.type === 'respond';
@@ -830,6 +854,65 @@ export const useGameStore = create<GameStore>((set, get) => ({
       setTimeout(() => {
         if (get().result) set({ screen: 'result' });
       }, 1400);
+      const finished = state.game;
+      if (state.lanRole === null && finished && recordedGame !== finished) {
+        recordedGame = finished;
+        setTimeout(() => {
+          const current = get();
+          if (current.game !== finished) return;
+          const finishedState = finished.state;
+          const human = finishedState.players[current.humanId];
+          if (!human) return;
+          const mode: 'identity' | 'duel' | 'landlord' | 'guozhan' =
+            finishedState.players.length === 2 ? 'duel' : finishedState.rules.mode;
+          const humanWon =
+            mode === 'guozhan'
+              ? ev.winner === human.faction
+              : mode === 'landlord'
+                ? (ev.winner === 'lord' && human.role === 'lord') ||
+                  (ev.winner === 'rebel' && human.role !== 'lord')
+                : mode === 'duel'
+                  ? ev.winner === human.role
+                  : (ev.winner === 'lord' &&
+                      (human.role === 'lord' || human.role === 'loyalist')) ||
+                    (ev.winner === 'rebel' && human.role === 'rebel') ||
+                    (ev.winner === 'traitor' && human.role === 'traitor');
+          const result: 'win' | 'lose' | 'draw' =
+            ev.winner === 'draw' ? 'draw' : humanWon ? 'win' : 'lose';
+          const modeLabel =
+            mode === 'duel'
+              ? '1v1 单挑'
+              : mode === 'landlord'
+                ? '斗地主'
+                : mode === 'guozhan'
+                  ? '国战'
+                  : '身份场';
+          const firstPlayer =
+            current.firstPlayerId !== null ? finishedState.players[current.firstPlayerId] : undefined;
+          addMatchRecord({
+            id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            dateKey: localDateKey(),
+            playedAt: new Date().toISOString(),
+            mode,
+            modeLabel,
+            playerCount: finishedState.players.length,
+            result,
+            winner: String(ev.winner),
+            humanHeroName: human.heroName,
+            firstPlayerName: firstPlayer?.name ?? '',
+            players: finishedState.players.map((player) => ({
+              name: player.name,
+              heroId: player.heroId,
+              heroName: player.heroName,
+              faction: player.faction,
+              role: player.role,
+              isBot: player.isBot,
+              alive: player.alive,
+            })),
+            log: finishedState.log.slice(-400),
+          });
+        }, 0);
+      }
     }
     set(patch);
   },

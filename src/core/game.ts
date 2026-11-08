@@ -1851,12 +1851,17 @@ export class Game {
     );
   }
 
-  async loseHp(player: PlayerState, amount: number, source?: PlayerState): Promise<void> {
+  async loseHp(
+    player: PlayerState,
+    amount: number,
+    source?: PlayerState,
+    opts?: { deferDying?: boolean },
+  ): Promise<void> {
     if (!player.alive || amount <= 0) return;
     player.hp -= amount;
     this.emit({ type: 'loseHp', targetId: player.id, amount, hp: player.hp });
     this.log(`【${player.name}】失去 ${amount} 点体力，体力 ${Math.max(0, player.hp)}/${player.maxHp}`, 'damage');
-    if (player.hp <= 0) await this.dying(player, source);
+    if (player.hp <= 0 && !opts?.deferDying) await this.dying(player, source);
   }
 
   async dying(player: PlayerState, killer?: PlayerState): Promise<void> {

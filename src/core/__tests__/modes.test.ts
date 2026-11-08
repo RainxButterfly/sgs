@@ -95,6 +95,32 @@ describe('对局模式', () => {
   }, 20000);
 });
 
+describe('苦肉结算', () => {
+  it('先摸两张牌，再处理濒死', async () => {
+    const io = new SimIO();
+    const game = new Game(
+      {
+        players: [
+          { name: '黄盖', heroId: 'huanggai', isBot: true },
+          { name: 'B', heroId: 'liubei', isBot: true },
+        ],
+        seed: 202603013,
+        rules: { mode: 'duel' },
+      },
+      io,
+    );
+    const player = game.state.players[0];
+    player.hp = 1;
+    await game.activateSkill(player, 'kurou');
+    const texts = game.state.log.map((entry) => entry.text);
+    const drawIndex = texts.findIndex((text) => text.includes('苦肉，摸了 2 张牌'));
+    const dyingIndex = texts.findIndex((text) => text.includes('进入濒死状态'));
+    expect(drawIndex).toBeGreaterThan(-1);
+    expect(dyingIndex).toBeGreaterThan(-1);
+    expect(drawIndex).toBeLessThan(dyingIndex);
+  });
+});
+
 describe('全部武将可以进入对局', () => {
   for (const hero of HEROES) {
     it(`${hero.name}（${hero.id}）`, async () => {

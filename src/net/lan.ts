@@ -127,6 +127,7 @@ export class LanHostManager {
   lordBotHero: string | null = null;
   private readonly relay: RelayClient;
   private readonly hooks: HostHooks;
+  private lastGameHeroes = new Set<string>();
   private hostConnId = 0;
   private hostChoices: string[] = [];
   private hostHeroId: string | null = null;
@@ -161,6 +162,7 @@ export class LanHostManager {
 
   private rollChoices(): string[] {
     const taken = this.takenHeroIds();
+    for (const heroId of this.lastGameHeroes) taken.add(heroId);
     const pool = HEROES.map((hero) => hero.id).filter((id) => !taken.has(id));
     for (let i = pool.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -498,6 +500,7 @@ export class LanHostManager {
       players.push({ name: botNames[(i - humans) % botNames.length], heroId: '', isBot: true });
     }
 
+    this.lastGameHeroes = new Set(players.map((player) => player.heroId).filter(Boolean));
     const roles = this.roles?.length === total ? this.roles : undefined;
     if (roles && this.lordBotHero) {
       const lordIndex = roles.indexOf('lord');
