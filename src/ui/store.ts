@@ -324,6 +324,7 @@ interface GameStore {
   cancelLanPick: () => void;
   setLanRules: (mode: 'standard' | 'custom', rules: CustomRules) => void;
   pickLanHero: (heroId: string) => void;
+  bidLan: (score: number) => void;
   leaveLan: () => void;
   suspendGame: () => void;
   resumeGame: () => void;
@@ -1135,6 +1136,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setLanRules: (mode, rules) => {
     get().lanHost?.setRules(mode, rules);
+  },
+
+  bidLan: (score) => {
+    const { lanRole, lanHost, lanClient } = get();
+    if (lanRole === 'host') lanHost?.submitBid(0, score);
+    else if (lanRole === 'client') lanClient?.submitBid(score);
   },
 
   pickLanHero: (heroId) => {

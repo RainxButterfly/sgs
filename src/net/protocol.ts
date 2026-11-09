@@ -34,6 +34,16 @@ export interface SpectatorInfo {
   ip: string;
 }
 
+export interface LandlordBidState {
+  order: number[];
+  index: number;
+  highest: number;
+  highestBidder: number;
+  bids: Record<number, number>;
+  done: boolean;
+  lordId?: number;
+}
+
 export interface LobbyState {
   room: RoomAddress;
   hostName: string;
@@ -49,6 +59,7 @@ export interface LobbyState {
   lordHeroId?: string;
   revealed?: boolean;
   spectators?: SpectatorInfo[];
+  bidding?: LandlordBidState | null;
 }
 
 export type ServerEvent =
@@ -82,6 +93,7 @@ export type HostPayload =
 
 export type GuestPayload =
   | { t: 'hello'; version: string }
+  | { t: 'bid'; score: number }
   | { t: 'action'; action: GameAction }
   | { t: 'pickHero'; heroId: string }
   | { t: 'chat'; text: string }

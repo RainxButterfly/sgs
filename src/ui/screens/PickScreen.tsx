@@ -143,6 +143,16 @@ export function PickScreen() {
                   <span className="pick-seat-tag">
                     {isLord ? (gameMode === 'landlord' ? '地主' : '主公') : bot.name}
                   </span>
+                  {(isLord || gameMode === 'landlord') && hero && (
+                    <button
+                      type="button"
+                      className="pick-seat-info"
+                      title={`查看【${hero.name}】的技能`}
+                      onClick={() => setDetailHero(hero.id)}
+                    >
+                      i
+                    </button>
+                  )}
                 </div>
               );
             })}

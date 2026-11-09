@@ -4,7 +4,8 @@ import { HEROES, PLAYABLE_HEROES } from '../core/deck';
 import { safeBotAction } from '../core/smartBot';
 import type { AskRequest, GameAction, GameEvent, GameIO, GameState, Role } from '../core/types';
 import { recordDiagnostic } from '../ui/diagnostics';
-import { DEFAULT_RULES, type CustomRules } from '../core/types';import {
+import { DEFAULT_RULES, type CustomRules } from '../core/types';import type { LandlordBidState } from './protocol';
+import {
   redactState,
   spectateState,
   type ChatMessage,
@@ -166,6 +167,7 @@ export class LanHostManager {
   private guests: HostGuest[] = [];
   private spectators: SpectatorInfo[] = [];
   private bannedNames = new Set<string>();
+  private bidding: LandlordBidState | null = null;
   private pending = new Map<number, { request: AskRequest; resolve: (action: GameAction) => void; timer: ReturnType<typeof setTimeout> }>();
   private stateTimer: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
@@ -294,6 +296,7 @@ export class LanHostManager {
       lordHeroId,
       revealed,
       spectators: this.spectators.map((spectator) => ({ ...spectator })),
+      bidding: this.bidding ? { ...this.bidding, bids: { ...this.bidding.bids }, order: [...this.bidding.order] } : null,
     };
   }
 
@@ -305,14 +308,88 @@ export class LanHostManager {
 
   beginPicking(count: number): void {
     if (this.started || this.picking) return;
+    const gameMode = this.rules.mode ?? 'identity';
+    if (gameMode === 'landlord') {
+      if (!this.bidding) this.beginLandlordBid(count);
+      return;
+    }
+    this.startPickingGame(count);
+  }
+
+  private beginLandlordBid(count: number): void {
+    const total = Math.max(3, Math.min(3, count));
+    this.plannedCount = total;
+    this.bidding = {
+      order: Array.from({ length: total }, (_, index) => index),
+      index: 0,
+      highest: 0,
+      highestBidder: -1,
+      bids: {},
+      done: false,
+    };
+    this.advanceBotBids();
+    this.refreshLobby();
+  }
+
+  private advanceBotBids(): void {
+    if (!this.bidding || this.bidding.done) return;
+    const humans = 1 + this.guests.length;
+    const currentId = this.bidding.order[this.bidding.index];
+    if (currentId >= humans) {
+      const score = Math.random() < 0.5 ? 0 : Math.min(3, this.bidding.highest + 1);
+      this.recordBid(currentId, score);
+      if (this.bidding && !this.bidding.done) this.advanceBotBids();
+    }
+  }
+
+  submitBid(playerId: number, score: number): void {
+    if (!this.bidding || this.bidding.done) return;
+    if (this.bidding.order[this.bidding.index] !== playerId) return;
+    this.recordBid(playerId, Math.max(0, Math.min(3, Math.round(score))));
+    this.advanceBotBids();
+    this.refreshLobby();
+  }
+
+  private recordBid(playerId: number, score: number): void {
+    if (!this.bidding || this.bidding.done) return;
+    const bidding = this.bidding;
+    bidding.bids[playerId] = score;
+    if (score > bidding.highest) {
+      bidding.highest = score;
+      bidding.highestBidder = playerId;
+    }
+    if (score === 3) {
+      this.finishBidding();
+      return;
+    }
+    bidding.index += 1;
+    if (bidding.index >= bidding.order.length) this.finishBidding();
+  }
+
+  private finishBidding(): void {
+    if (!this.bidding || this.bidding.done) return;
+    const bidding = this.bidding;
+    const lordId = bidding.highestBidder >= 0 ? bidding.highestBidder : bidding.order[0];
+    bidding.done = true;
+    bidding.lordId = lordId;
+    const total = bidding.order.length;
+    this.bidding = null;
+    this.startPickingGame(total, lordId);
+  }
+
+  private startPickingGame(count: number, forcedLordId?: number): void {
     this.ensureChoicesForMode();
     const total = Math.max(2, Math.min(8, count));
     this.plannedCount = total;
     const gameMode = this.rules.mode ?? 'identity';
-    const roles = buildRoles(total, gameMode);
-    for (let i = roles.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [roles[i], roles[j]] = [roles[j], roles[i]];
+    let roles = buildRoles(total, gameMode);
+    if (gameMode === 'landlord' && forcedLordId != null) {
+      roles = Array.from({ length: total }, (_, index) => (index === forcedLordId ? 'lord' : 'rebel'));
+    } else {
+      for (let i = roles.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [roles[i], roles[j]] = [roles[j], roles[i]];
+      }
     }
     this.roles = roles;
     const lordIndex = roles.indexOf('lord');
@@ -628,6 +705,10 @@ export class LanHostManager {
         this.broadcastSpectators();
         this.refreshLobby();
       }
+      return;
+    }
+    if (message.t === 'bid') {
+      if (guest) this.submitBid(guest.playerId, Number(message.score));
       return;
     }
     if (message.t === 'chat') {
@@ -1057,6 +1138,10 @@ export class LanClientManager {
 
   pickHero(heroId: string): void {
     this.relay.send({ t: 'pickHero', heroId } satisfies GuestPayload);
+  }
+
+  submitBid(score: number): void {
+    this.relay.send({ t: 'bid', score } satisfies GuestPayload);
   }
 
   sendChat(text: string): void {

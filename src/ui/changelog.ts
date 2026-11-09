@@ -20,6 +20,20 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.5',
+    date: '2026-11-09',
+    title: '联机叫分与主公技能查看',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '联机斗地主加入叫分：房主、玩家和补位电脑依次叫 0–3 分，3 分立即成为地主，全部不叫时首位玩家成为地主。',
+          '选将阶段主公/地主武将旁增加「i」，点击可查看其完整技能；联机选将也会显示已亮出的武将。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.4',
     date: '2026-11-09',
     title: '骁果、蛊惑与放权',

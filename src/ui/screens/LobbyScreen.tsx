@@ -17,6 +17,7 @@ export function LobbyScreen() {
   const setLanCount = useGameStore((s) => s.setLanCount);
   const leaveLan = useGameStore((s) => s.leaveLan);
   const pickLanHero = useGameStore((s) => s.pickLanHero);
+  const bidLan = useGameStore((s) => s.bidLan);
   const lanConnId = useGameStore((s) => s.lanConnId);
   const spectate = useGameStore((s) => s.spectate);
   const joinedRoom = useGameStore((s) => s.room);
@@ -94,6 +95,15 @@ export function LobbyScreen() {
 
   const players = lobby.players;
   const spectators = lobby.spectators ?? [];
+  const bidding = lobby.bidding ?? null;
+  const myPlayerId = host
+    ? 0
+    : players.find((player) => player.connId === lanConnId)?.playerId ?? -1;
+  const bidName = (id: number) =>
+    players.find((player) => player.playerId === id)?.name ?? `电脑${id}`;
+  const currentBidder = bidding ? bidding.order[bidding.index] : undefined;
+  const myBidTurn =
+    !!bidding && !bidding.done && currentBidder !== undefined && currentBidder === myPlayerId;
   const maxTotal = lobby.seatCount ?? lobby.maxPlayers;
   const me = host ? players.find((player) => player.isHost) : players.find((player) => player.connId === lanConnId);
   const mode = lobby.mode ?? 'standard';
@@ -466,7 +476,7 @@ export function LobbyScreen() {
               <button
                 type="button"
                 className="btn primary big"
-                disabled={players.some((p) => !p.connected)}
+                disabled={players.some((p) => !p.connected) || !!bidding}
                 onClick={() => startLanPick(startCount)}
               >
                 开始选将

@@ -100,6 +100,18 @@ export function LanPickPanel({
                     : '选择中'}
                 </span>
                 <span className="pick-seat-tag">{player.name}</span>
+                {showHero && selectedIds.length > 0 && (
+                  <button
+                    type="button"
+                    className="pick-seat-info"
+                    title="查看该武将的技能"
+                    onClick={() =>
+                      setDetailHero({ heroId: selectedIds[0], heroIds: selectedIds })
+                    }
+                  >
+                    i
+                  </button>
+                )}
               </div>
             );
           })}
