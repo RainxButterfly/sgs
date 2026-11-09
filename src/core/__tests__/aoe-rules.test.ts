@@ -89,3 +89,53 @@ describe('判定与铁索状态', () => {
     expect(player.flags.tianyi).toBeUndefined();
   });
 });
+
+describe('兵粮寸断', () => {
+  it('视为使用兵粮寸断时，判定区显示兵粮而不是原牌', async () => {
+    const game = new Game(
+      {
+        players: [
+          { name: '徐晃', heroId: 'xuhuang', isBot: false },
+          { name: 'P2', heroId: '', isBot: false },
+        ],
+        seed: 20261111,
+        rules: { mode: 'duel' },
+      },
+      new SimIO(),
+    );
+    const [user, target] = game.state.players;
+    user.hand = [];
+    target.hand = [];
+    const card = fakeCard('雷杀', 'spade', 4);
+    card.type = 'basic';
+    card.element = 'thunder';
+    user.hand.push(card);
+    await game.useCard(user, card, '兵粮寸断', [target.id]);
+    expect(target.judgeZone).toHaveLength(1);
+    expect(target.judgeZone[0].name).toBe('兵粮寸断');
+    expect(target.judgeZone[0].type).toBe('delayed');
+  });
+
+  it('同一角色不能被两张兵粮寸断指定', async () => {
+    const game = new Game(
+      {
+        players: [
+          { name: '徐晃', heroId: 'xuhuang', isBot: false },
+          { name: 'P2', heroId: '', isBot: false },
+        ],
+        seed: 20261112,
+        rules: { mode: 'duel' },
+      },
+      new SimIO(),
+    );
+    const [user, target] = game.state.players;
+    user.hand = [];
+    target.hand = [];
+    target.judgeZone.push({ ...fakeCard('兵粮寸断', 'club', 2), type: 'delayed' });
+    const card = fakeCard('杀', 'spade', 9);
+    card.type = 'basic';
+    user.hand.push(card);
+    const options = game.buildPlayOptions(user).filter((option) => option.as === '兵粮寸断');
+    expect(options.every((option) => !option.validTargets.includes(target.id))).toBe(true);
+  });
+});
