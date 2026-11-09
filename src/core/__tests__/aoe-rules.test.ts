@@ -69,7 +69,7 @@ describe('南蛮入侵与祸首', () => {
     target.hp = target.maxHp;
 
     await (game as unknown as {
-      resolveAoe: (user: unknown, card: Card, responseName: '杀' | '闪') => Promise<void>;
+      resolveAoe: (user: unknown, card: Card, responseName: '杀' | '闪', cardName?: string) => Promise<void>;
     }).resolveAoe(user, fakeCard('南蛮入侵', 'spade', 7), '杀');
 
     const damage = io.events
@@ -77,6 +77,33 @@ describe('南蛮入侵与祸首', () => {
       .filter((event) => event.targetId === target.id)
       .pop();
     expect(damage?.sourceId).toBe(menghuo.id);
+  });
+});
+
+describe('藤甲与转化群体锦囊', () => {
+  it('乱击等转化出的万箭齐发也会被藤甲无效', async () => {
+    const io = new SimIO();
+    const game = makeGame(io);
+    const user = game.state.players[0];
+    const target = game.state.players[1];
+    for (const player of game.state.players) player.hand = [];
+    target.equips.armor = {
+      id: 'tengjia',
+      name: '藤甲',
+      suit: 'club',
+      rank: 2,
+      type: 'equip',
+      equipSlot: 'armor',
+    };
+    const before = target.hp;
+    await (game as unknown as {
+      resolveAoe: (user: unknown, card: Card, responseName: '杀' | '闪', cardName?: string) => Promise<void>;
+    }).resolveAoe(user, fakeCard('杀', 'club', 7), '闪', '万箭齐发');
+    expect(target.hp).toBe(before);
+    const aoe = io.events
+      .filter((event): event is Extract<GameEvent, { type: 'aoe' }> => event.type === 'aoe')
+      .pop();
+    expect(aoe?.entries.find((entry) => entry.playerId === target.id)?.result).toBe('immune');
   });
 });
 

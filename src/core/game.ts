@@ -571,9 +571,13 @@ export class Game {
     return cards;
   }
 
-  async pindian(initiator: PlayerState, target: PlayerState, reason: string): Promise<boolean> {
-    if (!initiator.alive || !target.alive) return false;
-    if (!initiator.hand.length || !target.hand.length) return false;
+  async pindianWithCards(
+    initiator: PlayerState,
+    target: PlayerState,
+    reason: string,
+  ): Promise<{ win: boolean; mine: Card; theirs: Card } | null> {
+    if (!initiator.alive || !target.alive) return null;
+    if (!initiator.hand.length || !target.hand.length) return null;
     const mine = await this.askCards(
       initiator,
       initiator.hand,
@@ -583,7 +587,7 @@ export class Game {
       undefined,
       false,
     );
-    if (!mine.length) return false;
+    if (!mine.length) return null;
     const theirs = await this.askCards(
       target,
       target.hand,
@@ -593,13 +597,18 @@ export class Game {
       undefined,
       false,
     );
-    if (!theirs.length) return false;
+    if (!theirs.length) return null;
     const a = mine[0];
     const b = theirs[0];
     this.log(`【${initiator.name}】与【${target.name}】拼点：${cardLabel(a)} 对 ${cardLabel(b)}`, 'system');
     await this.discardCards(initiator, [a], '拼点');
     await this.discardCards(target, [b], '拼点');
-    return a.rank > b.rank;
+    return { win: a.rank > b.rank, mine: a, theirs: b };
+  }
+
+  async pindian(initiator: PlayerState, target: PlayerState, reason: string): Promise<boolean> {
+    const result = await this.pindianWithCards(initiator, target, reason);
+    return result?.win ?? false;
   }
 
   swapHands(a: PlayerState, b: PlayerState): void {
@@ -1310,9 +1319,9 @@ ${skill.desc}` : ''}`
     } else if (asName === '顺手牵羊') {
       await this.resolveShunshou(user, card, this.players[targets[0]]);
     } else if (asName === '万箭齐发') {
-      await this.resolveAoe(user, card, '闪');
+      await this.resolveAoe(user, card, '闪', asName);
     } else if (asName === '南蛮入侵') {
-      await this.resolveAoe(user, card, '杀');
+      await this.resolveAoe(user, card, '杀', asName);
     } else if (asName === '桃园结义') {
       await this.resolvePeachGarden(user, card);
     } else if (asName === '五谷丰登') {
@@ -1637,14 +1646,19 @@ ${skill.desc}` : ''}`
     }
   }
 
-  private async resolveAoe(user: PlayerState, card: Card, responseName: '杀' | '闪'): Promise<void> {
+  private async resolveAoe(
+    user: PlayerState,
+    card: Card,
+    responseName: '杀' | '闪',
+    cardName = card.name,
+  ): Promise<void> {
     const targets = this.turnOrder().filter((p) => p.id !== user.id && p.alive);
     const entries: AoeEntry[] = targets.map((p) => ({ playerId: p.id, result: 'pending' }));
     const entryOf = (playerId: number) => entries.find((entry) => entry.playerId === playerId);
     const emitAoe = (done = false, activeId?: number, timeoutMs?: number) =>
       this.emit({
         type: 'aoe',
-        cardName: card.name,
+        cardName: cardName,
         sourceId: user.id,
         entries: entries.map((entry) => ({ ...entry })),
         activeId,
@@ -1653,7 +1667,7 @@ ${skill.desc}` : ''}`
       });
     emitAoe();
     const huoshou =
-      card.name === '南蛮入侵'
+      cardName === '南蛮入侵'
         ? this.players.find(
             (p) => p.alive && p.id !== user.id && this.hasSkill(p, 'huoshou'),
           )
@@ -1670,13 +1684,13 @@ ${skill.desc}` : ''}`
         continue;
       }
       if (this.isBlackCard(user, card) && this.hasSkill(target, 'weimu')) {
-        this.log(`【${target.name}】的帷幕生效，不受黑色${card.name}影响`, 'skill');
+        this.log(`【${target.name}】的帷幕生效，不受黑色${cardName}影响`, 'skill');
         note(target.id, { result: 'immune', note: '帷幕', hp: target.hp });
         emitAoe();
         continue;
       }
       if (
-        card.name === '南蛮入侵' &&
+        cardName === '南蛮入侵' &&
         (this.hasSkill(target, 'huoshou') || this.hasSkill(target, 'juxiang'))
       ) {
         this.log(`【${target.name}】不受南蛮入侵影响`, 'skill');
@@ -1684,15 +1698,15 @@ ${skill.desc}` : ''}`
         emitAoe();
         continue;
       }
-      if (target.equips.armor?.name === '藤甲' && (card.name === '南蛮入侵' || card.name === '万箭齐发')) {
-        this.log(`【${target.name}】的藤甲生效，${card.name}无效`, 'skill');
+      if (target.equips.armor?.name === '藤甲' && (cardName === '南蛮入侵' || cardName === '万箭齐发')) {
+        this.log(`【${target.name}】的藤甲生效，${cardName}无效`, 'skill');
         note(target.id, { result: 'immune', note: '藤甲', hp: target.hp });
         emitAoe();
         continue;
       }
       emitAoe(false, target.id, 6000);
       await this.io.delay(500 + Math.random() * 700);
-      if (await this.askWuxie(card.name, target, user, `【${target.name}】受到${card.name}影响`)) {
+      if (await this.askWuxie(cardName, target, user, `【${target.name}】受到${cardName}影响`)) {
         note(target.id, { result: 'wuxie', hp: target.hp });
         emitAoe();
         continue;
@@ -1711,11 +1725,11 @@ ${skill.desc}` : ''}`
         emitAoe();
         continue;
       }
-      await this.damage(huoshou ?? user, target, 1, card, card.name);
+      await this.damage(huoshou ?? user, target, 1, card, cardName);
       note(target.id, { result: 'damage', hp: Math.max(0, target.hp) });
       emitAoe();
     }
-    if (card.name === '南蛮入侵') {
+    if (cardName === '南蛮入侵') {
       const juxiang = this.players.find(
         (p) => p.alive && p.id !== user.id && this.hasSkill(p, 'juxiang'),
       );

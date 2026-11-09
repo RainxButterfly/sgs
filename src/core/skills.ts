@@ -1567,7 +1567,7 @@ const SKILLS: SkillDef[] = [
   {
     id: 'luanji',
     name: '乱击',
-    desc: '出牌阶段限一次，你可以将两张相同花色的手牌当【万箭齐发】使用。',
+    desc: '出牌阶段，你可以将两张相同花色的手牌当【万箭齐发】使用。',
     active: {
       usable: (game, owner) => {
         const suits = new Set(owner.hand.map((c) => c.suit));
@@ -1993,14 +1993,15 @@ const SKILLS: SkillDef[] = [
   {
     id: 'ruoyu',
     name: '若愚',
-    desc: '主公技，觉醒技，回合开始时，若你的体力值不大于 1，你加 1 点体力上限，回复 1 点体力，并获得【激将】。',
+    desc: '主公技，觉醒技，准备阶段开始时，若你的体力值为全场最少（或之一），你加 1 点体力上限，回复 1 点体力，并获得【激将】。',
     lord: true,
     locked: true,
     triggers: [
       {
-        event: 'turnStart',
+        event: 'phaseStart',
         when: (c) =>
           isCurrent(c) &&
+          c.data.phase === 'prepare' &&
           !c.owner.flags.ruoyu &&
           c.owner.hp <= Math.min(...c.game.alivePlayers().map((p) => p.hp)),
         optional: true,
@@ -2020,7 +2021,7 @@ const SKILLS: SkillDef[] = [
   {
     id: 'jiang',
     name: '激昂',
-    desc: '当你使用或被指定为【决斗】或红色【杀】的目标时，你摸一张牌。',
+    desc: '当你使用【决斗】或红色【杀】指定目标后，或成为【决斗】或红色【杀】的目标后，你可以摸一张牌。',
     triggers: [
       {
         event: 'cardUsed',
@@ -2045,12 +2046,16 @@ const SKILLS: SkillDef[] = [
   {
     id: 'hunzi',
     name: '魂姿',
-    desc: '觉醒技，回合开始时，若你的体力值为 1，你减 1 点体力上限，然后获得【英姿】和【英魂】。',
+    desc: '觉醒技，准备阶段开始时，若你的体力值为 1，你减 1 点体力上限，然后获得【英姿】和【英魂】。',
     locked: true,
     triggers: [
       {
-        event: 'turnStart',
-        when: (c) => isCurrent(c) && c.owner.hp === 1 && !c.owner.flags.hunzi,
+        event: 'phaseStart',
+        when: (c) =>
+          isCurrent(c) &&
+          c.data.phase === 'prepare' &&
+          c.owner.hp === 1 &&
+          !c.owner.flags.hunzi,
         optional: true,
         prompt: '是否发动【魂姿】觉醒？',
         effect: async (c) => {
@@ -2068,16 +2073,30 @@ const SKILLS: SkillDef[] = [
   {
     id: 'zhiba',
     name: '制霸',
-    desc: '主公技，其他吴势力角色出牌阶段限一次，可以与你拼点；若其赢，其摸一张牌。',
+    desc: '主公技，其他吴势力角色的出牌阶段限一次，该角色可以与你拼点；若其没赢，你可以获得双方拼点的牌。',
     lord: true,
     active: {
       oncePerTurn: true,
-      usable: (game, owner) => game.players.some((p) => p.role === 'lord' && p.alive && p.skills.includes('zhiba') && p.id !== owner.id),
+      usable: (game, owner) =>
+        owner.faction === 'wu' &&
+        game.players.some(
+          (p) =>
+            p.role === 'lord' &&
+            p.alive &&
+            p.skills.includes('zhiba') &&
+            p.id !== owner.id,
+        ),
       run: async (game, owner) => {
-        const lord = game.players.find((p) => p.role === 'lord' && p.alive && p.skills.includes('zhiba'));
+        const lord = game.players.find(
+          (p) => p.role === 'lord' && p.alive && p.skills.includes('zhiba'),
+        );
         if (!lord) return;
-        const win = await game.pindian(owner, lord, '制霸');
-        if (win) game.drawCards(owner, 1, '制霸');
+        const result = await game.pindianWithCards(owner, lord, '制霸');
+        if (!result || result.win) return;
+        const take = await game.confirm(lord, '是否获得双方拼点的牌？');
+        if (!take) return;
+        game.gainFromDiscard(lord, result.mine, true);
+        game.gainFromDiscard(lord, result.theirs, true);
       },
     },
   },
