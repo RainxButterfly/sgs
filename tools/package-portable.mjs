@@ -42,24 +42,26 @@ zip.addLocalFile(path.join(folder, '四国闪.bat'), '', '四国闪.bat');
 zip.writeZip(zipPath);
 
 const sha256 = crypto.createHash('sha256').update(fs.readFileSync(zipPath)).digest('hex');
-const cacheBust = `?v=${version}`;
-const jsdelivr = `https://cdn.jsdelivr.net/gh/${repo}@main/updates/${zipName}${cacheBust}`;
-const gcore = `https://gcore.jsdelivr.net/gh/${repo}@main/updates/${zipName}${cacheBust}`;
-const fastly = `https://fastly.jsdelivr.net/gh/${repo}@main/updates/${zipName}${cacheBust}`;
+const tag = process.env.UPDATE_TAG || `v${version}`;
+const assetBase = `https://cdn.jsdelivr.net/gh/${repo}@${tag}/updates/${zipName}`;
+const rawBase = `https://raw.githubusercontent.com/${repo}/${tag}/updates/${zipName}`;
+const jsdelivr = assetBase;
+const gcore = `https://gcore.jsdelivr.net/gh/${repo}@${tag}/updates/${zipName}`;
+const fastly = `https://fastly.jsdelivr.net/gh/${repo}@${tag}/updates/${zipName}`;
 const manifest = {
   version,
   notes,
   url: jsdelivr,
   urls: [
     jsdelivr,
-    `https://testingcf.jsdelivr.net/gh/${repo}@main/updates/${zipName}${cacheBust}`,
+    `https://testingcf.jsdelivr.net/gh/${repo}@${tag}/updates/${zipName}`,
     gcore,
     fastly,
-    `https://jsd.onmicrosoft.cn/gh/${repo}@main/updates/${zipName}${cacheBust}`,
-    `https://ghfast.top/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
-    `https://ghproxy.net/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
+    `https://jsd.onmicrosoft.cn/gh/${repo}@${tag}/updates/${zipName}`,
+    `https://ghfast.top/${rawBase}`,
+    `https://ghproxy.net/${rawBase}`,
     `https://gh-proxy.com/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
-    `https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
+    rawBase,
   ],
   sha256,
 };
