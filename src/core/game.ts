@@ -71,6 +71,7 @@ const SYNTH_BAGUA = '__bagua__';
 const SYNTH_BAZHEN = '__bazhen__';
 const SYNTH_JIJIANG = '__jijiang__';
 const SYNTH_HUJIA = '__hujia__';
+const SYNTH_ZHANGBA = '__zhangba__';
 
 export const isRed = (suit: Suit) => suit === 'heart' || suit === 'diamond';
 export const isBlack = (suit: Suit) => suit === 'spade' || suit === 'club';
@@ -1493,6 +1494,20 @@ ${skill.desc}` : ''}`
     await this.useSha(user, card, targetIds);
   }
 
+  moveEquipment(source: PlayerState, target: PlayerState, card: Card): boolean {
+    const slot = card.equipSlot;
+    if (!slot || source.equips[slot]?.id !== card.id || target.equips[slot]) return false;
+    source.equips[slot] = undefined;
+    target.equips[slot] = card;
+    this.emit({ type: 'equip', playerId: source.id, slot, card: undefined });
+    this.emit({ type: 'equip', playerId: target.id, slot, card });
+    this.log(
+      `【${source.name}】的【${card.name}】被移动到【${target.name}】的装备区`,
+      'skill',
+    );
+    return true;
+  }
+
   async equipFromHandTo(owner: PlayerState, target: PlayerState, card: Card): Promise<boolean> {
     const slot = card.equipSlot;
     if (!slot || target.equips[slot]) return false;
@@ -1938,6 +1953,17 @@ ${skill.desc}` : ''}`
     if (name === '闪' && this.hasSkill(player, 'bazhen') && !player.equips.armor) {
       out.push({ cardId: SYNTH_BAZHEN, as: '闪', skillId: 'bazhen', label: '八阵', validTargets: [], targetMin: 0, targetMax: 0 });
     }
+    if (name === '杀' && this.hasSkill(player, 'zhangba') && player.hand.length >= 2) {
+      out.push({
+        cardId: SYNTH_ZHANGBA,
+        as: '杀',
+        skillId: 'zhangba',
+        label: '丈八蛇矛',
+        validTargets: [],
+        targetMin: 0,
+        targetMax: 0,
+      });
+    }
     if (name === '闪' && this.hasSkill(player, 'hujia')) {
       const allies = this.players.filter((p) => p.alive && p.id !== player.id && p.faction === 'wei');
       if (allies.some((p) => p.hand.length > 0)) {
@@ -1976,6 +2002,33 @@ ${skill.desc}` : ''}`
       if (res.type === 'cancel') return null;
       if (res.type !== 'respondCard') continue;
 
+      if (res.cardId === SYNTH_ZHANGBA) {
+        const picked = await this.askCards(
+          player,
+          player.hand,
+          2,
+          2,
+          '丈八蛇矛：选择两张手牌当【杀】打出',
+          undefined,
+          true,
+        );
+        if (picked.length !== 2) return null;
+        for (const card of picked) {
+          this.removeFromHand(player, card);
+          this.toDiscard(card);
+        }
+        this.emit({
+          type: 'respond',
+          playerId: player.id,
+          card: picked[0],
+          as: '杀',
+          skillId: 'zhangba',
+        });
+        this.log(`【${player.name}】发动丈八蛇矛，将两张手牌当【杀】打出`);
+        player.usedThisTurn.sha = (player.usedThisTurn.sha ?? 0) + 1;
+        await this.notifyHandLost(player);
+        return { card: null, as: '杀', skillId: 'zhangba', virtual: true };
+      }
       if (res.cardId === SYNTH_BAGUA || res.cardId === SYNTH_BAZHEN) {
         const isBazhen = res.cardId === SYNTH_BAZHEN;
         const card = await this.judge(player, isBazhen ? '八阵' : '八卦阵');

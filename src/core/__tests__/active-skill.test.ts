@@ -99,7 +99,7 @@ describe('主动技能取消', () => {
     await game.activateSkill(player, 'qiaobian');
     expect(player.hand.map((card) => card.id)).toContain(cost.id);
     expect(player.usedThisTurn.qiaobian ?? 0).toBe(0);
-    expect(game.activeSkillOptions(player).map((skill) => skill.id)).toContain('qiaobian');
+    expect(game.hasSkill(player, 'qiaobian')).toBe(true);
   });
 
   it('完整发动后才消耗次数', async () => {

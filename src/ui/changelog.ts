@@ -20,6 +20,21 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.12',
+    date: '2026-11-10',
+    title: '巧变、雌雄与丈八',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '张郃【巧变】改为阶段开始时弃一张手牌跳过判定/摸牌/出牌/弃牌阶段；跳过摸牌拿至多两人各一张手牌，跳过出牌/弃牌移动场上一张装备。',
+          '雌雄双股剑补上异性目标触发：目标选择弃一张手牌或令使用者摸一张。',
+          '丈八蛇矛可以在南蛮、决斗、借刀等响应中把两张手牌当【杀】打出。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.11',
     date: '2026-11-10',
     title: '国战暗将与野心家',

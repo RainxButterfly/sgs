@@ -65,8 +65,8 @@ export function PickScreen() {
         </div>
 
         {bid && (
-          <section className="bid-panel">
-            <div className="room-card-title">叫 地 主</div>
+          <section className={`bid-panel ${bid.done ? 'done' : ''}`}>
+            {!bid.done && <div className="room-card-title">叫 地 主</div>}
             {!bid.done ? (
               <>
                 <p className="setup-hint">

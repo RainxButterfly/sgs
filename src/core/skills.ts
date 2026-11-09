@@ -784,6 +784,42 @@ const SKILLS: SkillDef[] = [
     id: 'cixiong',
     name: '雌雄双股剑',
     desc: '当你使用【杀】指定异性目标后，该角色选择弃置一张手牌或令你摸一张牌。',
+    triggers: [
+      {
+        event: 'shaTargeted',
+        when: (c) =>
+          c.source?.id === c.owner.id &&
+          !!c.target &&
+          c.target.gender !== c.owner.gender,
+        optional: true,
+        prompt: '是否发动【雌雄双股剑】？',
+        effect: async (c) => {
+          const target = c.target!;
+          if (!target.hand.length) {
+            c.game.drawCards(c.owner, 1, '雌雄双股剑');
+            return;
+          }
+          const choice = await c.game.askOption(target, '雌雄双股剑：选择一项', [
+            { id: 'discard', label: '弃置一张手牌' },
+            { id: 'draw', label: '令使用者摸一张牌' },
+          ]);
+          if (choice === 'discard') {
+            const picked = await c.game.askCards(
+              target,
+              target.hand,
+              1,
+              1,
+              '雌雄双股剑：弃置一张手牌',
+              undefined,
+              false,
+            );
+            if (picked.length) await c.game.discardCards(target, picked, '雌雄双股剑');
+          } else {
+            c.game.drawCards(c.owner, 1, '雌雄双股剑');
+          }
+        },
+      },
+    ],
   },
   {
     id: 'hanbing',
@@ -1869,27 +1905,93 @@ const SKILLS: SkillDef[] = [
   {
     id: 'qiaobian',
     name: '巧变',
-    desc: '出牌阶段限一次，你可以弃置一张手牌，获得一名其他角色装备区里的一张牌。',
-    active: {
-      oncePerTurn: true,
-      usable: (game, owner) =>
-        owner.hand.length > 0 &&
-        others(game, owner).some((p) => Object.values(p.equips).some(Boolean)),
-      run: async (game, owner) => {
-        const cost = await game.askCards(owner, owner.hand, 1, 1, '巧变：选择一张手牌作为费用', undefined, false);
-        if (!cost.length) return;
-        const candidates = others(game, owner).filter((p) => Object.values(p.equips).some(Boolean));
-        const target = await game.askPlayer(owner, candidates, '巧变：选择一名有装备的角色');
-        if (!target) return;
-        const equips = Object.values(target.equips).filter((x): x is Card => !!x);
-        const picked = await game.askCards(owner, equips, 1, 1, '巧变：选择获得一张装备牌', undefined, false);
-        if (!picked.length) return;
-        await game.discardCards(owner, cost, '巧变');
-        const slot = picked[0].equipSlot;
-        game.gainCard(owner, picked[0], target, true);
-        if (slot) await game.trigger('equipLost', { player: target, card: picked[0], data: {} });
+    desc: '出牌阶段限一次，你可以弃置一张手牌并跳过判定、摸牌、出牌或弃牌阶段之一。跳过摸牌阶段，你可以获得至多两名角色各一张手牌；跳过出牌或弃牌阶段，你可以移动场上的一张装备牌。',
+    triggers: [
+      {
+        event: 'phaseStart',
+        when: (c) =>
+          isCurrent(c) &&
+          ['judge', 'draw', 'play', 'discard'].includes(String(c.data.phase)) &&
+          !c.owner.flags.qiaobian &&
+          c.owner.hand.length > 0,
+        optional: true,
+        prompt: '是否发动【巧变】弃一张手牌跳过当前阶段？',
+        effect: async (c) => {
+          const cost = await c.game.askCards(
+            c.owner,
+            c.owner.hand,
+            1,
+            1,
+            '巧变：弃置一张手牌',
+            undefined,
+            true,
+          );
+          if (!cost.length) return;
+          await c.game.discardCards(c.owner, cost, '巧变');
+          c.owner.flags.qiaobian = 1;
+          c.data.skip = true;
+          const phase = String(c.data.phase);
+          if (phase === 'draw') {
+            const chosen = new Set<number>();
+            for (let i = 0; i < 2; i += 1) {
+              const candidates = others(c.game, c.owner).filter(
+                (p) => p.hand.length > 0 && !chosen.has(p.id),
+              );
+              if (!candidates.length) break;
+              const target = await c.game.askPlayer(
+                c.owner,
+                candidates,
+                `巧变：选择第 ${i + 1} 名角色获得一张手牌`,
+                '取消则结束',
+                true,
+              );
+              if (!target) break;
+              chosen.add(target.id);
+              const card = c.game.randomItem(target.hand);
+              if (card) c.game.gainCard(c.owner, card, target, false);
+            }
+          } else if (phase === 'play' || phase === 'discard') {
+            const sources = c.game.players.filter((p) =>
+              Object.values(p.equips).some(Boolean),
+            );
+            const source = await c.game.askPlayer(
+              c.owner,
+              sources,
+              '巧变：选择一名有装备的角色',
+              '取消则不移动',
+              true,
+            );
+            if (!source) return;
+            const equips = Object.values(source.equips).filter((card): card is Card => !!card);
+            const picked = await c.game.askCards(
+              c.owner,
+              equips,
+              1,
+              1,
+              '巧变：选择一张装备牌移动',
+              undefined,
+              true,
+            );
+            if (!picked.length) return;
+            const card = picked[0];
+            const slot = card.equipSlot;
+            if (!slot || source.equips[slot]?.id !== card.id) return;
+            const targets = c.game.players.filter(
+              (p) => p.id !== source.id && !p.equips[slot],
+            );
+            const target = await c.game.askPlayer(
+              c.owner,
+              targets,
+              '巧变：选择装备牌的新主人',
+              '取消则不移动',
+              true,
+            );
+            if (!target) return;
+            c.game.moveEquipment(source, target, card);
+          }
+        },
       },
-    },
+    ],
   },
   {
     id: 'tuntian',
