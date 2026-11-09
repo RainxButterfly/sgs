@@ -94,6 +94,7 @@ export type HostPayload =
 export type GuestPayload =
   | { t: 'hello'; version: string }
   | { t: 'bid'; score: number }
+  | { t: 'reveal'; index: number }
   | { t: 'action'; action: GameAction }
   | { t: 'pickHero'; heroId: string }
   | { t: 'chat'; text: string }

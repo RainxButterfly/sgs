@@ -1,7 +1,7 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState, type Role } from '../../core/types';
-import { playerHeroNames, rankText, shortCardName } from '../labels';
+import { factionKnown, rankText, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
 import { EquipHover, HeroHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
 interface Flash {
@@ -48,7 +48,10 @@ export function PlayerSeat({
   onDetail,
   onClick,
 }: Props) {
+  const selfView = !!revealRoles;
   const hero = HERO_MAP.get(player.heroId);
+  const showFaction = factionKnown(player, mode, selfView);
+  const heroLabel = visibleHeroNames(player, mode, selfView);
   const roleVisible = revealRoles || player.roleRevealed || !player.alive;
   const roleLabel =
     mode === 'guozhan' || mode === 'duel'
@@ -69,7 +72,7 @@ export function PlayerSeat({
     .map((slot) => ({ slot, card: player.equips[slot] }))
     .filter((item): item is { slot: (typeof item)['slot']; card: NonNullable<typeof item.card> } => !!item.card);
   const fields = player.fields ?? [];
-  const skills = [...new Set([...player.skills, ...(player.extraSkills ?? [])])];
+  const skills = visibleSkillIds(player, mode, selfView);
   const showFlash = flash && flash.playerId === player.id ? flash : null;
   const activeFlashes = (flashes ?? []).filter((item) => item.playerId === player.id);
   const displayFlashes = activeFlashes.length ? activeFlashes : showFlash ? [showFlash] : [];
@@ -79,6 +82,7 @@ export function PlayerSeat({
       className={[
         'seat',
         `faction-${player.faction}`,
+        mode === 'guozhan' && !showFaction ? 'is-dark' : '',
         current ? 'seat-current' : '',
         targetable ? 'seat-targetable' : '',
         targeted ? 'seat-targeted' : '',
@@ -103,8 +107,9 @@ export function PlayerSeat({
         </span>
       ))}
       <div className="seat-head">
-        <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
-        <span className="seat-hero">{playerHeroNames(player)}</span>
+        <span className="faction-badge">{showFaction ? FACTION_NAME[player.faction] : '暗'}</span>
+        <span className="seat-hero">{heroLabel}</span>
+        {player.ambition && <span className="ambition-tag">野心家</span>}
         {roleLabel && <span className={`role-badge role-${player.role}`}>{roleLabel}</span>}
         {onMark && (
           <button
@@ -121,7 +126,7 @@ export function PlayerSeat({
         )}
         {current && <span className="seat-turn-tag">行动中</span>}
         {player.isBot && <span className="ai-badge">AI</span>}
-        {onDetail && (
+        {onDetail && showFaction && (
           <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} />}>
             <button
               type="button"

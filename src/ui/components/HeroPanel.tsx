@@ -1,7 +1,7 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
-import { equipSlotText, playerHeroNames, shortCardName } from '../labels';
+import { equipSlotText, factionKnown, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
 import { EquipHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
 interface Flash {
@@ -19,10 +19,23 @@ interface Props {
   flashes?: Flash[];
   speech?: { name: string; text: string } | null;
   handLimitModifier?: number;
+  selfView?: boolean;
+  onReveal?: (index: number) => void;
   onDetail?: () => void;
 }
 
-export function HeroPanel({ player, mode = 'identity', current, flash, flashes, speech, handLimitModifier = 0, onDetail }: Props) {
+export function HeroPanel({
+  player,
+  mode = 'identity',
+  current,
+  flash,
+  flashes,
+  speech,
+  handLimitModifier = 0,
+  selfView = false,
+  onReveal,
+  onDetail,
+}: Props) {
   const hero = HERO_MAP.get(player.heroId);
   const titles = (player.heroIds?.length ? player.heroIds : [player.heroId])
     .map((id) => HERO_MAP.get(id)?.title)
@@ -43,7 +56,9 @@ export function HeroPanel({ player, mode = 'identity', current, flash, flashes, 
   const activeFlashes = (flashes ?? []).filter((item) => item.playerId === player.id);
   const displayFlashes = activeFlashes.length ? activeFlashes : showFlash ? [showFlash] : [];
   const fields = player.fields ?? [];
-  const skills = [...new Set([...player.skills, ...(player.extraSkills ?? [])])];
+  const skills = visibleSkillIds(player, mode, selfView);
+  const heroLabel = visibleHeroNames(player, mode, selfView);
+  const showFaction = factionKnown(player, mode, selfView);
   const slots = [
     { key: 'weapon', label: '武器' },
     { key: 'armor', label: '防具' },
@@ -70,10 +85,10 @@ export function HeroPanel({ player, mode = 'identity', current, flash, flashes, 
         </span>
       ))}
       <div className="hero-main">
-        <div className="hero-emblem">{FACTION_NAME[player.faction]}</div>
+        <div className="hero-emblem">{showFaction ? FACTION_NAME[player.faction] : '暗'}</div>
         <div className="hero-identity">
           <div className="hero-name-row">
-            <span className="hero-name">{playerHeroNames(player)}</span>
+            <span className="hero-name">{heroLabel}</span>
             {roleLabel && <span className={`role-tag role-${player.role}`}>{roleLabel}</span>}
             {onDetail && (
               <button type="button" className="hero-detail-btn" onClick={onDetail}>
@@ -167,6 +182,24 @@ export function HeroPanel({ player, mode = 'identity', current, flash, flashes, 
           ))}
         </div>
       )}
+      {mode === 'guozhan' &&
+        player.generalRevealed?.some((value) => !value) &&
+        onReveal && (
+          <div className="hero-reveal-row">
+            {player.generalRevealed.map((revealed, index) =>
+              revealed ? null : (
+                <button
+                  key={index}
+                  type="button"
+                  className="btn ghost small"
+                  onClick={() => onReveal(index)}
+                >
+                  明置{index === 0 ? '主将' : '副将'}
+                </button>
+              ),
+            )}
+          </div>
+        )}
       <div className="hero-foot">
         <span>手牌 {player.hand.length}</span>
         <span>手牌上限 {Math.max(0, player.hp + handLimitModifier)}</span>

@@ -153,6 +153,8 @@ export function GameScreen() {
             flashes={flashes}
             speech={speechBubbles.find((bubble) => bubble.playerId === human.id) ?? null}
             handLimitModifier={game.state.rules?.handLimitModifier ?? 0}
+            selfView
+            onReveal={(index) => useGameStore.getState().revealGeneral(index)}
             onDetail={() => setDetailPlayer(human.id)}
           />
           <div className="play-column">

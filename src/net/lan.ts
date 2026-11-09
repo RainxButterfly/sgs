@@ -711,6 +711,16 @@ export class LanHostManager {
       if (guest) this.submitBid(guest.playerId, Number(message.score));
       return;
     }
+    if (message.t === 'reveal') {
+      if (guest && this.game) {
+        const player = this.game.state.players[guest.playerId];
+        if (player) {
+          this.game.revealGeneral(player, Number(message.index));
+          this.sendStates();
+        }
+      }
+      return;
+    }
     if (message.t === 'chat') {
       const value = message.text.trim().slice(0, 200);
       if (!value) return;
@@ -803,7 +813,7 @@ export class LanHostManager {
     }, 80);
   }
 
-  private sendStates(): void {
+  sendStates(): void {
     if (!this.game) return;
     for (const guest of this.guests) {
       if (!guest.connected) continue;
@@ -1142,6 +1152,10 @@ export class LanClientManager {
 
   submitBid(score: number): void {
     this.relay.send({ t: 'bid', score } satisfies GuestPayload);
+  }
+
+  revealGeneral(index: number): void {
+    this.relay.send({ t: 'reveal', index } satisfies GuestPayload);
   }
 
   sendChat(text: string): void {

@@ -208,6 +208,9 @@ export class Game {
         pojun: [],
         chained: false,
         isBot: p.isBot ?? false,
+        generalSkills: mode === 'guozhan' ? heroes.map((item) => item.skillIds) : undefined,
+        generalRevealed: mode === 'guozhan' ? heroes.map(() => false) : undefined,
+        ambition: false,
       };
     });
 
@@ -343,12 +346,31 @@ export class Game {
   }
 
   hasSkill(player: PlayerState, id: string): boolean {
-    if (player.skills.includes(id) || player.extraSkills.includes(id)) return true;
-    return Object.values(player.equips).some((c) => c && EQUIP_SKILL_ID[c.name] === id);
+    const equipped = Object.values(player.equips).some((c) => c && EQUIP_SKILL_ID[c.name] === id);
+    if (equipped) return true;
+    if (this.state.rules.mode === 'guozhan' && player.generalSkills) {
+      const revealedSkill = player.generalSkills.some(
+        (skills, index) => !!player.generalRevealed?.[index] && skills.includes(id),
+      );
+      const extra = !!player.generalRevealed?.some(Boolean) && player.extraSkills.includes(id);
+      return revealedSkill || extra;
+    }
+    return player.skills.includes(id) || player.extraSkills.includes(id);
   }
 
   skillsOf(player: PlayerState): SkillDef[] {
-    const ids = new Set<string>([...player.skills, ...player.extraSkills]);
+    const ids = new Set<string>();
+    if (this.state.rules.mode === 'guozhan' && player.generalSkills) {
+      player.generalSkills.forEach((skills, index) => {
+        if (player.generalRevealed?.[index]) for (const id of skills) ids.add(id);
+      });
+      if (player.generalRevealed?.some(Boolean)) {
+        for (const id of player.extraSkills) ids.add(id);
+      }
+    } else {
+      for (const id of player.skills) ids.add(id);
+      for (const id of player.extraSkills) ids.add(id);
+    }
     for (const c of Object.values(player.equips)) {
       if (c) {
         const sid = EQUIP_SKILL_ID[c.name];
@@ -356,6 +378,32 @@ export class Game {
       }
     }
     return [...ids].map((id) => SKILL_MAP.get(id)).filter((s): s is SkillDef => !!s);
+  }
+
+  revealGeneral(player: PlayerState, index: number): boolean {
+    if (this.state.rules.mode !== 'guozhan' || !player.alive) return false;
+    if (!player.generalRevealed) return false;
+    if (player.generalRevealed[index]) return false;
+    player.generalRevealed[index] = true;
+    const label = index === 0 ? '主将' : '副将';
+    this.log(`【${player.name}】明置${label}，势力为【${FACTION_NAME[player.faction]}】`, 'skill');
+    this.emit({ type: 'reveal', playerId: player.id, cards: [], label });
+    this.checkAmbition(player);
+    this.emit({ type: 'state' });
+    return true;
+  }
+
+  private checkAmbition(owner: PlayerState): void {
+    if (this.state.rules.mode !== 'guozhan') return;
+    const revealed = this.players.filter(
+      (p) => p.alive && p.faction === owner.faction && p.generalRevealed?.some(Boolean),
+    ).length;
+    if (revealed * 2 <= this.players.length) return;
+    for (const player of this.players) {
+      if (player.faction !== owner.faction || !player.alive || player.ambition) continue;
+      player.ambition = true;
+      this.log(`【${player.name}】成为野心家`, 'system');
+    }
   }
 
   skillDef(id: string): SkillDef | undefined {
@@ -2358,6 +2406,9 @@ ${skill.desc}` : ''}`
         await this.discardCards(killer, all, '误杀忠臣');
       }
     }
+    if (killer && killer.alive && this.state.rules.mode === 'guozhan' && killer.ambition) {
+      this.drawCards(killer, 3, '野心家击杀奖励');
+    }
     this.checkWin();
   }
 
@@ -2365,10 +2416,19 @@ ${skill.desc}` : ''}`
     if (this.state.over) return;
     const alive = this.alivePlayers();
     if (this.state.rules.mode === 'guozhan') {
-      const factions = [...new Set(alive.map((p) => p.faction))];
-      if (factions.length === 0) {
+      if (alive.length === 0) {
         this.endGame('draw', '同归于尽，天下未定。');
-      } else if (factions.length === 1) {
+        return;
+      }
+      if (alive.length === 1) {
+        const winner = alive[0];
+        this.endGame(winner.faction, `【${winner.name}】成为最后的生还者，取得了国战的胜利！`);
+        return;
+      }
+      const normal = alive.filter((p) => !p.ambition);
+      if (normal.length === 0) return;
+      const factions = [...new Set(normal.map((p) => p.faction))];
+      if (normal.length === alive.length && factions.length === 1) {
         const winner = factions[0];
         this.endGame(winner, `${FACTION_NAME[winner]}势力扫平群雄，取得了国战的胜利！`);
       }
@@ -2560,6 +2620,10 @@ ${skill.desc}` : ''}`
     player.usedThisTurn = {};
     this.resetTurnFlags(player);
     player.skipPhases = [];
+    if (this.state.rules.mode === 'guozhan' && player.isBot && player.generalRevealed) {
+      const hidden = player.generalRevealed.findIndex((value) => !value);
+      if (hidden >= 0) this.revealGeneral(player, hidden);
+    }
     this.state.phase = 'prepare';
     this.emit({ type: 'turn', playerId: player.id, turn: this.state.turn });
     this.log(`—— 第 ${this.state.turn} 回合：${player.name} ——`, 'system');

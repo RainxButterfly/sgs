@@ -11267,3 +11267,38 @@ button {
     font-size: 12px;
   }
 }
+
+.ambition-tag {
+  flex: 0 0 auto;
+  padding: 0 4px;
+  border: 1px solid rgba(184, 169, 236, 0.55);
+  border-radius: 3px;
+  color: #d8cff3;
+  font-size: 9px;
+  line-height: 15px;
+  white-space: nowrap;
+}
+
+.hero-reveal-row,
+.m-reveal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.m-reveal-btn {
+  padding: 2px 7px;
+  border: 1px solid rgba(219, 181, 108, 0.45);
+  border-radius: 4px;
+  background: rgba(20, 16, 12, 0.35);
+  color: var(--gold-bright);
+  font-family: var(--font-body);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.seat.is-dark,
+.m-seat.is-dark {
+  --faction: var(--gold) !important;
+}

@@ -138,6 +138,7 @@ type UpdateState = 'idle' | 'checking' | 'available' | 'downloading' | 'installi
 export interface GameLike {
   state: GameState;
   stop?: () => void;
+  revealGeneral?: (player: import('../core/types').PlayerState, index: number) => boolean;
 }
 
 interface AsChooser {
@@ -326,6 +327,7 @@ interface GameStore {
   setLanRules: (mode: 'standard' | 'custom', rules: CustomRules) => void;
   pickLanHero: (heroId: string) => void;
   bidLan: (score: number) => void;
+  revealGeneral: (index: number) => void;
   leaveLan: () => void;
   suspendGame: () => void;
   resumeGame: () => void;
@@ -1137,6 +1139,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setLanRules: (mode, rules) => {
     get().lanHost?.setRules(mode, rules);
+  },
+
+  revealGeneral: (index) => {
+    const { lanRole, lanClient, lanHost, game, humanId } = get();
+    if (lanRole === 'client') {
+      lanClient?.revealGeneral(index);
+      return;
+    }
+    if (!game) return;
+    const player = game.state.players[humanId];
+    if (!player) return;
+    game.revealGeneral?.(player, index);
+    lanHost?.sendStates();
+    set({ version: get().version + 1 });
   },
 
   bidLan: (score) => {

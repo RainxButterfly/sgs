@@ -1,5 +1,5 @@
 import { HERO_MAP } from '../core/deck';
-import type { Card, EquipSlot, PlayerState, Suit } from '../core/types';
+import type { Card, EquipSlot, GameMode, PlayerState, Suit } from '../core/types';
 
 export const SUIT_CHAR: Record<Suit, string> = {
   spade: '♠',
@@ -43,6 +43,36 @@ export function shortCardName(name: string): string {
   if (name === '青龙偃月刀') return '青龙刀';
   if (name === '诸葛连弩') return '连弩';
   return name;
+}
+
+export function factionKnown(player: PlayerState, mode: GameMode, self = false): boolean {
+  if (mode !== 'guozhan' || self) return true;
+  return !!player.generalRevealed?.some(Boolean);
+}
+
+export function visibleHeroNames(player: PlayerState, mode: GameMode, self = false): string {
+  if (mode !== 'guozhan' || !player.generalRevealed) return playerHeroNames(player);
+  const ids = player.heroIds?.length ? player.heroIds : [player.heroId];
+  const names = ids
+    .map((id, index) => (player.generalRevealed?.[index] || self ? HERO_MAP.get(id)?.name : null))
+    .filter((name): name is string => !!name);
+  return names.length ? names.join('·') : '暗将';
+}
+
+export function visibleSkillIds(player: PlayerState, mode: GameMode, self = false): string[] {
+  if (mode !== 'guozhan' || !player.generalSkills) {
+    return [...new Set([...player.skills, ...player.extraSkills])];
+  }
+  const ids = new Set<string>();
+  player.generalSkills.forEach((skills, index) => {
+    if (player.generalRevealed?.[index] || self) {
+      for (const id of skills) ids.add(id);
+    }
+  });
+  if (self || player.generalRevealed?.some(Boolean)) {
+    for (const id of player.extraSkills) ids.add(id);
+  }
+  return [...ids];
 }
 
 export function playerHeroNames(player: PlayerState): string {

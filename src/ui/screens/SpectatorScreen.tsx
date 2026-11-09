@@ -98,6 +98,7 @@ export function SpectatorScreen() {
           flashes={flashes}
           speech={speechBubbles.find((bubble) => bubble.playerId === focus.id) ?? null}
           handLimitModifier={game.state.rules?.handLimitModifier ?? 0}
+          selfView
           onDetail={() => setDetailPlayer(focus.id)}
         />
         <div className="spectator-focus-main">

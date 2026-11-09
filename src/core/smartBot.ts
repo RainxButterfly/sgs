@@ -41,7 +41,11 @@ function knownRole(state: GameState, me: PlayerState, other: PlayerState): Playe
 function isFriend(state: GameState, me: PlayerState, other: PlayerState): boolean {
   if (other.id === me.id) return true;
   const mode = state.rules?.mode ?? 'identity';
-  if (mode === 'guozhan') return other.faction === me.faction;
+  if (mode === 'guozhan') {
+    if (other.ambition) return false;
+    if (!other.generalRevealed?.some(Boolean)) return false;
+    return other.faction === me.faction;
+  }
   if (mode === 'landlord') return (me.role === 'lord') === (other.role === 'lord');
   if (mode === 'duel') return false;
   const role = knownRole(state, me, other);
@@ -56,7 +60,11 @@ function isFriend(state: GameState, me: PlayerState, other: PlayerState): boolea
 function isEnemy(state: GameState, me: PlayerState, other: PlayerState): boolean {
   if (other.id === me.id || !other.alive) return false;
   const mode = state.rules?.mode ?? 'identity';
-  if (mode === 'guozhan') return other.faction !== me.faction;
+  if (mode === 'guozhan') {
+    if (other.ambition) return true;
+    if (!other.generalRevealed?.some(Boolean)) return false;
+    return other.faction !== me.faction;
+  }
   if (mode === 'landlord') return (me.role === 'lord') !== (other.role === 'lord');
   if (mode === 'duel') return true;
   const role = knownRole(state, me, other);

@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
-import { cardDisplayName, playerHeroNames, rankText, shortCardName, SUIT_CHAR } from '../labels';
+import { cardDisplayName, factionKnown, playerHeroNames, rankText, shortCardName, visibleHeroNames, visibleSkillIds, SUIT_CHAR } from '../labels';
 import { compositionText } from '../composition';
 import { CardView } from '../components/CardView';
 import { CountdownRing } from '../components/CountdownRing';
@@ -62,6 +62,7 @@ export function MobileGameScreen() {
   const promptDeadline = useGameStore((s) => s.promptDeadline);
   const identityMarks = useGameStore((s) => s.identityMarks);
   const openIdentityMark = useGameStore((s) => s.openIdentityMark);
+  const revealGeneral = useGameStore((s) => s.revealGeneral);
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -142,7 +143,7 @@ export function MobileGameScreen() {
   }
   const opponents = game.state.players.filter((p) => p.id !== humanId);
   const handLimit = Math.max(0, human.hp + (game.state.rules?.handLimitModifier ?? 0));
-  const humanSkills = [...new Set([...human.skills, ...(human.extraSkills ?? [])])]
+  const humanSkills = visibleSkillIds(human, mode, true)
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
   const humanEquips = equipNames(human);
@@ -221,7 +222,7 @@ export function MobileGameScreen() {
           const canTarget = targetable.has(player.id);
           const selectedTarget = selectedTargets.includes(player.id);
           const role = roleText(player, mode);
-          const skills = player.skills
+          const skills = visibleSkillIds(player, mode)
             .map((id) => SKILL_MAP.get(id)?.name)
             .filter(Boolean)
             .slice(0, 3);
@@ -238,6 +239,7 @@ export function MobileGameScreen() {
               className={[
                 'm-seat',
                 `faction-${player.faction}`,
+                mode === 'guozhan' && !factionKnown(player, mode) ? 'is-dark' : '',
                 player.id === currentId ? 'is-current' : '',
                 canTarget ? 'is-target' : '',
                 lastPlay?.targets.includes(player.id) ? 'is-targeted' : '',
@@ -264,14 +266,17 @@ export function MobileGameScreen() {
                   </span>
                 ))}
               <div className="m-seat-head">
-                <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
-                <b>{playerHeroNames(player)}</b>
+                <span className="faction-badge">
+                  {factionKnown(player, mode) ? FACTION_NAME[player.faction] : '暗'}
+                </span>
+                <b>{visibleHeroNames(player, mode)}</b>
+                {player.ambition && <span className="ambition-tag">野心家</span>}
                 {role && <span className={`m-role role-${player.role}`}>{role}</span>}
                 {seatTimer && player.alive && (
                   <CountdownRing
                     deadline={seatTimer.deadline}
                     totalMs={seatTimer.totalMs}
-                    size={22}
+                    size={18}
                     className="m-seat-timer"
                   />
                 )}
@@ -290,16 +295,18 @@ export function MobileGameScreen() {
                       : '标'}
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="m-seat-info"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setDetailPlayer(player.id);
-                  }}
-                >
-                  i
-                </button>
+                {factionKnown(player, mode) && (
+                  <button
+                    type="button"
+                    className="m-seat-info"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setDetailPlayer(player.id);
+                    }}
+                  >
+                    i
+                  </button>
+                )}
               </div>
               <div className="m-seat-name">{player.name}</div>
               <div className="m-seat-stats">
@@ -413,7 +420,7 @@ export function MobileGameScreen() {
           ))}
         <button type="button" className="m-self-main" onClick={() => setDetailPlayer(human.id)}>
           <span className={`faction-badge faction-${human.faction}`}>{FACTION_NAME[human.faction]}</span>
-          <b>{playerHeroNames(human)}</b>
+          <b>{visibleHeroNames(human, mode, true)}</b>
           {roleText(human, mode, true) && <span className="m-self-role">{roleText(human, mode, true)}</span>}
           <span className="m-self-hp">
             {Math.max(0, human.hp)}/{human.maxHp}
@@ -446,6 +453,22 @@ export function MobileGameScreen() {
           </span>
           <span className="m-self-skills">{humanSkills.join(' · ') || '无技能'}</span>
         </button>
+        {mode === 'guozhan' && human.generalRevealed?.some((value) => !value) && (
+          <span className="m-reveal-row">
+            {human.generalRevealed.map((revealed, index) =>
+              revealed ? null : (
+                <button
+                  key={index}
+                  type="button"
+                  className="m-reveal-btn"
+                  onClick={() => revealGeneral(index)}
+                >
+                  明置{index === 0 ? '主将' : '副将'}
+                </button>
+              ),
+            )}
+          </span>
+        )}
         <button type="button" className="m-detail-btn" onClick={() => setDetailPlayer(human.id)}>
           详情
         </button>

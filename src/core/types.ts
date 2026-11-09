@@ -85,6 +85,10 @@ export interface PlayerState {
   pojun?: Card[];
   chained: boolean;
   isBot: boolean;
+  /** 国战双将各自的技能与明置状态 */
+  generalSkills?: string[][];
+  generalRevealed?: boolean[];
+  ambition?: boolean;
 }
 
 export interface LogEntry {
