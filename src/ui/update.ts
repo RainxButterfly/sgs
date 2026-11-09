@@ -35,8 +35,53 @@ function compareVersion(a: string, b: string): number {
   return 0;
 }
 
+async function fetchLatestTag(): Promise<string | null> {
+  const urls = [
+    'https://api.github.com/repos/RainxButterfly/sgs/tags?per_page=20',
+    'https://ghfast.top/https://api.github.com/repos/RainxButterfly/sgs/tags?per_page=20',
+    'https://ghproxy.net/https://api.github.com/repos/RainxButterfly/sgs/tags?per_page=20',
+  ];
+  for (const url of urls) {
+    try {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 7000);
+      const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      window.clearTimeout(timer);
+      if (!response.ok) continue;
+      const tags = (await response.json()) as { name?: string }[];
+      const versions = tags
+        .map((tag) => tag.name?.replace(/^v/i, ''))
+        .filter((version): version is string => !!version && /^\d+(\.\d+)+$/.test(version))
+        .sort((a, b) => compareVersion(b, a));
+      if (versions.length) return versions[0];
+    } catch {
+      // try the next tag source
+    }
+  }
+  return null;
+}
+
 async function fetchManifestFromWeb(name: string): Promise<PortableUpdateInfo | null> {
   const stamp = Date.now();
+  const tag = await fetchLatestTag();
+  if (tag) {
+    for (const base of [
+      `https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v${tag}/${name}`,
+      `https://raw.githubusercontent.com/RainxButterfly/sgs/v${tag}/${name}`,
+    ]) {
+      try {
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 9000);
+        const response = await fetch(base, { cache: 'no-store', signal: controller.signal });
+        window.clearTimeout(timer);
+        if (!response.ok) continue;
+        const info = (await response.json()) as PortableUpdateInfo;
+        if (info?.version && compareVersion(info.version, APP_VERSION) > 0) return info;
+      } catch {
+        // try the next tag mirror
+      }
+    }
+  }
   const urls = [
     `https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}?t=${stamp}`,
     `https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}?t=${stamp}`,

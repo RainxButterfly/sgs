@@ -20,6 +20,20 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.7.6',
+    date: '2026-11-09',
+    title: '更新版本发现修复',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '更新检查增加 GitHub 标签发现：先读取最新版本标签，再从标签地址读取清单，避免镜像返回旧的 main 清单。',
+          '版本比较会从标签列表中选取最高的 0.x 版本，不再被缓存中的旧版本误判为最新。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.7.5',
     date: '2026-11-09',
     title: '判定循环与等待提示',

@@ -1,17 +1,17 @@
 {
-  "version": "0.7.5",
-  "notes": "v0.7.5：AI 信息视野、斗地主判断、八卦判定与等待提示修复。",
-  "url": "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.5/updates/siguoshan-xinghe-arm64.apk",
+  "version": "0.7.6",
+  "notes": "v0.7.6：更新版本标签发现修复。",
+  "url": "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.6/updates/siguoshan-xinghe-arm64.apk",
   "urls": [
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.5/updates/siguoshan-xinghe-arm64.apk",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.5/updates/siguoshan-xinghe-arm64.apk",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.5/updates/siguoshan-xinghe-arm64.apk",
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.7.5/updates/siguoshan-xinghe-arm64.apk",
-    "https://testingcf.jsdelivr.net/gh/RainxButterfly/sgs@v0.7.5/updates/siguoshan-xinghe-arm64.apk",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@v0.7.5/updates/siguoshan-xinghe-arm64.apk",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@v0.7.5/updates/siguoshan-xinghe-arm64.apk",
-    "https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@v0.7.5/updates/siguoshan-xinghe-arm64.apk",
-    "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.5/updates/siguoshan-xinghe-arm64.apk"
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.6/updates/siguoshan-xinghe-arm64.apk",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.6/updates/siguoshan-xinghe-arm64.apk",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.6/updates/siguoshan-xinghe-arm64.apk",
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.7.6/updates/siguoshan-xinghe-arm64.apk",
+    "https://testingcf.jsdelivr.net/gh/RainxButterfly/sgs@v0.7.6/updates/siguoshan-xinghe-arm64.apk",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@v0.7.6/updates/siguoshan-xinghe-arm64.apk",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@v0.7.6/updates/siguoshan-xinghe-arm64.apk",
+    "https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@v0.7.6/updates/siguoshan-xinghe-arm64.apk",
+    "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.7.6/updates/siguoshan-xinghe-arm64.apk"
   ],
-  "sha256": "7aa6239794fd1342c3a898dcfbbdbdaa76aed39fea4deb6abd0cfd4eeae4d2fa"
+  "sha256": "cd61511c3f7873b90451ba0a31ac81d526501ef8f707b968ab4cf778803712c6"
 }
