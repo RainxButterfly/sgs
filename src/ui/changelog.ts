@@ -20,6 +20,19 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.14',
+    date: '2026-11-10',
+    title: '神速两段结算',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '夏侯渊【神速】拆成两个独立时机：判定阶段跳过判定与摸牌并视为出杀；出牌阶段弃一张装备牌跳过出牌并视为出杀，各自每回合限一次。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.13',
     date: '2026-11-10',
     title: 'AI补位开关与技能续修',

@@ -1552,42 +1552,60 @@ const SKILLS: SkillDef[] = [
   {
     id: 'shensu',
     name: '神速',
-    desc: '判定阶段开始时，你可以选择一项：跳过判定与摸牌阶段，或跳过出牌阶段并弃置一张装备牌；视为对一名其他角色使用一张【杀】。',
+    desc: '你可以选择一项：1. 跳过判定阶段和摸牌阶段；2. 跳过出牌阶段并弃置一张装备牌。你以此法跳过阶段后，视为对一名其他角色使用一张【杀】。',
     triggers: [
       {
         event: 'phaseStart',
-        when: (c) => isCurrent(c) && c.data.phase === 'judge' && !c.owner.flags.shensu && others(c.game, c.owner).length > 0,
+        when: (c) =>
+          isCurrent(c) &&
+          c.data.phase === 'judge' &&
+          !c.owner.flags.shensuJudge &&
+          others(c.game, c.owner).length > 0,
+        optional: true,
+        prompt: '是否发动【神速】，跳过判定与摸牌阶段并视为使用一张杀？',
         effect: async (c) => {
-          const equipCards = Object.values(c.owner.equips).filter((x): x is Card => !!x);
-          const choice = await c.game.askOption(
+          c.owner.flags.shensuJudge = 1;
+          c.owner.skipPhases.push('draw');
+          c.data.skip = true;
+          const target = await c.game.askPlayer(
             c.owner,
-            '神速：选择一项',
-            [
-              { id: 'draw', label: '跳过判定与摸牌阶段', desc: '视为使用一张杀' },
-              {
-                id: 'play',
-                label: '跳过出牌阶段并弃置一张装备牌',
-                desc: equipCards.length ? '视为使用一张杀' : '没有装备牌',
-              },
-            ],
+            others(c.game, c.owner),
+            '神速：选择杀的目标',
+          );
+          if (target) await c.game.useVirtualSha(c.owner, [target.id], 'shensu', '神速');
+        },
+      },
+      {
+        event: 'phaseStart',
+        when: (c) =>
+          isCurrent(c) &&
+          c.data.phase === 'play' &&
+          !c.owner.flags.shensuPlay &&
+          allCards(c.owner).some((card) => !!card.equipSlot) &&
+          others(c.game, c.owner).length > 0,
+        optional: true,
+        prompt: '是否发动【神速】，弃一张装备牌跳过出牌阶段并视为使用一张杀？',
+        effect: async (c) => {
+          const equips = allCards(c.owner).filter((card) => !!card.equipSlot);
+          const picked = await c.game.askCards(
+            c.owner,
+            equips,
+            1,
+            1,
+            '神速：弃置一张装备牌',
             undefined,
             true,
           );
-          if (!choice) return;
-          c.owner.flags.shensu = 1;
-          if (choice === 'draw') {
-            c.owner.skipPhases.push('draw');
-            c.data.skip = true;
-          } else {
-            if (!equipCards.length) return;
-            const picked = await c.game.askCards(c.owner, equipCards, 1, 1, '神速：弃置一张装备牌', undefined, false);
-            if (!picked.length) return;
-            await c.game.discardCards(c.owner, picked, '神速');
-            c.owner.skipPhases.push('play');
-          }
-          const target = await c.game.askPlayer(c.owner, others(c.game, c.owner), '神速：选择杀的目标');
-          if (!target) return;
-          await c.game.useVirtualSha(c.owner, [target.id], 'shensu', '神速');
+          if (!picked.length) return;
+          await c.game.discardCards(c.owner, picked, '神速');
+          c.owner.flags.shensuPlay = 1;
+          c.data.skip = true;
+          const target = await c.game.askPlayer(
+            c.owner,
+            others(c.game, c.owner),
+            '神速：选择杀的目标',
+          );
+          if (target) await c.game.useVirtualSha(c.owner, [target.id], 'shensu', '神速');
         },
       },
     ],
