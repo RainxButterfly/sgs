@@ -7043,3 +7043,113 @@ button {
     flex: 0 0 auto;
   }
 }
+
+.m-feed {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 8px;
+  padding: 2px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.m-feed::-webkit-scrollbar {
+  display: none;
+}
+
+.m-feed-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.m-feed-item {
+  flex: 0 0 auto;
+  width: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-right: 7px;
+  border-right: 1px solid rgba(219, 181, 108, 0.16);
+}
+
+.m-feed-item:last-child {
+  border-right: none;
+}
+
+.m-feed .card {
+  width: 40px;
+  height: 56px;
+  padding: 2px;
+}
+
+.m-feed .card-name {
+  font-size: 9px;
+  max-width: 34px;
+}
+
+.m-feed .card-corner {
+  font-size: 7px;
+}
+
+.m-feed-text {
+  width: 100%;
+  min-width: 0;
+  font-size: 9px;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--muted);
+}
+
+.m-feed-text b {
+  color: var(--gold-bright);
+  font-weight: 500;
+}
+
+.m-feed-text span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-feed-text i {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: normal;
+  color: var(--gold);
+  font-size: 8.5px;
+}
+
+.m-feed-card-empty {
+  width: 40px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(219, 181, 108, 0.25);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.m-round-chip {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 2px 5px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 3px;
+  color: var(--gold);
+  font-size: 8.5px;
+  white-space: nowrap;
+}

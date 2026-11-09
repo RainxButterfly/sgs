@@ -140,6 +140,7 @@ interface CardHistoryEntry {
   label: string;
   as?: string;
   targets?: number[];
+  turn?: number;
 }
 
 interface GameStore {
@@ -869,6 +870,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   event: (ev) => {
     const state = get();
+    const turn = state.game?.state.turn ?? 0;
     const patch: Partial<GameStore> = { version: state.version + 1 };
     if (ev.type === 'turn' || ev.type === 'playCard') {
       patch.skipWuxie = false;
@@ -897,8 +899,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
           label: isResponse ? '打出' : '使用',
           as: ev.as,
           targets: ev.type === 'playCard' ? ev.targets : [],
+          turn,
         },
-      ].slice(-5);
+      ].slice(-16);
     } else if (ev.type === 'judge') {
       eventSeq += 1;
       patch.lastJudge = {
@@ -919,8 +922,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           : state.cardHistory;
       patch.cardHistory = [
         ...baseHistory,
-        { id: eventSeq, kind: 'judge' as const, playerId: ev.playerId, cards: [ev.card], label: ev.reason },
-      ].slice(-5);
+        { id: eventSeq, kind: 'judge' as const, playerId: ev.playerId, cards: [ev.card], label: ev.reason, turn },
+      ].slice(-16);
     } else if (ev.type === 'discard' && ev.cards.length > 0) {
       eventSeq += 1;
       patch.cardHistory = [
@@ -931,8 +934,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
           playerId: ev.playerId,
           cards: ev.cards,
           label: ev.reason ?? '弃置',
+          turn,
         },
-      ].slice(-5);
+      ].slice(-16);
     } else if (ev.type === 'gain' && ev.cards.length > 0) {
       eventSeq += 1;
       patch.cardHistory = [
@@ -943,8 +947,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
           playerId: ev.playerId,
           cards: ev.cards,
           label: ev.public ? '获得' : '获得一张牌',
+          turn,
         },
-      ].slice(-5);
+      ].slice(-16);
     } else if (ev.type === 'reveal' && ev.cards.length > 0) {
       eventSeq += 1;
       patch.cardHistory = [
@@ -955,8 +960,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
           playerId: ev.playerId,
           cards: ev.cards,
           label: '展示',
+          turn,
         },
-      ].slice(-5);
+      ].slice(-16);
     } else if (ev.type === 'damage' || ev.type === 'heal') {
       eventSeq += 1;
       patch.flash = {

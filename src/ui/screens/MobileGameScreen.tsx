@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
@@ -32,9 +32,14 @@ export function MobileGameScreen() {
   const pending = useGameStore((s) => s.pending);
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
-  const lastPlay = useGameStore((s) => s.lastPlay);
   const lastJudge = useGameStore((s) => s.lastJudge);
   const cardHistory = useGameStore((s) => s.cardHistory);
+  const feedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = feedRef.current;
+    if (element) element.scrollLeft = element.scrollWidth;
+  }, [cardHistory.length]);
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
   const [logOpen, setLogOpen] = useState(false);
@@ -97,7 +102,7 @@ export function MobileGameScreen() {
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
   const humanEquips = equipNames(human);
-  const recent = [...cardHistory].slice(-5).reverse();
+  const feed = cardHistory.slice(-16);
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
     const card = entry.cards[0];
@@ -117,12 +122,6 @@ export function MobileGameScreen() {
     }
     return `${entry.label} ${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
   };
-
-  const latest = recent[0];
-  const latestCard = latest?.cards[0];
-  const latestPlayer = latest?.playerId !== undefined ? targetName(latest.playerId) : '';
-  const latestText = latest ? actionText(latest) : '';
-  const latestTargets = latest?.targets ?? [];
 
   const exit = () => {
     const state = useGameStore.getState();
@@ -236,46 +235,38 @@ export function MobileGameScreen() {
             </span>
           )}
         </div>
-        <div className="m-stage">
-          {latestCard ? (
-            <div className="m-last-play">
-              <CardView card={latestCard} size="sm" />
-              <span>
-                <b>{latestPlayer}</b> {latestText}
-                {latestTargets.length > 0 && (
-                  <em className="m-last-target">→ {latestTargets.map(targetName).join('、')}</em>
-                )}
-              </span>
-            </div>
-          ) : lastPlay ? (
-            <div className="m-last-play">
-              <CardView card={lastPlay.card} size="sm" />
-              <span>
-                <b>{targetName(lastPlay.playerId)}</b>
-                {lastPlay.isResponse ? ' 打出' : ' 使用'}
-                {lastPlay.as === cardDisplayName(lastPlay.card)
-                  ? `【${cardDisplayName(lastPlay.card)}】`
-                  : `【${cardDisplayName(lastPlay.card)}】当【${lastPlay.as}】`}
-                {lastPlay.targets.length > 0 && (
-                  <em className="m-last-target">→ {lastPlay.targets.map(targetName).join('、')}</em>
-                )}
-              </span>
-            </div>
-          ) : (
-            <span className="m-stage-empty">牌桌暂无声响</span>
-          )}
-        </div>
-        <div className="m-history">
-          {recent.map((entry) => (
-            <div key={entry.id} className="m-history-item">
-              <em>{entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'}</em>
-              <span>{actionText(entry)}</span>
-              {entry.targets && entry.targets.length > 0 && (
-                <i>→ {entry.targets.map(targetName).join('、')}</i>
-              )}
-            </div>
-          ))}
-        </div>
+        {feed.length === 0 ? (
+          <div className="m-feed-empty">牌桌暂无声响</div>
+        ) : (
+          <div className="m-feed" ref={feedRef}>
+            {feed.map((entry, index) => {
+              const previous = feed[index - 1];
+              const owner = entry.playerId !== undefined ? game.state.players[entry.playerId] : undefined;
+              const card = entry.cards[0];
+              return (
+                <Fragment key={entry.id}>
+                  {(!previous || previous.turn !== entry.turn) && (
+                    <span className="m-round-chip">第{entry.turn ?? 0}回合</span>
+                  )}
+                  <div className={`m-feed-item faction-${owner?.faction ?? 'qun'}`}>
+                    {card ? (
+                      <CardView card={card} size="sm" />
+                    ) : (
+                      <span className="m-feed-card-empty">牌</span>
+                    )}
+                    <div className="m-feed-text">
+                      <b>{entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'}</b>
+                      <span>{actionText(entry)}</span>
+                      {entry.targets && entry.targets.length > 0 && (
+                        <i>→ {entry.targets.map(targetName).join('、')}</i>
+                      )}
+                    </div>
+                  </div>
+                </Fragment>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="m-self">

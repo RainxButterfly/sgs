@@ -42,16 +42,16 @@ git push
 
 ```json
 {
-  "version": "0.6.0",
+  "version": "0.6.1",
   "notes": "更新说明",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.6.0",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.6.1",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.6.0",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.6.0",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.6.0",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.6.0",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.6.0",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.6.0"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.6.1",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.6.1",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-win64.zip?v=0.6.1",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.6.1",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.6.1",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-win64.zip?v=0.6.1"
   ],
   "sha256": "更新包的 SHA-256"
 }
@@ -59,7 +59,7 @@ git push
 
 `version` 必须高于当前版本。zip 根目录需要包含 `sanguosha.exe` 和 `WebView2Loader.dll`，`npm run release:portable` 会自动打包。仓库需要公开，程序放在可写目录。
 
-安装包和更新包使用版本标签地址（如 `@v0.6.0`），发版后必须推送对应 tag，避免 CDN 命中 main 分支旧缓存。
+安装包和更新包使用版本标签地址（如 `@v0.6.1`），发版后必须推送对应 tag，避免 CDN 命中 main 分支旧缓存。
 
 更新包文件名固定为 `siguoshan-xinghe-win64.zip`，清单里的 URL 带 `?v=版本号` 用来绕过镜像缓存，不要去掉。每个镜像下载后都会校验 SHA-256，缓存到旧包时会自动换下一个地址。
 

@@ -60,7 +60,7 @@ const manifest = {
     `https://jsd.onmicrosoft.cn/gh/${repo}@${tag}/updates/${zipName}`,
     `https://ghfast.top/${rawBase}`,
     `https://ghproxy.net/${rawBase}`,
-    `https://gh-proxy.com/https://raw.githubusercontent.com/${repo}/main/updates/${zipName}${cacheBust}`,
+    `https://gh-proxy.com/${rawBase}`,
     rawBase,
   ],
   sha256,
