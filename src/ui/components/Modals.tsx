@@ -82,6 +82,9 @@ export function CardsModal() {
   const min = pending.min ?? 0;
   const max = pending.max ?? cards.length;
   const canConfirm = choices.length >= min && choices.length <= max;
+  const canCancel =
+    pending.canCancel ||
+    /^(?!弃牌阶段|五谷)([^：]{1,12})：/.test(pending.prompt);
   return (
     <Overlay title={pending.prompt}>
       {pending.detail && <div className="modal-desc">{pending.detail}</div>}
@@ -99,7 +102,7 @@ export function CardsModal() {
         已选择 {choices.length} 张（需要 {min} 张{max !== min ? `，至多 ${max} 张` : ''}）
       </div>
       <div className="modal-actions">
-        {pending.canCancel && (
+        {canCancel && (
           <button type="button" className="btn ghost" onClick={cancel}>
             取消
           </button>
@@ -155,31 +158,34 @@ export function OptionModal() {
   const skill = skillName
     ? [...SKILL_MAP.values()].find((item) => item.name === skillName)
     : undefined;
-  const isSkill = !!skill && /发动|使用|是否/.test(pending.prompt);
+  const isQuestion = /是否质疑/.test(pending.prompt);
+  const isSkillLike = isQuestion || /是否发动|是否使用/.test(pending.prompt);
+  const canCancel = pending.canCancel || isSkillLike;
   const label = (id: string, fallback: string) => {
-    if (!isSkill) return fallback;
-    if (id === 'yes') return `发动【${skillName}】`;
-    if (id === 'no') return '不发动';
+    if (isQuestion && id === 'yes') return '质疑';
+    if (isQuestion && id === 'no') return '不质疑';
+    if (isSkillLike && id === 'yes') return skillName ? `发动【${skillName}】` : '发动';
+    if (isSkillLike && id === 'no') return '不发动';
     return fallback;
   };
   return (
-    <Overlay title={isSkill ? '技能发动' : pending.prompt}>
-      {isSkill && (
+    <Overlay title={isSkillLike ? (isQuestion ? '是否质疑' : '技能发动') : pending.prompt}>
+      {isSkillLike && (
         <div className="skill-prompt">
           <span className="skill-prompt-seal">技</span>
           <div>
-            <b>{skill.name}</b>
-            <p>{pending.detail || skill.desc}</p>
+            <b>{skill?.name ?? skillName ?? '技能'}</b>
+            <p>{pending.detail || skill?.desc || pending.prompt}</p>
           </div>
         </div>
       )}
-      {!isSkill && pending.detail && <div className="modal-desc">{pending.detail}</div>}
-      <div className={`option-list ${isSkill ? 'skill-option-list' : ''}`}>
+      {!isSkillLike && pending.detail && <div className="modal-desc">{pending.detail}</div>}
+      <div className={`option-list ${isSkillLike ? 'skill-option-list' : ''}`}>
         {(pending.options ?? []).map((option) => (
           <button
             key={option.id}
             type="button"
-            className={`option-button ${isSkill && option.id === 'yes' ? 'primary-choice' : ''}`}
+            className={`option-button ${isSkillLike && option.id === 'yes' ? 'primary-choice' : ''}`}
             onClick={() => choose(option.id)}
             title={option.desc}
           >
@@ -189,7 +195,7 @@ export function OptionModal() {
         ))}
       </div>
       <div className="modal-actions">
-        {pending.canCancel && (
+        {canCancel && (
           <button type="button" className="btn ghost" onClick={cancel}>
             取消
           </button>

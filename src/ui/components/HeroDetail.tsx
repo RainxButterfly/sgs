@@ -122,7 +122,7 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
             <div className="detail-section-title">当前状态</div>
             <div className="detail-judge">
               {player.flipped && <span className="detail-tag">翻面</span>}
-              {player.chained && <span className="mini-status chained">横置</span>}
+              {player.chained && <span className="mini-status chained" title="铁索连环：横置，受到属性伤害时会传导">铁索·横置</span>}
               {fields.map((card) => (
                 <span key={card.id} className="mini-unyu">
                   田 {card.name}

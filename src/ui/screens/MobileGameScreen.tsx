@@ -34,7 +34,13 @@ function judgeIcon(name: string): string {
 
 function equipNames(player: PlayerState): string[] {
   return (['weapon', 'armor', 'horsePlus', 'horseMinus'] as const)
-    .map((slot) => player.equips[slot]?.name)
+    .map((slot) => {
+      const card = player.equips[slot];
+      if (!card) return null;
+      if (slot === 'horsePlus') return `+1马 ${card.name}`;
+      if (slot === 'horseMinus') return `-1马 ${card.name}`;
+      return card.name;
+    })
     .filter((name): name is string => !!name);
 }
 
@@ -46,7 +52,9 @@ export function MobileGameScreen() {
   const selectedTargets = useGameStore((s) => s.selectedTargets);
   const lastJudge = useGameStore((s) => s.lastJudge);
   const lastDiscard = useGameStore((s) => s.lastDiscard);
+  const lastPlay = useGameStore((s) => s.lastPlay);
   const flashes = useGameStore((s) => s.flashes);
+  const speechBubbles = useGameStore((s) => s.speechBubbles);
   const cardHistory = useGameStore((s) => s.cardHistory);
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -120,7 +128,7 @@ export function MobileGameScreen() {
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
   const humanEquips = equipNames(human);
-  const feed = cardHistory.slice(-30);
+  const feed = cardHistory.slice(-8);
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
     const card = entry.cards[0];
@@ -208,12 +216,17 @@ export function MobileGameScreen() {
                 `faction-${player.faction}`,
                 player.id === currentId ? 'is-current' : '',
                 canTarget ? 'is-target' : '',
+                lastPlay?.targets.includes(player.id) ? 'is-targeted' : '',
                 selectedTarget ? 'is-selected' : '',
                 player.alive ? '' : 'is-dead',
               ].join(' ')}
               data-player-id={player.id}
               onClick={() => useGameStore.getState().seatClick(player.id)}
             >
+              {(() => {
+                const bubble = speechBubbles.find((item) => item.playerId === player.id);
+                return bubble ? <div className="m-seat-speech">{bubble.text}</div> : null;
+              })()}
               {flashes
                 .filter((item) => item.playerId === player.id)
                 .map((item, index) => (
@@ -247,7 +260,7 @@ export function MobileGameScreen() {
                   {Math.max(0, player.hp)}/{player.maxHp}
                 </span>
                 <span>手牌 {player.hand.length}</span>
-                {player.chained && <span className="m-tag">横置</span>}
+                {player.chained && <span className="m-tag m-chain" title="铁索连环：横置">铁索·横置</span>}
                 {player.flipped && <span className="m-tag">翻面</span>}
               </div>
               <div className="m-hp-meter">
@@ -282,11 +295,6 @@ export function MobileGameScreen() {
           <button type="button" className="m-pile-button" onClick={() => setDiscardOpen(true)}>
             弃牌 {game.state.discardCount ?? game.state.discard.length}
           </button>
-          {lastJudge && (
-            <span className="m-judge">
-              {targetName(lastJudge.playerId)} {lastJudge.reason} · {lastJudge.card.name} {lastJudge.success ? '生效' : '未生效'}
-            </span>
-          )}
         </div>
         {lastDiscard && (
           <div className="m-discard-strip">
@@ -338,6 +346,10 @@ export function MobileGameScreen() {
       </div>
 
       <div className="m-self">
+        {(() => {
+          const bubble = speechBubbles.find((item) => item.playerId === human.id);
+          return bubble ? <div className="m-self-speech">{bubble.text}</div> : null;
+        })()}
         {flashes
           .filter((item) => item.playerId === human.id)
           .map((item, index) => (
@@ -358,7 +370,7 @@ export function MobileGameScreen() {
             {Math.max(0, human.hp)}/{human.maxHp}
           </span>
           <span className="m-self-limit">手牌上限 {handLimit}</span>
-          {human.chained && <span className="m-tag">横置</span>}
+          {human.chained && <span className="m-tag m-chain" title="铁索连环：横置">铁索·横置</span>}
           {human.flipped && <span className="m-tag">翻面</span>}
           <span className="m-self-equips">装备 {humanEquips.join(' · ') || '无'}</span>
           {human.judgeZone.length > 0 && (

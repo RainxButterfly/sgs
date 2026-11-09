@@ -171,6 +171,27 @@ interface FlashEvent {
   card?: Card;
 }
 
+interface SpeechBubble {
+  id: number;
+  playerId: number;
+  name: string;
+  text: string;
+}
+
+interface SkillNotice {
+  id: number;
+  playerId: number;
+  name: string;
+  text?: string;
+}
+
+interface RevealNotice {
+  id: number;
+  playerId?: number;
+  cards: Card[];
+  label?: string;
+}
+
 interface DamageNotice {
   id: number;
   kind: 'damage' | 'heal';
@@ -228,6 +249,9 @@ interface GameStore {
   flash: FlashEvent | null;
   flashes: FlashEvent[];
   damageNotice: DamageNotice | null;
+  revealNotice: RevealNotice | null;
+  lastSkill: SkillNotice | null;
+  speechBubbles: SpeechBubble[];
   error: string | null;
   lanRole: 'host' | 'client' | null;
   lanHost: LanHostManager | null;
@@ -367,6 +391,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   flash: null,
   flashes: [],
   damageNotice: null,
+  revealNotice: null,
+  lastSkill: null,
+  speechBubbles: [],
   error: null,
   lanRole: null,
   lanHost: null,
@@ -1186,6 +1213,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         text: ev.text,
         reason: ev.reason,
       };
+      const judgeId = eventSeq;
+      setTimeout(() => {
+        if (get().lastJudge?.id === judgeId) set({ lastJudge: null });
+      }, 3600);
       const lastHistory = state.cardHistory[state.cardHistory.length - 1];
       const baseHistory =
         lastHistory?.kind === 'reveal' &&
@@ -1230,8 +1261,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
           turn,
         },
       ].slice(-40);
+    } else if (ev.type === 'skill') {
+      eventSeq += 1;
+      patch.lastSkill = {
+        id: eventSeq,
+        playerId: ev.playerId,
+        name: ev.name,
+        text: ev.text,
+      };
+      const skillId = eventSeq;
+      setTimeout(() => {
+        if (get().lastSkill?.id === skillId) set({ lastSkill: null });
+      }, 2400);
     } else if (ev.type === 'reveal' && ev.cards.length > 0) {
       eventSeq += 1;
+      if (ev.label) {
+        patch.revealNotice = {
+          id: eventSeq,
+          playerId: ev.playerId,
+          cards: ev.cards,
+          label: ev.label,
+        };
+        const revealId = eventSeq;
+        setTimeout(() => {
+          if (get().revealNotice?.id === revealId) set({ revealNotice: null });
+        }, 2800);
+      }
       patch.cardHistory = [
         ...state.cardHistory,
         {
@@ -1505,10 +1560,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   receiveChat: (message) => {
     const state = get();
+    const bubble =
+      message.playerId !== undefined
+        ? {
+            id: message.id,
+            playerId: message.playerId,
+            name: message.name,
+            text: message.text,
+          }
+        : null;
     set({
       chatMessages: [...state.chatMessages, message].slice(-100),
       chatUnread: state.chatOpen ? 0 : state.chatUnread + 1,
+      speechBubbles: bubble ? [...state.speechBubbles, bubble].slice(-8) : state.speechBubbles,
     });
+    if (bubble) {
+      setTimeout(() => {
+        set({
+          speechBubbles: get().speechBubbles.filter((item) => item.id !== bubble.id),
+        });
+      }, 5200);
+    }
   },
 
   sendChat: (text) => {

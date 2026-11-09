@@ -147,18 +147,25 @@ export function PromptBar() {
       });
     };
     return (
-      <div className="prompt-bar active-respond">
+      <div className={`prompt-bar active-respond ${isWuxie ? 'wuxie-prompt' : ''}`}>
         <div className="prompt-main">
           <div className="prompt-title">
             <span className="prompt-dot red" />
-            {pending.prompt}
+            {isWuxie ? '无懈可击 · 可以抵消这张锦囊' : pending.prompt}
           </div>
           <div className="prompt-status">
-            {selected
-              ? `已选【${selected.as}】，点击确定打出`
-              : real.length > 0
-                ? '点击手牌中的对应牌进行响应'
-                : '没有可响应的手牌'}
+            {isWuxie ? (
+              <>
+                {pending.prompt}
+                {selected && <b className="wuxie-ready"> 已准备【无懈可击】</b>}
+              </>
+            ) : selected ? (
+              `已选【${selected.as}】，点击确定打出`
+            ) : real.length > 0 ? (
+              '点击手牌中的对应牌进行响应'
+            ) : (
+              '没有可响应的手牌'
+            )}
           </div>
         </div>
         <div className="prompt-actions">
@@ -179,13 +186,8 @@ export function PromptBar() {
               {o.label ?? '发动'}
             </button>
           ))}
-          {isWuxie && (
-            <button type="button" className="btn ghost" onClick={() => useGameStore.getState().cancelAllWuxie()}>
-              本轮全部取消
-            </button>
-          )}
           <button type="button" className="btn ghost" onClick={() => useGameStore.getState().cancelPrompt()}>
-            取消
+            {isWuxie ? '本轮不用' : '取消'}
           </button>
           <button
             type="button"
@@ -207,6 +209,7 @@ export function PromptBar() {
       useGameStore.getState().submit({ type: 'choosePlayers', playerIds: ids });
     };
     const canPickSelf = pending.players?.includes(humanId) ?? false;
+    const canCancel = pending.canCancel || /^[^：]{1,12}：/.test(pending.prompt);
     return (
       <div className="prompt-bar active-choose">
         <div className="prompt-main">
@@ -226,7 +229,7 @@ export function PromptBar() {
               选择自己
             </button>
           )}
-          {pending.canCancel && (
+          {canCancel && (
             <button type="button" className="btn ghost" onClick={() => useGameStore.getState().cancelPrompt()}>
               取消
             </button>

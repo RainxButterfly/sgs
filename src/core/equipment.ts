@@ -20,3 +20,13 @@ export const EQUIP_SKILL_ID: Record<string, string> = {
 export function equipSkillId(cardName: string): string | undefined {
   return EQUIP_SKILL_ID[cardName];
 }
+
+export const EQUIP_DESC: Record<string, string> = {
+  的卢: '防御马（+1 马）：其他角色计算与你的距离时 +1。',
+  绝影: '防御马（+1 马）：其他角色计算与你的距离时 +1。',
+  爪黄飞电: '防御马（+1 马）：其他角色计算与你的距离时 +1。',
+  骅骝: '防御马（+1 马）：其他角色计算与你的距离时 +1。',
+  赤兔: '进攻马（-1 马）：你计算与其他角色的距离时 -1。',
+  大宛: '进攻马（-1 马）：你计算与其他角色的距离时 -1。',
+  紫骍: '进攻马（-1 马）：你计算与其他角色的距离时 -1。',
+};

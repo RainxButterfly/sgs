@@ -8995,3 +8995,403 @@ button {
     min-height: 42px;
   }
 }
+
+/* 聊天气泡 */
+.seat-speech,
+.m-seat-speech,
+.m-self-speech {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: 210px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  border: 1px solid rgba(219, 181, 108, 0.45);
+  background: rgba(48, 39, 29, 0.98);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: left;
+  overflow-wrap: anywhere;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.42);
+  pointer-events: none;
+  animation: speechIn 0.18s ease;
+}
+
+.seat-speech::after,
+.m-seat-speech::after,
+.m-self-speech::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(48, 39, 29, 0.98);
+}
+
+.hero-speech {
+  bottom: auto;
+  top: -6px;
+}
+
+@keyframes speechIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.m-seat-speech {
+  max-width: 170px;
+  font-size: 10px;
+  padding: 4px 7px;
+}
+
+.m-self-speech {
+  max-width: 220px;
+  font-size: 10px;
+  padding: 4px 7px;
+  bottom: calc(100% + 4px);
+}
+
+.m-chain {
+  color: #9fe0c0;
+  border-color: rgba(100, 190, 145, 0.55);
+  background: rgba(60, 130, 100, 0.16);
+  font-weight: 600;
+}
+
+/* 技能展示牌提示 */
+.reveal-notice {
+  position: fixed;
+  left: 50%;
+  top: 132px;
+  transform: translateX(-50%);
+  z-index: 56;
+  min-width: 180px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  border: 1px solid rgba(219, 181, 108, 0.52);
+  background: rgba(42, 34, 24, 0.97);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  animation: revealNotice 2.7s ease-out forwards;
+}
+
+.reveal-notice-head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 5px;
+  color: var(--gold-dim);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.reveal-notice-head b {
+  color: var(--gold-bright);
+  font-size: 11px;
+}
+
+.reveal-notice-cards {
+  display: flex;
+  gap: 6px;
+}
+
+.reveal-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(219, 181, 108, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.reveal-card em {
+  color: var(--gold-bright);
+  font-size: 10px;
+  font-style: normal;
+}
+
+.reveal-card b {
+  color: var(--text);
+  font-size: 12px;
+}
+
+@keyframes revealNotice {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -6px) scale(0.96);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+@media (max-width: 720px) {
+  .reveal-notice {
+    top: 104px;
+    max-width: 82vw;
+  }
+
+  .reveal-card {
+    padding: 3px 6px;
+  }
+
+  .reveal-card b {
+    font-size: 10.5px;
+  }
+}
+
+/* 判定结果提示 */
+.judge-notice {
+  position: fixed;
+  left: 50%;
+  top: 74px;
+  transform: translateX(-50%);
+  z-index: 54;
+  min-width: 220px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(219, 181, 108, 0.52);
+  background: rgba(42, 34, 24, 0.97);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  animation: judgeNoticeIn 0.2s ease;
+}
+
+.judge-notice.ok {
+  border-color: rgba(123, 190, 138, 0.6);
+}
+
+.judge-notice.bad {
+  border-color: rgba(210, 122, 100, 0.65);
+}
+
+.judge-notice-head,
+.judge-notice-body {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.judge-notice-head {
+  color: var(--gold-dim);
+  font-size: 10px;
+}
+
+.judge-notice-head b {
+  color: var(--gold-bright);
+  font-size: 11px;
+}
+
+.judge-notice-body {
+  margin-top: 3px;
+}
+
+.judge-notice-card {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.judge-notice-body strong {
+  color: #8fcb9d;
+  font-size: 11px;
+}
+
+.judge-notice.bad .judge-notice-body strong {
+  color: #e09a8e;
+}
+
+@keyframes judgeNoticeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (max-width: 720px) {
+  .judge-notice {
+    top: 60px;
+    min-width: 190px;
+    padding: 6px 9px;
+  }
+}
+
+@keyframes playedCardIn {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) rotate(-4deg) scale(0.82);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-3px) rotate(1deg) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0) scale(1);
+  }
+}
+
+.played-card {
+  animation: playedCardIn 0.34s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+
+.played-banner {
+  animation: fadeIn 0.2s ease;
+}
+
+/* 技能发动提示条 */
+.skill-notice {
+  position: fixed;
+  left: 14px;
+  top: 74px;
+  z-index: 54;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 290px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(219, 181, 108, 0.48);
+  background: rgba(42, 34, 24, 0.97);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  animation: skillNoticeIn 2.3s ease-out forwards;
+}
+
+.skill-notice-mark {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(219, 181, 108, 0.5);
+  color: var(--gold-bright);
+  font-family: var(--font-calligraphy);
+  font-size: 12px;
+}
+
+.skill-notice b {
+  display: block;
+  color: var(--gold-bright);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.skill-notice p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+@keyframes skillNoticeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  14% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+
+@media (max-width: 720px) {
+  .skill-notice {
+    top: 58px;
+    left: 8px;
+    max-width: 230px;
+  }
+}
+
+.recent-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  max-width: 360px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: rgba(26, 21, 16, 0.5);
+  pointer-events: none;
+}
+
+.recent-action {
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-action b {
+  margin-right: 4px;
+  color: var(--gold-dim);
+  font-weight: 500;
+}
+
+.seat-targeted {
+  border-color: rgba(255, 210, 120, 0.75);
+  box-shadow: 0 0 0 1px rgba(255, 210, 120, 0.3), 0 0 22px rgba(255, 190, 80, 0.18);
+}
+
+.m-seat.is-targeted {
+  border-color: rgba(255, 210, 120, 0.75);
+  box-shadow: 0 0 0 1px rgba(255, 210, 120, 0.22), 0 0 18px rgba(255, 190, 80, 0.16);
+}
+
+.played-effect {
+  max-width: 280px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(26, 21, 16, 0.55);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.prompt-bar.wuxie-prompt {
+  border-color: rgba(177, 155, 230, 0.55);
+  box-shadow: 0 0 0 1px rgba(177, 155, 230, 0.12), 0 8px 26px rgba(0, 0, 0, 0.28);
+}
+
+.wuxie-ready {
+  margin-left: 6px;
+  color: #c8bdf0;
+  font-size: 11px;
+}

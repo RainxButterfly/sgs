@@ -2126,8 +2126,11 @@ const SKILLS: SkillDef[] = [
           if (yes) questioners.push(p);
         }
         if (questioners.length > 0) {
-          game.revealCards(owner.id, [card]);
-          game.log(`【${owner.name}】的蛊惑牌是【${card.name}】`, 'judge');
+          game.revealCards(owner.id, [card], '蛊惑质疑');
+          game.log(
+            `【${owner.name}】展示蛊惑牌【${card.name}】（${black(card) ? '黑色' : '红色'}）`,
+            'judge',
+          );
           if (black(card)) {
             await game.discardCards(owner, [card], '蛊惑');
             await game.loseHp(owner, 1);

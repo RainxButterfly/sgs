@@ -61,3 +61,39 @@ describe('技能触发链', () => {
     expect(liubei.hp).toBe(before - 1);
   });
 });
+
+class WuxieIO extends SkillIO {
+  ask(req: AskRequest): Promise<GameAction> {
+    if (req.kind === 'respond' && req.respondName === '无懈可击' && req.playerId === 1) {
+      const option = (req.cardOptions ?? []).find((item) => !item.cardId.startsWith('__'));
+      return Promise.resolve(option ? { type: 'respondCard', cardId: option.cardId, as: option.as } : { type: 'cancel' });
+    }
+    return super.ask(req);
+  }
+}
+
+describe('无懈可击', () => {
+  it('无中生有可以被无懈可击抵消', async () => {
+    const io = new WuxieIO();
+    const game = new Game(
+      {
+        players: [
+          { name: '使用者', heroId: 'liubei', isBot: false },
+          { name: '无懈者', heroId: 'simayi', isBot: false },
+          { name: '旁观者', heroId: 'caocao', isBot: false },
+        ],
+        seed: 20261116,
+        rules: { skillsEnabled: false },
+      },
+      io,
+    );
+    const [user, wuxie] = game.state.players;
+    user.hand = [{ id: 'wuzhong', name: '无中生有', suit: 'heart', rank: 7, type: 'trick' }];
+    wuxie.hand = [{ id: 'wuxie', name: '无懈可击', suit: 'spade', rank: 2, type: 'trick' }];
+    const before = user.hand.length;
+    await game.useCard(user, user.hand[0], '无中生有', []);
+    expect(user.hand).toHaveLength(before - 1);
+    expect(wuxie.hand).toHaveLength(0);
+    expect(game.state.log.some((entry) => entry.text.includes('无中生有被无懈可击抵消'))).toBe(true);
+  });
+});

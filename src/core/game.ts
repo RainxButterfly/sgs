@@ -514,8 +514,8 @@ export class Game {
     return cards;
   }
 
-  revealCards(playerId: number | undefined, cards: Card[]): void {
-    this.emit({ type: 'reveal', playerId, cards });
+  revealCards(playerId: number | undefined, cards: Card[], label?: string): void {
+    this.emit({ type: 'reveal', playerId, cards, label });
   }
 
   drawRevealed(player: PlayerState, count: number, reason = '亮出牌'): Card[] {
@@ -574,7 +574,7 @@ export class Game {
     if (this.state.deck.length === 0) this.reshuffle();
     let card = this.state.deck.pop();
     if (!card) throw new Error('牌堆与弃牌堆均为空');
-    this.emit({ type: 'reveal', playerId: player.id, cards: [card] });
+    this.emit({ type: 'reveal', playerId: player.id, cards: [card], label: '判定牌' });
     this.log(`【${player.name}】进行${reason}判定，判定牌为 ${cardLabel(card)}`, 'judge');
     const ctx: SkillContext = {
       game: this,
@@ -588,7 +588,7 @@ export class Game {
       const old = card;
       card = ctx.data.judgeCard as Card;
       this.toDiscard(old);
-      this.emit({ type: 'reveal', playerId: player.id, cards: [card] });
+      this.emit({ type: 'reveal', playerId: player.id, cards: [card], label: '改判' });
       this.log(`判定牌被改为 ${cardLabel(card)}`, 'judge');
     }
     const success = this.judgeResult(card, reason);
@@ -643,7 +643,16 @@ export class Game {
           if (trig.when && !trig.when(ctx)) continue;
           if (trig.oncePerTurn && (owner.usedThisTurn[skill.id] ?? 0) > 0) continue;
           if (trig.optional) {
-            const ok = await this.confirm(owner, trig.prompt ?? `是否发动【${skill.name}】？`, skill.desc);
+            const triggerDetail =
+              event === 'judgeBefore' && base.card
+                ? `当前判定牌：${cardLabel(base.card)}${skill.desc ? `
+${skill.desc}` : ''}`
+                : skill.desc;
+            const ok = await this.confirm(
+              owner,
+              trig.prompt ?? `是否发动【${skill.name}】？`,
+              triggerDetail,
+            );
             if (!ok) continue;
           }
           if (trig.oncePerTurn) owner.usedThisTurn[skill.id] = 1;
@@ -1149,7 +1158,11 @@ export class Game {
     } else if (asName === '桃') {
       this.heal(user, user, 1, { card, reason: '桃' });
     } else if (asName === '无中生有') {
-      this.drawCards(user, 2, '使用无中生有');
+      if (!(await this.askWuxie('无中生有', user, user, `【${user.name}】使用无中生有`))) {
+        this.drawCards(user, 2, '使用无中生有');
+      } else {
+        this.log('无中生有被无懈可击抵消', 'skill');
+      }
     } else if (asName === '决斗') {
       const target = this.players[targets[0]];
       if (target && target.alive && !(await this.askWuxie('决斗', target, user, `【${user.name}】对【${target.name}】使用决斗`))) {
@@ -1225,7 +1238,7 @@ export class Game {
     if (await this.askWuxie('火攻', target, user, `【${user.name}】对【${target.name}】使用火攻`)) return;
     const revealed = await this.askCards(target, target.hand, 1, 1, '火攻：展示一张手牌', undefined, false);
     if (!revealed.length) return;
-    this.emit({ type: 'reveal', playerId: target.id, cards: revealed });
+    this.emit({ type: 'reveal', playerId: target.id, cards: revealed, label: '火攻' });
     this.log(`【${target.name}】展示了 ${cardLabel(revealed[0])}`);
     const suit = revealed[0].suit;
     const sameSuit = user.hand.filter((c) => c.suit === suit);

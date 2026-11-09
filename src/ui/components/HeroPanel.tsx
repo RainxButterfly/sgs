@@ -17,11 +17,12 @@ interface Props {
   current: boolean;
   flash?: Flash | null;
   flashes?: Flash[];
+  speech?: { name: string; text: string } | null;
   handLimitModifier?: number;
   onDetail?: () => void;
 }
 
-export function HeroPanel({ player, mode = 'identity', current, flash, flashes, handLimitModifier = 0, onDetail }: Props) {
+export function HeroPanel({ player, mode = 'identity', current, flash, flashes, speech, handLimitModifier = 0, onDetail }: Props) {
   const hero = HERO_MAP.get(player.heroId);
   const titles = (player.heroIds?.length ? player.heroIds : [player.heroId])
     .map((id) => HERO_MAP.get(id)?.title)
@@ -52,6 +53,7 @@ export function HeroPanel({ player, mode = 'identity', current, flash, flashes, 
 
   return (
     <div className={`hero-panel faction-${player.faction} ${current ? 'hero-current' : ''}`}>
+      {speech && <div className="seat-speech hero-speech">{speech.text}</div>}
       {displayFlashes.map((item, index) => (
         <span
           key={item.id}
@@ -140,7 +142,7 @@ export function HeroPanel({ player, mode = 'identity', current, flash, flashes, 
       {(player.flipped || player.unyu.length > 0 || player.chained || fields.length > 0) && (
         <div className="hero-status-row">
           {player.flipped && <span className="mini-status flipped">翻面</span>}
-          {player.chained && <span className="mini-status chained">横置</span>}
+          {player.chained && <span className="mini-status chained" title="铁索连环：横置，受到属性伤害时会传导">铁索·横置</span>}
           {fields.map((c) => (
             <span key={c.id} className="mini-unyu" title={`田：${c.name}`}>
               田 {c.name}

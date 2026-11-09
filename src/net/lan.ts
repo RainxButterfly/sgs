@@ -508,6 +508,7 @@ export class LanHostManager {
       name: this.hostName,
       text: value,
       at: Date.now(),
+      playerId: 0,
     };
     this.hooks.onChat(message);
     this.broadcast({ t: 'chat', message });
@@ -528,6 +529,7 @@ export class LanHostManager {
         name: guest?.name ?? spectator?.name ?? '观战者',
         text: value,
         at: Date.now(),
+        playerId: guest?.playerId,
       };
       this.hooks.onChat(chat);
       this.broadcast({ t: 'chat', message: chat });

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { cardDisplayName, rankText, shortCardName, SUIT_CHAR } from '../labels';
+import { cardEffectText } from '../cardEffects';
 import { DiscardModal } from './DiscardModal';
 import { useGameSnapshot, useGameStore } from '../store';
 import { CardView } from './CardView';
@@ -15,19 +16,15 @@ export function TableCenter() {
   const player = (id?: number) => (id === undefined ? undefined : game.state.players[id]);
   const playerName = (id: number) => game.state.players[id]?.name ?? '';
   const faction = (id?: number) => player(id)?.faction;
-
-  const actionText = (entry: (typeof cardHistory)[number]) => {
+  const recentText = (entry: (typeof cardHistory)[number]) => {
     const card = entry.cards[0];
     if (entry.kind === 'play' || entry.kind === 'respond') {
-      const verb = entry.kind === 'respond' ? '打出' : '使用';
-      const as = entry.as ?? (card ? cardDisplayName(card) : '');
-      if (card && as !== cardDisplayName(card)) return `将【${cardDisplayName(card)}】当【${as}】${verb}`;
-      return `${verb}【${as}】`;
+      return `${entry.kind === 'respond' ? '打出' : '使用'}【${entry.as ?? (card ? cardDisplayName(card) : '')}】`;
     }
-    if (entry.kind === 'judge') {
-      return `判定【${card ? cardDisplayName(card) : ''}】· ${entry.label}`;
-    }
-    return `${entry.label} ${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
+    if (entry.kind === 'judge') return `判定${card ? `【${card.name}】` : ''}`;
+    if (entry.kind === 'discard') return `弃置${card ? `【${card.name}】` : ''}`;
+    if (entry.kind === 'gain') return `获得${card ? `【${card.name}】` : ''}`;
+    return entry.label;
   };
 
   return (
@@ -59,6 +56,9 @@ export function TableCenter() {
                 </span>
               </div>
               <CardView card={lastPlay.card} size="lg" className="played-card" />
+              {cardEffectText(lastPlay.card) && (
+                <div className="played-effect">{cardEffectText(lastPlay.card)}</div>
+              )}
               {lastPlay.targets.length > 0 && (
                 <div className="played-targets-row">
                   <span>目标</span>
@@ -72,28 +72,14 @@ export function TableCenter() {
             <div className="played-empty">等待出牌</div>
           )}
         </div>
-
         {cardHistory.length > 0 && (
-          <div className="action-feed">
-            <div className="action-feed-title">出牌顺序</div>
-            {cardHistory.map((entry, index) => {
-              const owner = player(entry.playerId);
-              return (
-                <div
-                  key={entry.id}
-                  className={`action-row ${index === cardHistory.length - 1 ? 'latest' : ''}`}
-                >
-                  <span className="action-index">{index + 1}</span>
-                  <span className={`action-player faction-${owner?.faction ?? 'qun'}`}>
-                    {owner?.name ?? '牌堆'}
-                  </span>
-                  <span className="action-text">{actionText(entry)}</span>
-                  {entry.targets && entry.targets.length > 0 && (
-                    <span className="action-targets">→ {entry.targets.map(playerName).join('、')}</span>
-                  )}
-                </div>
-              );
-            })}
+          <div className="recent-actions">
+            {cardHistory.slice(-3).map((entry) => (
+              <span key={entry.id} className="recent-action">
+                <b>{entry.playerId !== undefined ? playerName(entry.playerId) : '牌堆'}</b>
+                {recentText(entry)}
+              </span>
+            ))}
           </div>
         )}
       </div>
@@ -113,16 +99,6 @@ export function TableCenter() {
               </span>
             ))}
           </span>
-        </div>
-      )}
-      {lastJudge && (
-        <div key={lastJudge.id} className={`judge-strip ${lastJudge.success ? 'ok' : 'bad'}`}>
-          <span className="judge-owner">{playerName(lastJudge.playerId)}</span>
-          <span className="judge-reason">{lastJudge.reason}</span>
-          <span className="judge-card-mini">
-            {lastJudge.card.name} {lastJudge.text}
-          </span>
-          <span className="judge-result">{lastJudge.success ? '生效' : '未生效'}</span>
         </div>
       )}
       {discardOpen && <DiscardModal cards={game.state.discard} onClose={() => setDiscardOpen(false)} />}

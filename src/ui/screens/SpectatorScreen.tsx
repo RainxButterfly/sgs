@@ -14,6 +14,7 @@ export function SpectatorScreen() {
   const openChat = useGameStore((s) => s.openChat);
   const chatUnread = useGameStore((s) => s.chatUnread);
   const flashes = useGameStore((s) => s.flashes);
+  const speechBubbles = useGameStore((s) => s.speechBubbles);
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
 
@@ -62,6 +63,7 @@ export function SpectatorScreen() {
                 mode={mode}
                 current={player.id === currentId}
                 flashes={flashes}
+                speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
                 style={{ left: `${x}%`, top: `${y}%` }}
                 onDetail={() => setDetailPlayer(player.id)}
               />

@@ -20,6 +20,8 @@ export function GameScreen() {
   const selectedTargets = useGameStore((s) => s.selectedTargets);
   const flash = useGameStore((s) => s.flash);
   const flashes = useGameStore((s) => s.flashes);
+  const speechBubbles = useGameStore((s) => s.speechBubbles);
+  const lastPlay = useGameStore((s) => s.lastPlay);
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
   const selectedCardId = selected?.cardId;
@@ -110,10 +112,12 @@ export function GameScreen() {
                 mode={displayMode}
                 current={player.id === currentId}
                 targetable={targetable.has(player.id)}
+                targeted={!!lastPlay?.targets.includes(player.id)}
                 selected={selectedTargets.includes(player.id)}
                 clickable={targetable.has(player.id)}
                 flash={flash}
                 flashes={flashes}
+                speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
                 style={{ left: `${x}%`, top: `${y}%` }}
                 onDetail={() => setDetailPlayer(player.id)}
                 onClick={() => useGameStore.getState().seatClick(player.id)}
@@ -131,6 +135,7 @@ export function GameScreen() {
             current={human.id === currentId}
             flash={flash}
             flashes={flashes}
+            speech={speechBubbles.find((bubble) => bubble.playerId === human.id) ?? null}
             handLimitModifier={game.state.rules?.handLimitModifier ?? 0}
             onDetail={() => setDetailPlayer(human.id)}
           />

@@ -61,6 +61,7 @@ export interface ChatMessage {
   name: string;
   text: string;
   at: number;
+  playerId?: number;
 }
 
 export type HostPayload =

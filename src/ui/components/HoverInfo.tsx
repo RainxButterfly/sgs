@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { HeroData, PlayerState } from '../../core/types';
 import { FACTION_NAME } from '../../core/types';
 import { SKILL_MAP } from '../../core/skills';
-import { EQUIP_SKILL_ID } from '../../core/equipment';
+import { EQUIP_DESC, EQUIP_SKILL_ID } from '../../core/equipment';
 import { HERO_MAP } from '../../core/deck';
 import { playerHeroNames } from '../labels';
 
@@ -103,7 +103,7 @@ export function HeroHover({ hero, player }: { hero?: HeroData; player: PlayerSta
       <div className="hover-hero-meta">
         <span>体力 {Math.max(0, player.hp)}/{player.maxHp}</span>
         <span>手牌 {player.hand.length}</span>
-        {player.chained && <span>横置</span>}
+        {player.chained && <span title="横置角色受到属性伤害时会传导给其他横置角色">铁索·横置</span>}
         {player.flipped && <span>翻面</span>}
       </div>
       <div className="hover-skills">
@@ -142,7 +142,7 @@ export function EquipHover({ name }: { name: string }) {
         <b>{name}</b>
         <span className="hover-tag">装备</span>
       </div>
-      <p>{skill?.desc ?? '装备牌'}</p>
+      <p>{EQUIP_DESC[name] ?? skill?.desc ?? '装备牌'}</p>
     </div>
   );
 }

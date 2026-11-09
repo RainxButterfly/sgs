@@ -235,7 +235,7 @@ export type GameEvent =
   | { type: 'death'; playerId: number; role: Role }
   | { type: 'equip'; playerId: number; slot: EquipSlot; card?: Card }
   | { type: 'skill'; playerId: number; name: string; text?: string }
-  | { type: 'reveal'; playerId?: number; cards: Card[] }
+  | { type: 'reveal'; playerId?: number; cards: Card[]; label?: string }
   | {
       type: 'harvest';
       cards: Card[];

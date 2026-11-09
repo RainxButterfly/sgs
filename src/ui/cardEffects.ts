@@ -1,5 +1,5 @@
 import type { Card } from '../core/types';
-import { equipSkillId } from '../core/equipment';
+import { EQUIP_DESC, equipSkillId } from '../core/equipment';
 import { SKILL_MAP } from '../core/skills';
 
 const EFFECTS: Record<string, string> = {
@@ -27,8 +27,14 @@ const EFFECTS: Record<string, string> = {
 
 export function cardEffectText(card: Card): string {
   if (card.equipSlot) {
+    if (EQUIP_DESC[card.name]) return EQUIP_DESC[card.name];
     const skill = SKILL_MAP.get(equipSkillId(card.name) ?? '');
     if (skill?.desc) return skill.desc;
+    return card.equipSlot === 'horsePlus'
+      ? '防御马（+1 马）：其他角色计算与你的距离时 +1。'
+      : card.equipSlot === 'horseMinus'
+        ? '进攻马（-1 马）：你计算与其他角色的距离时 -1。'
+        : '装备牌。';
   }
   return EFFECTS[card.name] ?? '';
 }
