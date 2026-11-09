@@ -304,7 +304,7 @@ const SKILLS: SkillDef[] = [
     id: 'qingguo',
     name: '倾国',
     desc: '你可以将一张黑色手牌当【闪】使用或打出。',
-    viewAs: [{ as: '闪', usage: 'respond', filter: (_g, _o, card) => black(card) }],
+    viewAs: [{ as: '闪', usage: 'respond', filter: (game, owner, card) => game.isBlackCard(owner, card) }],
   },
   {
     id: 'luoshen',
@@ -368,7 +368,7 @@ const SKILLS: SkillDef[] = [
     id: 'wusheng',
     name: '武圣',
     desc: '你可以将一张红色牌当【杀】使用或打出。',
-    viewAs: [{ as: '杀', usage: 'both', filter: (_g, _o, card) => red(card) }],
+    viewAs: [{ as: '杀', usage: 'both', filter: (game, owner, card) => game.isRedCard(owner, card) }],
   },
   {
     id: 'paoxiao',
@@ -499,7 +499,7 @@ const SKILLS: SkillDef[] = [
     id: 'qixi',
     name: '奇袭',
     desc: '你可以将一张黑色牌当【过河拆桥】使用。',
-    viewAs: [{ as: '过河拆桥', usage: 'play', filter: (_g, _o, card) => black(card) }],
+    viewAs: [{ as: '过河拆桥', usage: 'play', filter: (game, owner, card) => game.isBlackCard(owner, card) }],
   },
   {
     id: 'keji',
@@ -691,7 +691,7 @@ const SKILLS: SkillDef[] = [
       {
         as: '桃',
         usage: 'respond',
-        filter: (_g, _o, card) => red(card),
+        filter: (game, owner, card) => game.isRedCard(owner, card),
         condition: (game, owner) => game.currentPlayer?.id !== owner.id,
       },
     ],
@@ -1368,7 +1368,7 @@ const SKILLS: SkillDef[] = [
   {
     id: 'shuangxiong',
     name: '双雄',
-    desc: '摸牌阶段，你可以改为亮出并获得牌堆顶一张牌；本回合你可以将与此牌颜色不同的手牌当【决斗】使用。',
+    desc: '摸牌阶段，你可以放弃摸牌，改为进行判定并获得判定牌；本回合你可以将与此牌颜色不同的手牌当【决斗】使用。',
     triggers: [
       {
         event: 'drawPhase',
@@ -1377,8 +1377,10 @@ const SKILLS: SkillDef[] = [
         prompt: '是否发动【双雄】改为亮出并获得一张牌？',
         effect: async (c) => {
           c.data.skip = true;
-          const cards = c.game.drawRevealed(c.owner, 1, '双雄');
-          if (cards.length) c.owner.flags.shuangxiong = red(cards[0]) ? 1 : 2;
+          const judged = await c.game.judge(c.owner, '双雄', {
+            gainTo: c.owner,
+          });
+          c.owner.flags.shuangxiong = c.game.isRedCard(c.owner, judged) ? 1 : 2;
         },
       },
     ],
@@ -1386,8 +1388,9 @@ const SKILLS: SkillDef[] = [
       {
         as: '决斗',
         usage: 'play',
-        filter: (_g, owner, card) =>
-          !!owner.flags.shuangxiong && (red(card) ? 1 : 2) !== owner.flags.shuangxiong,
+        filter: (game, owner, card) =>
+          !!owner.flags.shuangxiong &&
+          (game.isRedCard(owner, card) ? 1 : 2) !== owner.flags.shuangxiong,
       },
     ],
   },
@@ -1675,7 +1678,7 @@ const SKILLS: SkillDef[] = [
       {
         as: '火攻',
         usage: 'play',
-        filter: (_game, _owner, card) => red(card),
+        filter: (game, owner, card) => game.isRedCard(owner, card),
       },
     ],
   },
@@ -1687,7 +1690,7 @@ const SKILLS: SkillDef[] = [
       {
         as: '无懈可击',
         usage: 'respond',
-        filter: (_game, _owner, card) => black(card),
+        filter: (game, owner, card) => game.isBlackCard(owner, card),
       },
     ],
   },

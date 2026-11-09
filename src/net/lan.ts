@@ -168,6 +168,7 @@ export class LanHostManager {
   private spectators: SpectatorInfo[] = [];
   private bannedNames = new Set<string>();
   private bidding: LandlordBidState | null = null;
+  fillBots = true;
   private pending = new Map<number, { request: AskRequest; resolve: (action: GameAction) => void; timer: ReturnType<typeof setTimeout> }>();
   private stateTimer: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
@@ -297,6 +298,7 @@ export class LanHostManager {
       revealed,
       spectators: this.spectators.map((spectator) => ({ ...spectator })),
       bidding: this.bidding ? { ...this.bidding, bids: { ...this.bidding.bids }, order: [...this.bidding.order] } : null,
+      fillBots: this.fillBots,
     };
   }
 
@@ -308,16 +310,22 @@ export class LanHostManager {
 
   beginPicking(count: number): void {
     if (this.started || this.picking) return;
-    const gameMode = this.rules.mode ?? 'identity';
-    if (gameMode === 'landlord') {
-      if (!this.bidding) this.beginLandlordBid(count);
-      return;
-    }
     this.startPickingGame(count);
   }
 
+  setFillBots(value: boolean): void {
+    if (this.started || this.picking) return;
+    this.fillBots = value;
+    this.refreshLobby();
+  }
+
   private beginLandlordBid(count: number): void {
-    const total = Math.max(3, Math.min(3, count));
+    const humans = 1 + this.guests.filter((guest) => guest.connected).length;
+    const total = this.fillBots ? 3 : humans;
+    if (total < 3) {
+      this.hooks.onError('斗地主需要 3 名玩家，关闭电脑补位后人手不足');
+      return;
+    }
     this.plannedCount = total;
     this.bidding = {
       order: Array.from({ length: total }, (_, index) => index),
@@ -378,10 +386,21 @@ export class LanHostManager {
   }
 
   private startPickingGame(count: number, forcedLordId?: number): void {
-    this.ensureChoicesForMode();
-    const total = Math.max(2, Math.min(8, count));
-    this.plannedCount = total;
     const gameMode = this.rules.mode ?? 'identity';
+    const humanCount = 1 + this.guests.filter((guest) => guest.connected).length;
+    const minPlayers =
+      gameMode === 'duel' ? 2 : gameMode === 'landlord' ? 3 : gameMode === 'guozhan' ? 4 : this.mode === 'custom' ? 2 : 5;
+    const total = this.fillBots ? Math.max(2, Math.min(8, count)) : humanCount;
+    if (total < minPlayers) {
+      this.hooks.onError(`当前模式至少需要 ${minPlayers} 人，关闭电脑补位后人手不足`);
+      return;
+    }
+    if (gameMode === 'landlord' && !this.bidding && forcedLordId == null && total >= 3) {
+      this.beginLandlordBid(total);
+      return;
+    }
+    this.ensureChoicesForMode();
+    this.plannedCount = total;
     let roles = buildRoles(total, gameMode);
     if (gameMode === 'landlord' && forcedLordId != null) {
       roles = Array.from({ length: total }, (_, index) => (index === forcedLordId ? 'lord' : 'rebel'));
@@ -894,7 +913,13 @@ export class LanHostManager {
       this.hooks.onError(`当前模式最多 ${maxPlayers} 名玩家`);
       return;
     }
-    const total = Math.max(minPlayers, Math.min(maxPlayers, Math.max(count, humans)));
+    if (!this.fillBots && humans < minPlayers) {
+      this.hooks.onError(`当前模式至少需要 ${minPlayers} 人，关闭电脑补位后人手不足`);
+      return;
+    }
+    const total = this.fillBots
+      ? Math.max(minPlayers, Math.min(maxPlayers, Math.max(count, humans)))
+      : humans;
     this.guests.forEach((guest, index) => {
       guest.playerId = index + 1;
     });

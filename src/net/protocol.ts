@@ -60,6 +60,7 @@ export interface LobbyState {
   revealed?: boolean;
   spectators?: SpectatorInfo[];
   bidding?: LandlordBidState | null;
+  fillBots?: boolean;
 }
 
 export type ServerEvent =

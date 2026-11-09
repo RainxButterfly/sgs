@@ -95,6 +95,7 @@ export function LobbyScreen() {
 
   const players = lobby.players;
   const spectators = lobby.spectators ?? [];
+  const fillBots = lobby.fillBots !== false;
   const bidding = lobby.bidding ?? null;
   const myPlayerId = host
     ? 0
@@ -121,10 +122,9 @@ export function LobbyScreen() {
           : mode === 'custom'
             ? [2, 3, 4, 5, 6, 7, 8]
             : [5, 6, 7, 8];
-  const startCount = Math.max(
-    minPlayers,
-    Math.min(8, Math.max(lobby.seatCount ?? count, players.length)),
-  );
+  const startCount = fillBots
+    ? Math.max(minPlayers, Math.min(8, Math.max(lobby.seatCount ?? count, players.length)))
+    : Math.max(players.length, minPlayers);
   const picking = lobby.picking === true;
   const pickCount = Math.max(lobby.targetCount ?? startCount, players.length);
   const kickPlayer = (playerId: number, name: string, permanent = false) => {
@@ -434,6 +434,13 @@ export function LobbyScreen() {
                 >
                   军争篇
                 </button>
+                <button
+                  type="button"
+                  className={`count-btn ${fillBots ? 'on' : ''}`}
+                  onClick={() => lanHost?.setFillBots(!fillBots)}
+                >
+                  空位电脑补足
+                </button>
                 <span className="setup-hint">
                   {gameMode === 'guozhan'
                     ? '魏蜀吴群阵营团战，存活到最后的势力获胜'
@@ -472,11 +479,19 @@ export function LobbyScreen() {
                   </button>
                 ))}
               </div>
-              <span className="setup-hint">实际开局人数 {startCount} · 空位由电脑补足</span>
+              <span className="setup-hint">
+                实际开局人数 {startCount}
+                {fillBots ? ' · 空位由电脑补足' : ' · 不补电脑'}
+                {!fillBots && players.length < minPlayers ? ` · 至少需要 ${minPlayers} 人` : ''}
+              </span>
               <button
                 type="button"
                 className="btn primary big"
-                disabled={players.some((p) => !p.connected) || !!bidding}
+                disabled={
+                  players.some((p) => !p.connected) ||
+                  !!bidding ||
+                  (!fillBots && players.length < minPlayers)
+                }
                 onClick={() => startLanPick(startCount)}
               >
                 开始选将
@@ -488,6 +503,7 @@ export function LobbyScreen() {
             <div className="lobby-rules-summary">
               模式：{gameModeLabel}
               {mode === 'custom' || gameMode !== 'identity' ? ` · ${ruleSummary}` : ' · 5–8 人'}
+              {fillBots ? ' · 空位电脑补足' : ' · 不补电脑'}
             </div>
             <div className="start-row waiting-row">
               <span className="waiting-dot" />

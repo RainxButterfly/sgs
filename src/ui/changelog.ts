@@ -20,6 +20,26 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.13',
+    date: '2026-11-10',
+    title: 'AI补位开关与技能续修',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '联机房主新增「空位电脑补足」开关：关闭后只用真实玩家开局，人数不足时不能开始。',
+        ],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '颜良文丑【双雄】改为摸牌阶段放弃摸牌、判定并获得判定牌，再按判定牌颜色转化决斗。',
+          '小乔【红颜】的武圣、奇袭、倾国、火计、看破、双雄等花色判断统一按黑桃视为红桃处理。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.12',
     date: '2026-11-10',
     title: '巧变、雌雄与丈八',
