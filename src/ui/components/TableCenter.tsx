@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { cardDisplayName } from '../labels';
+import { DiscardModal } from './DiscardModal';
 import { useGameSnapshot, useGameStore } from '../store';
 import { CardView } from './CardView';
 
 export function TableCenter() {
   const { game } = useGameSnapshot();
+  const [discardOpen, setDiscardOpen] = useState(false);
   const lastPlay = useGameStore((s) => s.lastPlay);
   const lastJudge = useGameStore((s) => s.lastJudge);
   const cardHistory = useGameStore((s) => s.cardHistory);
@@ -34,8 +37,10 @@ export function TableCenter() {
           <span className="pile-label">牌堆 {game.state.deckCount ?? game.state.deck.length}</span>
         </div>
         <div className="pile">
-          <span className="pile-stack face" />
-          <span className="pile-label">弃牌 {game.state.discardCount ?? game.state.discard.length}</span>
+          <button type="button" className="pile-stack face pile-button" onClick={() => setDiscardOpen(true)} aria-label="查看弃牌堆" />
+          <button type="button" className="pile-label pile-button" onClick={() => setDiscardOpen(true)}>
+            弃牌 {game.state.discardCount ?? game.state.discard.length}
+          </button>
         </div>
       </div>
 
@@ -102,6 +107,7 @@ export function TableCenter() {
           <span className="judge-result">{lastJudge.success ? '生效' : '未生效'}</span>
         </div>
       )}
+      {discardOpen && <DiscardModal cards={game.state.discard} onClose={() => setDiscardOpen(false)} />}
     </div>
   );
 }

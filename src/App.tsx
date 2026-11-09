@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { loadBackgroundSettings } from './ui/background';
+import { ChatPanel } from './ui/components/ChatPanel';
+import { HarvestLayer } from './ui/components/HarvestModal';
 import { SettingsModal } from './ui/components/SettingsModal';
 import { initDataStorage } from './ui/dataStorage';
 import { UpdateModal } from './ui/components/UpdateModal';
@@ -14,10 +16,12 @@ import { MobileGameScreen } from './ui/screens/MobileGameScreen';
 import { PickScreen } from './ui/screens/PickScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { SetupScreen } from './ui/screens/SetupScreen';
+import { SpectatorScreen } from './ui/screens/SpectatorScreen';
 import { useIsMobile } from './ui/useIsMobile';
 
 export default function App() {
   const screen = useGameStore((s) => s.screen);
+  const spectate = useGameStore((s) => s.spectate);
   const gameError = useGameStore((s) => s.error);
   const mobile = useIsMobile();
 
@@ -51,7 +55,14 @@ export default function App() {
       {screen === 'lan' && <LanScreen />}
       {screen === 'lobby' && <LobbyScreen />}
       {screen === 'gallery' && <HeroGallery />}
-      {screen === 'game' && (mobile ? <MobileGameScreen /> : <GameScreen />)}
+      {screen === 'game' &&
+        (spectate ? (
+          <SpectatorScreen />
+        ) : mobile ? (
+          <MobileGameScreen />
+        ) : (
+          <GameScreen />
+        ))}
       {screen === 'result' && <ResultScreen />}
       {gameError && (
         <div className="fatal-error">
@@ -67,6 +78,8 @@ export default function App() {
         </div>
       )}
       <SettingsModal />
+      <HarvestLayer />
+      <ChatPanel />
       <MatchHistoryModal />
       <UpdateModal />
     </div>

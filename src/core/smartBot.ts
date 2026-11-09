@@ -31,6 +31,9 @@ function valueOf(card: Card | undefined): number {
 
 function isFriend(state: GameState, me: PlayerState, other: PlayerState): boolean {
   if (other.id === me.id) return true;
+  const mode = state.rules?.mode ?? 'identity';
+  if (mode === 'guozhan') return other.faction === me.faction;
+  if (mode === 'landlord') return (me.role === 'lord') === (other.role === 'lord');
   if (me.role === 'lord' || me.role === 'loyalist') {
     return other.role === 'lord' || other.role === 'loyalist';
   }
@@ -40,6 +43,10 @@ function isFriend(state: GameState, me: PlayerState, other: PlayerState): boolea
 
 function isEnemy(state: GameState, me: PlayerState, other: PlayerState): boolean {
   if (other.id === me.id || !other.alive) return false;
+  const mode = state.rules?.mode ?? 'identity';
+  if (mode === 'guozhan') return other.faction !== me.faction;
+  if (mode === 'landlord') return (me.role === 'lord') !== (other.role === 'lord');
+  if (mode === 'duel') return true;
   if (me.role === 'lord' || me.role === 'loyalist') {
     return other.role === 'rebel' || other.role === 'traitor';
   }
@@ -107,7 +114,7 @@ function scorePlay(state: GameState, me: PlayerState, option: NonNullable<AskReq
       return enemyTargets.length ? 40 : 0;
     case '南蛮入侵':
     case '万箭齐发': {
-      if (me.role === 'traitor') return 0;
+      if (me.role === 'traitor' && (state.rules?.mode ?? 'identity') === 'identity') return 0;
       const enemies = enemiesOf(state, me).length;
       const friendsCount = friendsOf(state, me).length;
       return enemies >= friendsCount ? 44 : 0;

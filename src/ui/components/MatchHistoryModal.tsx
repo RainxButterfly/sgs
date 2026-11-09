@@ -145,7 +145,7 @@ export function MatchHistoryModal() {
                   </div>
                   <div className="history-log-title">战报</div>
                   <div className="history-log">
-                    {match.log.map((entry) => (
+                    {[...match.log].sort((a, b) => a.id - b.id).map((entry) => (
                       <div key={entry.id} className={`log-line log-${entry.kind}`}>
                         {entry.text}
                       </div>

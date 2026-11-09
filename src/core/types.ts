@@ -215,6 +215,13 @@ export type GameEvent =
   | { type: 'equip'; playerId: number; slot: EquipSlot; card?: Card }
   | { type: 'skill'; playerId: number; name: string; text?: string }
   | { type: 'reveal'; playerId?: number; cards: Card[] }
+  | {
+      type: 'harvest';
+      cards: Card[];
+      picks: { playerId: number; card: Card }[];
+      chooserId?: number;
+      done?: boolean;
+    }
   | { type: 'gameOver'; text: string; winner: Role | Faction | 'draw' }
   | { type: 'state' };
 

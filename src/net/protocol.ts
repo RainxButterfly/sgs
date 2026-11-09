@@ -27,6 +27,12 @@ export interface LobbyPlayer {
   choices?: string[];
 }
 
+export interface SpectatorInfo {
+  connId: number;
+  name: string;
+  ip: string;
+}
+
 export interface LobbyState {
   room: RoomAddress;
   hostName: string;
@@ -40,26 +46,38 @@ export interface LobbyState {
   lordSeat?: number;
   lordHeroId?: string;
   revealed?: boolean;
+  spectators?: SpectatorInfo[];
 }
 
 export type ServerEvent =
   | { server: 'welcome'; id: number; role: 'host' | 'guest' }
-  | { server: 'join'; id: number; name: string }
+  | { server: 'join'; id: number; name: string; ip?: string; spectate?: boolean }
   | { server: 'leave'; id: number; name: string }
   | { server: 'host-left' };
+
+export interface ChatMessage {
+  id: number;
+  name: string;
+  text: string;
+  at: number;
+}
 
 export type HostPayload =
   | { t: 'lobby'; lobby: LobbyState }
   | { t: 'start'; playerId: number }
+  | { t: 'spectate' }
+  | { t: 'spectators'; spectators: SpectatorInfo[] }
   | { t: 'state'; state: GameState }
   | { t: 'ask'; request: AskRequest; state: GameState }
   | { t: 'event'; ev: GameEvent }
   | { t: 'end'; text: string; winner: string }
+  | { t: 'chat'; message: ChatMessage }
   | { t: 'error'; message: string };
 
 export type GuestPayload =
   | { t: 'action'; action: GameAction }
   | { t: 'pickHero'; heroId: string }
+  | { t: 'chat'; text: string }
   | { t: 'leave' };
 
 function hiddenCard(playerId: number, index: number): Card {

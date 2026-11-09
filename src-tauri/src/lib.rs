@@ -1,7 +1,7 @@
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        Query, State,
+        ConnectInfo, Query, State,
     },
     http::{header, StatusCode, Uri},
     response::IntoResponse,
@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
-    net::UdpSocket,
+    net::{SocketAddr, UdpSocket},
     path::PathBuf,
     sync::{Arc, Mutex, OnceLock},
     time::Duration,
@@ -447,6 +447,7 @@ struct WsQuery {
     room: String,
     secret: Option<String>,
     name: Option<String>,
+    spectate: Option<String>,
 }
 
 fn all_ipv4() -> Vec<(String, String)> {
@@ -657,7 +658,12 @@ async fn start_room() -> Result<RoomInfo, String> {
         .with_state(room);
 
     tokio::spawn(async move {
-        if let Err(err) = axum::serve(listener, app).await {
+        if let Err(err) = axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await
+        {
             log::error!("room server stopped: {err}");
         }
     });
@@ -694,16 +700,17 @@ async fn static_handler(uri: Uri) -> impl IntoResponse {
 
 async fn ws_handler(
     ws: WebSocketUpgrade,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
     State(room): State<Arc<Room>>,
     Query(query): Query<WsQuery>,
 ) -> impl IntoResponse {
     if query.room != room.code {
         return (StatusCode::FORBIDDEN, "房间码错误").into_response();
     }
-    ws.on_upgrade(move |socket| handle_socket(socket, room, query))
+    ws.on_upgrade(move |socket| handle_socket(socket, room, query, addr.ip().to_string()))
 }
 
-async fn handle_socket(socket: WebSocket, room: Arc<Room>, query: WsQuery) {
+async fn handle_socket(socket: WebSocket, room: Arc<Room>, query: WsQuery, ip: String) {
     let (mut sink, mut stream) = socket.split();
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
 
@@ -737,6 +744,7 @@ async fn handle_socket(socket: WebSocket, room: Arc<Room>, query: WsQuery) {
         "server": "welcome",
         "id": id,
         "role": if is_host { "host" } else { "guest" },
+        "ip": ip.clone(),
     });
     let _ = tx.send(welcome.to_string());
 
@@ -757,6 +765,8 @@ async fn handle_socket(socket: WebSocket, room: Arc<Room>, query: WsQuery) {
                         "server": "join",
                         "id": id,
                         "name": name,
+                        "ip": ip,
+                        "spectate": query.spectate.as_deref() == Some("1"),
                     });
                     (host.tx.clone(), event.to_string())
                 })

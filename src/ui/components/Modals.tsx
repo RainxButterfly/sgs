@@ -181,7 +181,9 @@ export function OptionModal() {
 
 export function GameModals() {
   const pending = useGameStore((s) => s.pending);
+  const harvest = useGameStore((s) => s.harvest);
   if (!pending) return null;
+  if (pending.kind === 'chooseCards' && harvest && pending.prompt.startsWith('五谷')) return null;
   if (pending.kind === 'chooseCards') return <CardsModal />;
   if (pending.kind === 'reorder') return <ReorderModal />;
   if (pending.kind === 'chooseOption') return <OptionModal />;

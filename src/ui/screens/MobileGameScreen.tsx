@@ -4,12 +4,15 @@ import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
 import { cardDisplayName } from '../labels';
+import { compositionText } from '../composition';
 import { CardView } from '../components/CardView';
+import { DiscardModal } from '../components/DiscardModal';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { Hand } from '../components/Hand';
 import { LogPanel } from '../components/LogPanel';
 import { GameModals } from '../components/Modals';
 import { PromptBar } from '../components/PromptBar';
+import { SpectatorBadge } from '../components/SpectatorBadge';
 import { useGameSnapshot, useGameStore } from '../store';
 import { useDeviceStatus } from '../useDeviceStatus';
 
@@ -18,6 +21,16 @@ function roleText(player: PlayerState, mode: string, self = false): string {
   if (mode === 'landlord') return player.role === 'lord' ? '地主' : '农民';
   if (self || player.roleRevealed || !player.alive || player.role === 'lord') return ROLE_NAME[player.role];
   return '';
+}
+
+const JUDGE_ICON: Record<string, string> = {
+  '乐不思蜀': '乐',
+  '兵粮寸断': '粮',
+  '闪电': '电',
+};
+
+function judgeIcon(name: string): string {
+  return JUDGE_ICON[name] ?? name.slice(0, 1);
 }
 
 function equipNames(player: PlayerState): string[] {
@@ -42,8 +55,11 @@ export function MobileGameScreen() {
   }, [cardHistory.length]);
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
+  const openChat = useGameStore((s) => s.openChat);
+  const chatUnread = useGameStore((s) => s.chatUnread);
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const { time, battery } = useDeviceStatus();
 
   if (!game) {
@@ -82,6 +98,7 @@ export function MobileGameScreen() {
   const currentId = game.state.current;
   const current = game.state.players[currentId];
   const mine = currentId === humanId;
+  const composition = compositionText(game.state, mode);
   const selectedOption =
     pending?.kind === 'play' && selected
       ? pending.cardOptions?.find(
@@ -151,9 +168,14 @@ export function MobileGameScreen() {
           <b>{mine ? '轮到你' : `等待 ${current?.name ?? ''}`}</b>
           <em>
             第 {game.state.turn} 回合 · {current?.heroName ?? ''} · {PHASE_NAME[game.state.phase]}
+            {composition ? ` · ${composition}` : ''}
           </em>
         </span>
         <div className="m-top-actions">
+          <SpectatorBadge compact />
+          <button type="button" onClick={openChat}>
+            聊天{chatUnread > 0 && <span className="chat-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
+          </button>
           <button type="button" onClick={() => setLogOpen(true)}>
             战报
           </button>
@@ -216,9 +238,22 @@ export function MobileGameScreen() {
                 {player.flipped && <span className="m-tag">翻面</span>}
               </div>
               <div className="m-seat-equips">装备 {equips.join(' · ') || '无'}</div>
+              {player.judgeZone.length > 0 && (
+                <div className="m-seat-judges">
+                  {player.judgeZone.map((card) => (
+                    <span key={card.id} className={`m-judge-icon judge-${card.name}`} title={card.name}>
+                      {judgeIcon(card.name)}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="m-seat-skills">{skills.join(' · ') || '无技能'}</div>
               {player.id === currentId && <span className="m-current">行动中</span>}
-              {canTarget && <span className="m-target-hint">可选中</span>}
+              {selectedTarget ? (
+                <span className="m-target-selected">已选目标</span>
+              ) : canTarget ? (
+                <span className="m-target-hint">可选中</span>
+              ) : null}
               {!player.alive && <span className="m-dead">阵亡</span>}
             </div>
           );
@@ -228,7 +263,9 @@ export function MobileGameScreen() {
       <div className="m-table">
         <div className="m-piles">
           <span>牌堆 {game.state.deckCount ?? game.state.deck.length}</span>
-          <span>弃牌 {game.state.discardCount ?? game.state.discard.length}</span>
+          <button type="button" className="m-pile-button" onClick={() => setDiscardOpen(true)}>
+            弃牌 {game.state.discardCount ?? game.state.discard.length}
+          </button>
           {lastJudge && (
             <span className="m-judge">
               {targetName(lastJudge.playerId)} {lastJudge.reason} · {lastJudge.card.name} {lastJudge.success ? '生效' : '未生效'}
@@ -279,6 +316,15 @@ export function MobileGameScreen() {
           </span>
           <span className="m-self-limit">手牌上限 {handLimit}</span>
           <span className="m-self-equips">装备 {humanEquips.join(' · ') || '无'}</span>
+          {human.judgeZone.length > 0 && (
+            <span className="m-self-judges">
+              {human.judgeZone.map((card) => (
+                <span key={card.id} className={`m-judge-icon judge-${card.name}`} title={card.name}>
+                  {judgeIcon(card.name)}
+                </span>
+              ))}
+            </span>
+          )}
           <span className="m-self-skills">{humanSkills.join(' · ') || '无技能'}</span>
         </button>
         <button type="button" className="m-detail-btn" onClick={() => setDetailPlayer(human.id)}>
@@ -300,6 +346,9 @@ export function MobileGameScreen() {
       </div>
 
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />
+      {discardOpen && (
+        <DiscardModal cards={game.state.discard} onClose={() => setDiscardOpen(false)} />
+      )}
       <GameModals />
       {detailPlayer !== null && game.state.players[detailPlayer] && (
         <HeroDetailModal

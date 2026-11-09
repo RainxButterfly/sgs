@@ -19,6 +19,7 @@ export function LanScreen() {
   });
   const [address, setAddress] = useState(preset?.address ?? (desktop ? '' : '127.0.0.1:8787'));
   const [code, setCode] = useState(preset?.code ?? (desktop ? '' : 'DEV'));
+  const [spectate, setSpectate] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const create = async () => {
@@ -35,7 +36,7 @@ export function LanScreen() {
       // ignore storage failures
     }
     setBusy(true);
-    await joinLanRoom(address, code, name);
+    await joinLanRoom(address, code, name, spectate);
     setBusy(false);
   };
 
@@ -107,8 +108,19 @@ export function LanScreen() {
                 onChange={(e) => setJoinName(e.target.value)}
               />
             </label>
+            <label className="lan-spectate-toggle">
+              <input
+                type="checkbox"
+                checked={spectate}
+                onChange={(e) => setSpectate(e.target.checked)}
+              />
+              <span>
+                <b>以观战身份加入</b>
+                <em>不占玩家座位，对局开始后也能进入，观战席会显示你的名字与 IP。</em>
+              </span>
+            </label>
             <button type="button" className="btn primary" disabled={busy || !address.trim() || !code.trim()} onClick={join}>
-              加入房间
+              {spectate ? '加入观战' : '加入房间'}
             </button>
           </section>
         </div>

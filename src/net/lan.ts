@@ -6,12 +6,14 @@ import { smartBotAction } from '../core/smartBot';
 import type { AskRequest, GameAction, GameEvent, GameIO, Role } from '../core/types';
 import { DEFAULT_RULES, type CustomRules } from '../core/types';import {
   redactState,
+  type ChatMessage,
   type GuestPayload,
   type HostPayload,
   type LobbyPlayer,
   type LobbyState,
   type RoomInfo,
   type ServerEvent,
+  type SpectatorInfo,
 } from './protocol';
 
 export function isTauri(): boolean {
@@ -112,6 +114,8 @@ interface HostHooks {
   emitHost: (event: GameEvent) => void;
   onLobby: (lobby: LobbyState) => void;
   onGame: (game: Game) => void;
+  onChat: (message: ChatMessage) => void;
+  onSpectators: (spectators: SpectatorInfo[]) => void;
   onError: (message: string) => void;
   onClosed: () => void;
 }
@@ -132,10 +136,12 @@ export class LanHostManager {
   private readonly relay: RelayClient;
   private readonly hooks: HostHooks;
   private lastGameHeroes = new Set<string>();
+  private chatSeq = 0;
   private hostConnId = 0;
   private hostChoices: string[] = [];
   private hostHeroId: string | null = null;
   private guests: HostGuest[] = [];
+  private spectators: SpectatorInfo[] = [];
   private pending = new Map<number, { request: AskRequest; resolve: (action: GameAction) => void; timer: ReturnType<typeof setTimeout> }>();
   private stateTimer: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
@@ -172,7 +178,7 @@ export class LanHostManager {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    return pool.slice(0, 3);
+    return pool.slice(0, 5);
   }
 
   private buildLobby(): LobbyState {
@@ -226,6 +232,7 @@ export class LanHostManager {
       lordSeat,
       lordHeroId,
       revealed,
+      spectators: this.spectators.map((spectator) => ({ ...spectator })),
     };
   }
 
@@ -292,6 +299,13 @@ export class LanHostManager {
     this.broadcast({ t: 'lobby', lobby: guestLobby } satisfies HostPayload);
   }
 
+  private broadcastSpectators(): void {
+    const list = this.spectators.map((spectator) => ({ ...spectator }));
+    this.lobby = { ...this.lobby, spectators: list };
+    this.hooks.onSpectators(list);
+    this.broadcast({ t: 'spectators', spectators: list } satisfies HostPayload);
+  }
+
   private handleServer(event: ServerEvent): void {
     if (event.server === 'welcome') {
       this.hostConnId = event.id;
@@ -300,44 +314,89 @@ export class LanHostManager {
     }
     if (event.server === 'join') {
       const joinName = event.name || `玩家${event.id}`;
-      if (this.started || this.picking) {
-        const rejoin = this.guests.find((guest) => !guest.connected && guest.name === joinName);
-        if (!rejoin) {
-          this.relay.send(
-            { t: 'error', message: '对局已经开始，只有掉线玩家可以用原昵称回归' } satisfies HostPayload,
-            event.id,
-          );
-          return;
+      if (event.spectate) {
+        const existing = this.spectators.find((item) => item.name === joinName);
+        if (existing) {
+          existing.connId = event.id;
+          if (event.ip) existing.ip = event.ip;
+        } else {
+          this.spectators.push({ connId: event.id, name: joinName, ip: event.ip ?? '' });
+          if (this.started && this.game) this.game.log(`【${joinName}】进入观战`, 'system');
         }
-        rejoin.connId = event.id;
-        rejoin.connected = true;
+        this.sendTo(event.id, { t: 'spectate' });
         if (this.started && this.game) {
-          const player = this.game.state.players[rejoin.playerId];
-          if (player) player.isBot = false;
-          this.sendTo(event.id, { t: 'start', playerId: rejoin.playerId });
           this.sendTo(event.id, {
             t: 'state',
-            state: redactState(this.game.state, rejoin.playerId),
+            state: redactState(this.game.state, -1),
           });
-          const pending = this.pending.get(rejoin.playerId);
-          if (pending) {
+        }
+        this.broadcastSpectators();
+        if (!this.started) this.refreshLobby();
+        return;
+      }
+      if (this.started || this.picking) {
+        const rejoin = this.guests.find((guest) => !guest.connected && guest.name === joinName);
+        if (rejoin) {
+          rejoin.connId = event.id;
+          rejoin.connected = true;
+          if (this.started && this.game) {
+            const player = this.game.state.players[rejoin.playerId];
+            if (player) player.isBot = false;
+            this.sendTo(event.id, { t: 'start', playerId: rejoin.playerId });
             this.sendTo(event.id, {
-              t: 'ask',
-              request: pending.request,
+              t: 'state',
               state: redactState(this.game.state, rejoin.playerId),
             });
+            const pending = this.pending.get(rejoin.playerId);
+            if (pending) {
+              this.sendTo(event.id, {
+                t: 'ask',
+                request: pending.request,
+                state: redactState(this.game.state, rejoin.playerId),
+              });
+            }
+            this.game.log(`【${rejoin.name}】重新连接`, 'system');
+            if (this.game.state.over) {
+              this.sendTo(event.id, {
+                t: 'end',
+                text: '对局已经结束',
+                winner: this.game.state.winner ?? 'draw',
+              });
+            }
+          } else {
+            this.refreshLobby();
           }
-          this.game.log(`【${rejoin.name}】重新连接`, 'system');
-          if (this.game.state.over) {
+          return;
+        }
+        const spectator = this.spectators.find((item) => item.name === joinName);
+        if (spectator) {
+          spectator.connId = event.id;
+          if (event.ip) spectator.ip = event.ip;
+          if (this.started && this.game) {
+            this.sendTo(event.id, { t: 'spectate' });
             this.sendTo(event.id, {
-              t: 'end',
-              text: '对局已经结束',
-              winner: this.game.state.winner ?? 'draw',
+              t: 'state',
+              state: redactState(this.game.state, -1),
             });
           }
-        } else {
-          this.refreshLobby();
+          this.broadcastSpectators();
+          return;
         }
+        const nextSpectator: SpectatorInfo = {
+          connId: event.id,
+          name: joinName,
+          ip: event.ip ?? '',
+        };
+        this.spectators.push(nextSpectator);
+        if (this.started && this.game) {
+          this.sendTo(event.id, { t: 'spectate' });
+          this.sendTo(event.id, {
+            t: 'state',
+            state: redactState(this.game.state, -1),
+          });
+          this.game.log(`【${joinName}】进入观战`, 'system');
+        }
+        this.broadcastSpectators();
         return;
       }
       if (this.guests.some((g) => g.connId === event.id)) return;
@@ -354,7 +413,14 @@ export class LanHostManager {
     }
     if (event.server === 'leave') {
       const guest = this.guests.find((g) => g.connId === event.id);
-      if (!guest) return;
+      if (!guest) {
+        const leaving = this.spectators.find((item) => item.connId === event.id);
+        if (!leaving) return;
+        this.spectators = this.spectators.filter((item) => item.connId !== event.id);
+        this.broadcastSpectators();
+        if (this.game && this.started) this.game.log(`【${leaving.name}】离开观战`, 'system');
+        return;
+      }
       if (this.started) {
         guest.connected = false;
         const player = this.game?.state.players[guest.playerId];
@@ -379,10 +445,40 @@ export class LanHostManager {
     }
   }
 
+  sendChat(text: string): void {
+    const value = text.trim().slice(0, 200);
+    if (!value) return;
+    this.chatSeq += 1;
+    const message: ChatMessage = {
+      id: this.chatSeq,
+      name: this.hostName,
+      text: value,
+      at: Date.now(),
+    };
+    this.hooks.onChat(message);
+    this.broadcast({ t: 'chat', message });
+  }
+
   private handleGuestPayload(from: number, payload: unknown): void {
     const message = payload as GuestPayload | undefined;
     if (!message) return;
     const guest = this.guests.find((g) => g.connId === from);
+    const spectator = this.spectators.find((item) => item.connId === from);
+    if (!guest && !spectator) return;
+    if (message.t === 'chat') {
+      const value = message.text.trim().slice(0, 200);
+      if (!value) return;
+      this.chatSeq += 1;
+      const chat: ChatMessage = {
+        id: this.chatSeq,
+        name: guest?.name ?? spectator?.name ?? '观战者',
+        text: value,
+        at: Date.now(),
+      };
+      this.hooks.onChat(chat);
+      this.broadcast({ t: 'chat', message: chat });
+      return;
+    }
     if (!guest) return;
     if (message.t === 'action') {
       const pending = this.pending.get(guest.playerId);
@@ -439,6 +535,12 @@ export class LanHostManager {
       this.sendTo(guest.connId, {
         t: 'state',
         state: redactState(this.game.state, guest.playerId),
+      });
+    }
+    for (const spectator of this.spectators) {
+      this.sendTo(spectator.connId, {
+        t: 'state',
+        state: redactState(this.game.state, -1),
       });
     }
   }
@@ -543,6 +645,11 @@ export class LanHostManager {
       this.sendTo(guest.connId, { t: 'start', playerId: guest.playerId });
       this.sendTo(guest.connId, { t: 'state', state: redactState(game.state, guest.playerId) });
     }
+    for (const spectator of this.spectators) {
+      this.sendTo(spectator.connId, { t: 'spectate' });
+      this.sendTo(spectator.connId, { t: 'state', state: redactState(game.state, -1) });
+    }
+    this.broadcastSpectators();
     this.hooks.onGame(game);
     game.begin().catch((error) => {
       this.hooks.onError(`对局异常：${(error as Error).message}`);
@@ -590,10 +697,13 @@ interface ClientHooks {
   onWelcome?: (connId: number) => void;
   onLobby: (lobby: LobbyState) => void;
   onStart: (playerId: number) => void;
+  onSpectate: () => void;
+  onSpectators: (spectators: SpectatorInfo[]) => void;
   onState: (state: Game['state']) => void;
   onAsk: (request: AskRequest, state: Game['state']) => void;
   onEvent: (event: GameEvent) => void;
   onEnd: (text: string, winner: string) => void;
+  onChat: (message: ChatMessage) => void;
   onError: (message: string) => void;
   onClosed: () => void;
 }
@@ -605,11 +715,19 @@ export class LanClientManager {
   private readonly hooks: ClientHooks;
   private closedByUser = false;
 
-  constructor(ip: string, port: number, code: string, name: string, hooks: ClientHooks) {
+  constructor(
+    ip: string,
+    port: number,
+    code: string,
+    name: string,
+    hooks: ClientHooks,
+    spectate = false,
+  ) {
     this.address = `${ip}:${port}`;
     this.code = code;
     this.hooks = hooks;
-    const url = `ws://${ip}:${port}/ws?room=${encodeURIComponent(code)}&name=${encodeURIComponent(name)}`;
+    const watch = spectate ? '&spectate=1' : '';
+    const url = `ws://${ip}:${port}/ws?room=${encodeURIComponent(code)}&name=${encodeURIComponent(name)}${watch}`;
     this.relay = new RelayClient(url);
     this.relay.onServer = (event) => {
       if (event.server === 'welcome') this.hooks.onWelcome?.(event.id);
@@ -633,6 +751,12 @@ export class LanClientManager {
       case 'start':
         this.hooks.onStart(message.playerId);
         break;
+      case 'spectate':
+        this.hooks.onSpectate();
+        break;
+      case 'spectators':
+        this.hooks.onSpectators(message.spectators);
+        break;
       case 'state':
         this.hooks.onState(message.state);
         break;
@@ -644,6 +768,9 @@ export class LanClientManager {
         break;
       case 'end':
         this.hooks.onEnd(message.text, message.winner);
+        break;
+      case 'chat':
+        this.hooks.onChat(message.message);
         break;
       case 'error':
         this.hooks.onError(message.message);
@@ -658,6 +785,12 @@ export class LanClientManager {
 
   pickHero(heroId: string): void {
     this.relay.send({ t: 'pickHero', heroId } satisfies GuestPayload);
+  }
+
+  sendChat(text: string): void {
+    const value = text.trim().slice(0, 200);
+    if (!value) return;
+    this.relay.send({ t: 'chat', text: value } satisfies GuestPayload);
   }
 
   leave(): void {

@@ -60,13 +60,22 @@ export function PromptBar() {
                 {selected.skillId
                   ? `（${selected.skillId === 'recast' ? '重铸' : SKILL_MAP.get(selected.skillId)?.name ?? selected.skillId}）`
                   : ''}
-                {option && option.targetMax > 0 ? (
-                  <span>
-                    {' '}
-                    · 目标 {targetNames.length ? targetNames.join('、') : '未选择'}（{selectedTargets.length}/
-                    {option.targetMax}）
+                {option && option.targetMax > 0 && (
+                  <span className="prompt-targets">
+                    目标
+                    {targetNames.length ? (
+                      targetNames.map((name) => <b key={name}>{name}</b>)
+                    ) : (
+                      <em>未选择</em>
+                    )}
+                    <i>
+                      {selectedTargets.length}/{option.targetMax}
+                    </i>
                   </span>
-                ) : null}
+                )}
+                {selected.as === '铁索连环' && (
+                  <span className="prompt-tip">点击高亮角色横置或重置，可选 1–2 人</span>
+                )}
               </>
             ) : (
               <span className="muted">尚未选择卡牌</span>

@@ -17,6 +17,7 @@ export function LobbyScreen() {
   const leaveLan = useGameStore((s) => s.leaveLan);
   const pickLanHero = useGameStore((s) => s.pickLanHero);
   const lanConnId = useGameStore((s) => s.lanConnId);
+  const spectate = useGameStore((s) => s.spectate);
   const joinedRoom = useGameStore((s) => s.room);
   const [count, setCount] = useState(8);
   const [copied, setCopied] = useState<string | null>(null);
@@ -188,7 +189,15 @@ export function LobbyScreen() {
               onStart={() => startLanGame(pickCount)}
               onCancel={cancelLanPick}
             />
-          ) : null
+          ) : (
+            <div className="lobby-spectator-wait">
+              <b>观战中</b>
+              <p>你正在观战席，房主开始对局后会自动进入观战画面。</p>
+              <p className="muted">
+                房间码 <b>{lobby.room.code}</b> · 观战席 {lobby.spectators?.length ?? 0} 人
+              </p>
+            </div>
+          )
         ) : (
           <>
         <div className="lobby-grid">
@@ -321,7 +330,7 @@ export function LobbyScreen() {
                         className={`count-btn ${active ? 'on' : ''}`}
                         onClick={() => {
                           if (id === 'custom') setLanRules('custom', { ...rules, mode: 'identity' });
-                          else if (id === 'identity') setLanRules('standard', { ...rules, mode: 'identity' });
+                          else if (id === 'identity') setLanRules('standard', { ...DEFAULT_RULES, military: rules.military, mode: 'identity' });
                           else setLanRules('custom', { ...rules, mode: id });
                         }}
                       >
@@ -391,7 +400,9 @@ export function LobbyScreen() {
             </div>
             <div className="start-row waiting-row">
               <span className="waiting-dot" />
-              <span>等待房主开始选将…</span>
+              <span>
+                {spectate ? '你以观战身份加入，房主开始后会自动进入观战画面…' : '等待房主开始选将…'}
+              </span>
             </div>
           </>
         )}

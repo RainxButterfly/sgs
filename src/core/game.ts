@@ -830,14 +830,15 @@ export class Game {
             p.id !== user.id &&
             this.hasCards(p) &&
             (ignoreDist || this.distance(user, p) <= 1) &&
-            this.canBeTargeted(p, user, name),
+            this.canBeTargeted(p, user, name) &&
+            !p.judgeZone.some((c) => c.name === name),
         )
         .map((p) => p.id);
       return { ids, min: ids.length ? 1 : 0, max: 1 };
     }
     if (name === '乐不思蜀') {
       const ids = this.players
-        .filter((p) => p.alive && p.id !== user.id && this.canBeTargeted(p, user, name))
+        .filter((p) => p.alive && p.id !== user.id && this.canBeTargeted(p, user, name) && !p.judgeZone.some((c) => c.name === name))
         .map((p) => p.id);
       return { ids, min: ids.length ? 1 : 0, max: 1 };
     }
@@ -863,7 +864,8 @@ export class Game {
             p.alive &&
             p.id !== user.id &&
             (ignoreDist || this.distance(user, p) <= 1) &&
-            this.canBeTargeted(p, user, name),
+            this.canBeTargeted(p, user, name) &&
+            !p.judgeZone.some((c) => c.name === name),
         )
         .map((p) => p.id);
       return { ids, min: ids.length ? 1 : 0, max: 1 };
@@ -906,7 +908,11 @@ export class Game {
 
   private liangdaoVictims(target: PlayerState, user: PlayerState): PlayerState[] {
     return this.players.filter(
-      (p) => p.alive && p.id !== target.id && this.distance(target, p) <= this.attackRange(target),
+      (p) =>
+        p.alive &&
+        p.id !== target.id &&
+        p.id !== user.id &&
+        this.distance(target, p) <= this.attackRange(target),
     );
   }
 
@@ -918,6 +924,7 @@ export class Game {
     isLastHand = false,
   ): CardOption | null {
     if (!this.canUseName(user, as)) return null;
+    if (as === '闪电' && user.judgeZone.some((c) => c.name === '闪电')) return null;
     const info = this.targetInfo(user, as, isLastHand);
     const needsTarget = [
       '杀',
@@ -1157,9 +1164,10 @@ export class Game {
         target?.alive &&
         !(await this.askWuxie('兵粮寸断', target, user, `【${user.name}】对【${target.name}】使用兵粮寸断`))
       ) {
-        target.judgeZone.push(card);
+        const delayed = card.name === asName ? card : { ...card, name: asName, type: 'delayed' as const };
+        target.judgeZone.push(delayed);
         this.removeFromLimbo(card);
-        this.log(`【${target.name}】的判定区被放置了 ${cardLabel(card)}`);
+        this.log(`【${target.name}】的判定区被放置了 ${cardLabel(delayed)}`);
       }
     } else if (asName === '无懈可击') {
       // 只能响应时使用
@@ -1459,7 +1467,10 @@ export class Game {
     if (this.state.deck.length < alive.length) this.reshuffle();
     const revealed = this.state.deck.splice(Math.max(0, this.state.deck.length - alive.length));
     revealed.reverse();
+    const allCards = revealed.slice();
+    const picks: { playerId: number; card: Card }[] = [];
     this.emit({ type: 'reveal', cards: revealed });
+    this.emit({ type: 'harvest', cards: allCards, picks: [] });
     this.log(`五谷丰登亮出：${revealed.map((c) => cardLabel(c)).join('、')}`, 'system');
     for (const p of this.turnOrder()) {
       if (!p.alive || revealed.length === 0) continue;
@@ -1467,14 +1478,18 @@ export class Game {
         this.log(`【${p.name}】的帷幕生效，不受黑色五谷丰登影响`, 'skill');
         continue;
       }
+      this.emit({ type: 'harvest', cards: allCards, picks: picks.slice(), chooserId: p.id });
       if (await this.askWuxie('五谷丰登', p, user, `【${p.name}】受到五谷丰登影响`)) continue;
       const picked = await this.askCards(p, revealed.slice(), 1, 1, '五谷丰登：选择一张牌获得', undefined, false);
       const got = picked[0] ?? revealed[revealed.length - 1];
       const idx = revealed.findIndex((c) => c.id === got.id);
       if (idx >= 0) revealed.splice(idx, 1);
+      picks.push({ playerId: p.id, card: got });
       this.gainCard(p, got, undefined, true);
+      this.emit({ type: 'harvest', cards: allCards, picks: picks.slice() });
     }
     for (const c of revealed) this.toDiscard(c);
+    this.emit({ type: 'harvest', cards: allCards, picks: picks.slice(), done: true });
   }
 
   private async resolveJiedao(user: PlayerState, card: Card, target?: PlayerState): Promise<void> {

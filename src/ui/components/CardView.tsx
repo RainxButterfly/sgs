@@ -1,4 +1,5 @@
 import type { Card } from '../../core/types';
+import { cardEffectText } from '../cardEffects';
 import { cardDisplayName, cardTypeText, isRedCard, rankText, SUIT_CHAR } from '../labels';
 
 interface Props {
@@ -29,7 +30,8 @@ export function CardView({ card, size = 'md', selected, disabled, dimmed, onClic
       ].join(' ')}
       onClick={onClick}
       disabled={disabled}
-      title={`${cardDisplayName(card)} ${SUIT_CHAR[card.suit]}${rankText(card.rank)}`}
+      title={`${cardDisplayName(card)} ${SUIT_CHAR[card.suit]}${rankText(card.rank)}${cardEffectText(card) ? `
+${cardEffectText(card)}` : ''}`}
     >
       <span className="card-corner card-corner-tl">
         {SUIT_CHAR[card.suit]}

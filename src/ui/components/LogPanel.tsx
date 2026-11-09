@@ -17,7 +17,7 @@ export function LogPanel({ open, onClose }: { open: boolean; onClose: () => void
         </button>
       </div>
       <div className="log-list" ref={ref}>
-        {game.state.log.map((entry) => (
+        {[...game.state.log].sort((a, b) => a.id - b.id).map((entry) => (
           <div key={entry.id} className={`log-line log-${entry.kind}`}>
             {entry.text}
           </div>

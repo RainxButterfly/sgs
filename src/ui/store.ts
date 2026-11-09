@@ -4,7 +4,7 @@ import { HEROES } from '../core/deck';
 import { botAction } from '../core/bot';
 import { smartBotAction } from '../core/smartBot';
 import { LanClientManager, LanHostManager, createRoomInfo, isAndroidApp, isTauri, parseAddress } from '../net/lan';
-import type { LobbyState, RoomInfo } from '../net/protocol';
+import type { ChatMessage, LobbyState, RoomInfo, SpectatorInfo } from '../net/protocol';
 import {
   checkAndroidUpdate,
   checkAppUpdate,
@@ -43,6 +43,7 @@ interface SavedLanSession {
   address: string;
   code: string;
   name: string;
+  spectate?: boolean;
 }
 
 const LAN_SESSION_KEY = 'sgk-lan-session';
@@ -53,7 +54,12 @@ export function loadSavedLanSession(): SavedLanSession | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<SavedLanSession>;
     if (!parsed.address || !parsed.code || !parsed.name) return null;
-    return { address: parsed.address, code: parsed.code, name: parsed.name };
+    return {
+      address: parsed.address,
+      code: parsed.code,
+      name: parsed.name,
+      spectate: parsed.spectate === true,
+    };
   } catch {
     return null;
   }
@@ -143,6 +149,13 @@ interface CardHistoryEntry {
   turn?: number;
 }
 
+interface HarvestState {
+  cards: Card[];
+  picks: { playerId: number; card: Card }[];
+  chooserId?: number;
+  done?: boolean;
+}
+
 interface GameStore {
   screen: Screen;
   game: GameLike | null;
@@ -151,10 +164,14 @@ interface GameStore {
   version: number;
   pending: AskRequest | null;
   skipWuxie: boolean;
+  chatMessages: ChatMessage[];
+  chatOpen: boolean;
+  chatUnread: number;
   result: { text: string; winner: string } | null;
   lastPlay: PlayEvent | null;
   lastJudge: JudgeEvent | null;
   cardHistory: CardHistoryEntry[];
+  harvest: HarvestState | null;
   flash: FlashEvent | null;
   error: string | null;
   lanRole: 'host' | 'client' | null;
@@ -165,6 +182,8 @@ interface GameStore {
   netError: string | null;
   lanPlayerId: number;
   lanConnId: number;
+  spectate: boolean;
+  spectators: SpectatorInfo[];
   joinPreset: { address: string; code: string } | null;
   suspended: boolean;
   savedLanSession: SavedLanSession | null;
@@ -193,7 +212,7 @@ interface GameStore {
   backToMenu: () => void;
   restart: () => void;
   createLanRoom: (name: string) => Promise<void>;
-  joinLanRoom: (address: string, code: string, name: string) => Promise<void>;
+  joinLanRoom: (address: string, code: string, name: string, spectate?: boolean) => Promise<void>;
   startLanGame: (count: number) => void;
   startLanPick: (count: number) => void;
   cancelLanPick: () => void;
@@ -228,6 +247,11 @@ interface GameStore {
   activateSkill: (skillId: string) => void;
   cancelPrompt: () => void;
   cancelAllWuxie: () => void;
+  receiveChat: (message: ChatMessage) => void;
+  sendChat: (text: string) => void;
+  openChat: () => void;
+  closeChat: () => void;
+  dismissHarvest: () => void;
   toggleCardChoice: (cardId: string) => void;
   confirmCards: () => void;
   toggleReorder: (cardId: string) => void;
@@ -264,10 +288,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
   version: 0,
   pending: null,
   skipWuxie: false,
+  chatMessages: [],
+  chatOpen: false,
+  chatUnread: 0,
   result: null,
   lastPlay: null,
   lastJudge: null,
   cardHistory: [],
+  harvest: null,
   flash: null,
   error: null,
   lanRole: null,
@@ -278,6 +306,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   netError: null,
   lanPlayerId: 0,
   lanConnId: -1,
+  spectate: false,
+  spectators: [],
   joinPreset: null,
   suspended: false,
   savedLanSession: loadSavedLanSession(),
@@ -459,6 +489,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     resolveAsk = null;
     set({
       savedLanSession: null,
+      chatMessages: [],
+      chatOpen: false,
+      chatUnread: 0,
       screen: 'menu',
       game: null,
       preGame: null,
@@ -473,9 +506,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       netError: null,
       lanPlayerId: 0,
       lanConnId: -1,
+      spectate: false,
+      spectators: [],
       lastPlay: null,
       lastJudge: null,
       cardHistory: [],
+      harvest: null,
       flash: null,
     });
     set({ suspended: false });
@@ -535,6 +571,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         askHost: (request) => get().ask(request),
         emitHost: (event) => get().event(event),
         onLobby: (lobby) => set({ lobby, version: get().version + 1 }),
+        onChat: (message) => get().receiveChat(message),
+        onSpectators: (spectators) => set({
+          spectators,
+          lobby: get().lobby ? { ...get().lobby!, spectators } : null,
+          version: get().version + 1,
+        }),
         onGame: (game) =>
           set({
             game,
@@ -561,12 +603,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       clearSavedLanSession();
       set({
         savedLanSession: null,
+        chatMessages: [],
+        chatOpen: false,
+        chatUnread: 0,
         lanRole: 'host',
         lanHost: host,
         lanClient: null,
         lanConnId: 0,
         room: info,
         lobby: host.lobby,
+        spectate: false,
+        spectators: [],
         screen: 'lobby',
         netError: null,
         game: null,
@@ -579,7 +626,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  joinLanRoom: async (address, code, name) => {
+  joinLanRoom: async (address, code, name, spectate = false) => {
     const { ip, port } = parseAddress(address);
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) {
@@ -587,11 +634,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     const playerName = name.trim() || '玩家';
-    const client = new LanClientManager(ip, port, cleanCode, playerName, {
-      onWelcome: (connId) => set({ lanConnId: connId }),
+    const client = new LanClientManager(ip, port, cleanCode, playerName, {      onWelcome: (connId) => set({ lanConnId: connId }),
       onLobby: (lobby) =>
         set({
           lobby,
+          spectators: lobby.spectators ?? [],
           screen: 'lobby',
           result: null,
           pending: null,
@@ -606,6 +653,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({
           humanId: playerId,
           lanPlayerId: playerId,
+          spectate: false,
           screen: 'game',
           pending: null,
           result: null,
@@ -616,7 +664,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
           flash: null,
           version: get().version + 1,
         }),
-      onState: (state) => set({ game: { state }, version: get().version + 1 }),
+      onSpectate: () =>
+        set({
+          humanId: -1,
+          lanPlayerId: -1,
+          spectate: true,
+          screen: 'lobby',
+          pending: null,
+          result: null,
+          lastPlay: null,
+          lastJudge: null,
+          cardHistory: [],
+          flash: null,
+          selected: null,
+          selectedTargets: [],
+          asChooser: null,
+          cardChoices: [],
+          reorderTop: [],
+          version: get().version + 1,
+        }),
+      onSpectators: (spectators) =>
+        set({
+          spectators,
+          lobby: get().lobby ? { ...get().lobby!, spectators } : null,
+          version: get().version + 1,
+        }),
+      onState: (state) =>
+        set({
+          game: { state },
+          screen: get().spectate ? 'game' : get().screen,
+          version: get().version + 1,
+        }),
       onAsk: (request, state) =>
         set({
           game: { state },
@@ -630,6 +708,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           version: get().version + 1,
         }),
       onEvent: (event) => get().event(event),
+      onChat: (message) => get().receiveChat(message),
       onEnd: (text, winner) => {
         if (get().result) return;
         clearSavedLanSession();
@@ -649,8 +728,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
           screen: 'menu',
           suspended: false,
         }),
-    });
-    const session: SavedLanSession = { address: `${ip}:${port}`, code: cleanCode, name: playerName };
+    }, spectate);
+    const session: SavedLanSession = {
+      address: `${ip}:${port}`,
+      code: cleanCode,
+      name: playerName,
+      spectate,
+    };
     saveLanSession(session);
     set({
       lanRole: 'client',
@@ -666,6 +750,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       pending: null,
       suspended: false,
       savedLanSession: session,
+      spectate: false,
+      spectators: [],
+      chatMessages: [],
+      chatOpen: false,
+      chatUnread: 0,
       version: get().version + 1,
     });
   },
@@ -797,6 +886,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     resolveAsk = null;
     set({
       savedLanSession: null,
+      chatMessages: [],
+      chatOpen: false,
+      chatUnread: 0,
       screen: 'menu',
       game: null,
       preGame: null,
@@ -810,9 +902,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       netError: null,
       lanPlayerId: 0,
       lanConnId: -1,
+      spectate: false,
+      spectators: [],
       lastPlay: null,
       lastJudge: null,
       cardHistory: [],
+      harvest: null,
       flash: null,
       suspended: false,
     });
@@ -833,7 +928,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resumeSavedLanSession: async () => {
     const saved = get().savedLanSession;
     if (!saved) return;
-    await get().joinLanRoom(saved.address, saved.code, saved.name);
+    await get().joinLanRoom(saved.address, saved.code, saved.name, saved.spectate === true);
   },
 
   dismissSavedLanSession: () => {
@@ -847,6 +942,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     resolveAsk = null;
     set({
       savedLanSession: null,
+      chatMessages: [],
+      chatOpen: false,
+      chatUnread: 0,
       screen: 'menu',
       game: null,
       preGame: null,
@@ -872,6 +970,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     const turn = state.game?.state.turn ?? 0;
     const patch: Partial<GameStore> = { version: state.version + 1 };
+    if (ev.type === 'harvest') {
+      patch.harvest = {
+        cards: ev.cards,
+        picks: ev.picks,
+        chooserId: ev.chooserId,
+        done: ev.done,
+      };
+    }
     if (ev.type === 'turn' || ev.type === 'playCard') {
       patch.skipWuxie = false;
     }
@@ -1126,7 +1232,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
       return;
     }
-    set({ asChooser: { cardId, options } });
+    set({ asChooser: { cardId, options }, selected: null, selectedTargets: [] });
   },
 
   chooseAs: (as, skillId) => {
@@ -1140,7 +1246,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
-  closeAsChooser: () => set({ asChooser: null }),
+  closeAsChooser: () => set({ asChooser: null, selected: null, selectedTargets: [] }),
 
   clearSelection: () => set({ selected: null, selectedTargets: [], asChooser: null }),
 
@@ -1170,8 +1276,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   confirmPlay: () => {
-    const { pending, selected, selectedTargets } = get();
-    if (!pending || !selected || pending.kind !== 'play') return;
+    const { pending, selected, selectedTargets, asChooser } = get();
+    if (asChooser || !pending || !selected || pending.kind !== 'play') return;
     const option = pending.cardOptions?.find(
       (o) =>
         o.cardId === selected.cardId &&
@@ -1202,6 +1308,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ skipWuxie: true });
     get().submit({ type: 'cancel' });
   },
+
+  receiveChat: (message) => {
+    const state = get();
+    set({
+      chatMessages: [...state.chatMessages, message].slice(-100),
+      chatUnread: state.chatOpen ? 0 : state.chatUnread + 1,
+    });
+  },
+
+  sendChat: (text) => {
+    const value = text.trim();
+    if (!value) return;
+    const state = get();
+    if (state.lanRole === 'host') state.lanHost?.sendChat(value);
+    else if (state.lanRole === 'client') state.lanClient?.sendChat(value);
+  },
+
+  openChat: () => set({ chatOpen: true, chatUnread: 0 }),
+  closeChat: () => set({ chatOpen: false }),
+
+  dismissHarvest: () => set({ harvest: null, version: get().version + 1 }),
 
   toggleCardChoice: (cardId) => {
     const { pending, cardChoices } = get();
