@@ -532,6 +532,15 @@ export class Game {
     }
     if (real.length === 0) return;
     this.emit({ type: 'discard', playerId: player.id, cards: real, reason });
+    for (const card of real) {
+      if (player.alive) {
+        await this.trigger('cardLost', {
+          player,
+          card,
+          data: { reason },
+        });
+      }
+    }
     this.log(
       `【${player.name}】弃置了 ${real.map((c) => cardLabel(c)).join('、')}${reason && reason !== '弃置' ? `（${reason}）` : ''}`,
     );
@@ -2078,6 +2087,11 @@ ${skill.desc}` : ''}`
       if (as !== name) continue;
       this.removeFromHand(player, card);
       this.toDiscard(card);
+      await this.trigger('cardLost', {
+        player,
+        card,
+        data: { reason: '响应' },
+      });
       this.emit({ type: 'respond', playerId: player.id, card, as, skillId });
       this.log(`【${player.name}】打出了${as === card.name ? ` ${cardLabel(card)}` : ` ${cardLabel(card)} 视为【${as}】`}`);
       if (as === '杀') player.usedThisTurn.sha = (player.usedThisTurn.sha ?? 0) + 1;

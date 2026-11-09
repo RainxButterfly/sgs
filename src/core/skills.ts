@@ -20,6 +20,7 @@ export type SkillEvent =
   | 'shanUsed'
   | 'handLost'
   | 'equipLost'
+  | 'cardLost'
   | 'discardPhaseEnd'
   | 'dying'
   | 'death';
@@ -2021,7 +2022,7 @@ const SKILLS: SkillDef[] = [
     distanceFrom: (_game, owner) => -owner.fields.length,
     triggers: [
       {
-        event: ['handLost', 'equipLost'],
+        event: 'cardLost',
         when: (c) =>
           c.player?.id === c.owner.id &&
           c.game.currentPlayer?.id !== c.owner.id,
@@ -2402,6 +2403,7 @@ const SKILLS: SkillDef[] = [
           '桃园结义',
           '五谷丰登',
           '火攻',
+          '铁索连环',
         ];
         const picked = await game.askCards(owner, owner.hand, 1, 1, '蛊惑：选择一张手牌', undefined, false);
         if (picked.length !== 1) return;

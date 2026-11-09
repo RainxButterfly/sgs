@@ -20,6 +20,20 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.15',
+    date: '2026-11-10',
+    title: '屯田时机与蛊惑声明',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '新增失去牌事件：邓艾【屯田】在回合外弃牌、弃装备、弃判定牌或响应打出牌后触发判定，不再只监听最后一张手牌。',
+          '于吉【蛊惑】可声明范围补充铁索连环。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.14',
     date: '2026-11-10',
     title: '神速两段结算',
