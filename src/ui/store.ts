@@ -41,6 +41,12 @@ interface PreGame {
   roles: Role[];
   lordIndex: number;
   lordHeroId: string | null;
+  bid?: {
+    highest: number;
+    highestBidder: number;
+    bids: (number | null)[];
+    done: boolean;
+  };
 }
 
 interface SavedLanSession {
@@ -302,6 +308,7 @@ interface GameStore {
   initLocal: (count: number, heroId: string, rules?: Partial<CustomRules>) => void;
   prepareLocal: (count: number, rules?: Partial<CustomRules>, excludeHeroIds?: string[]) => void;
   confirmLocalPick: (heroId: string, secondaryId?: string) => void;
+  bidLocal: (score: number) => void;
   backToMenu: () => void;
   restart: () => void;
   createLanRoom: (name: string) => Promise<void>;
@@ -539,7 +546,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     const mode = rules?.mode ?? 'identity';
     const roles = buildRoles(count, mode);
-    roles.sort(() => Math.random() - 0.5);
+    if (mode !== 'landlord') roles.sort(() => Math.random() - 0.5);
+    else roles.fill('rebel');
     let bots: { name: string; heroId: string; heroIds?: string[] }[];
     let candidates: string[];
     let candidatePairs: { primary: string; secondary: string }[] | undefined;
@@ -562,15 +570,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }));
       candidates = pool.slice(0, 5);
     }
-    const visibleLordIndex =
-      count > 2 && (mode === 'identity' || mode === 'landlord') ? roles.indexOf('lord') : -1;
+    const visibleLordIndex = count > 2 && mode === 'identity' ? roles.indexOf('lord') : -1;
     const lordIndex = visibleLordIndex;
     const lordHeroId = lordIndex > 0 ? bots[lordIndex - 1].heroId : null;
+    const bid =
+      mode === 'landlord'
+        ? { highest: 0, highestBidder: -1, bids: [null, null, null], done: false }
+        : undefined;
     set({
       screen: 'pick',
       game: null,
       suspended: false,
-      preGame: { count, rules, candidates, candidatePairs, bots, roles, lordIndex, lordHeroId },
+      preGame: { count, rules, candidates, candidatePairs, bots, roles, lordIndex, lordHeroId, bid },
       humanId: 0,
       firstPlayerId: null,
       lanRole: null,
@@ -601,9 +612,46 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
+  bidLocal: (score) => {
+    const preGame = get().preGame;
+    if (!preGame?.bid || preGame.bid.done || preGame.rules?.mode !== 'landlord') return;
+    const value = Math.max(0, Math.min(3, Math.round(score)));
+    const bids: (number | null)[] = [value, null, null];
+    let highest = value;
+    let highestBidder = value > 0 ? 0 : -1;
+    if (value < 3) {
+      for (let index = 1; index < 3; index += 1) {
+        const canRaise = highest < 3 && Math.random() < 0.55;
+        const next = canRaise ? Math.min(3, highest + 1) : 0;
+        bids[index] = next;
+        if (next > highest) {
+          highest = next;
+          highestBidder = index;
+          if (highest === 3) break;
+        }
+      }
+    }
+    if (highestBidder < 0) highestBidder = 0;
+    const roles: Role[] = ['rebel', 'rebel', 'rebel'];
+    roles[highestBidder] = 'lord';
+    const lordHeroId =
+      highestBidder > 0 ? preGame.bots[highestBidder - 1]?.heroId ?? null : null;
+    set({
+      preGame: {
+        ...preGame,
+        roles,
+        lordIndex: highestBidder,
+        lordHeroId,
+        bid: { highest, highestBidder, bids, done: true },
+      },
+      version: get().version + 1,
+    });
+  },
+
   confirmLocalPick: (heroId, secondaryId) => {
     const preGame = get().preGame;
     if (!preGame || !preGame.candidates.includes(heroId)) return;
+    if (preGame.bid && !preGame.bid.done) return;
     const pair = preGame.candidatePairs?.find(
       (item) => item.primary === heroId && item.secondary === secondaryId,
     );
@@ -954,6 +1002,46 @@ export const useGameStore = create<GameStore>((set, get) => ({
         clearSavedLanSession();
         set({
           netError: reason,
+          lanClient: null,
+          lanRole: null,
+          lanConnId: -1,
+          game: null,
+          pending: null,
+          lobby: null,
+          room: null,
+          screen: 'menu',
+          spectate: false,
+          spectators: [],
+          suspended: false,
+          savedLanSession: null,
+          chatMessages: [],
+          result: null,
+        });
+      },
+      onVersionMismatch: (message) => {
+        clearSavedLanSession();
+        set({
+          netError: message,
+          lanClient: null,
+          lanRole: null,
+          lanConnId: -1,
+          game: null,
+          pending: null,
+          lobby: null,
+          room: null,
+          screen: 'menu',
+          spectate: false,
+          spectators: [],
+          suspended: false,
+          savedLanSession: null,
+          chatMessages: [],
+          result: null,
+        });
+      },
+      onConnectTimeout: () => {
+        clearSavedLanSession();
+        set({
+          netError: '连接失败：目标房间可能已关闭，或房主地址不可达。',
           lanClient: null,
           lanRole: null,
           lanConnId: -1,

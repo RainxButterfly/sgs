@@ -10820,3 +10820,48 @@ button {
     white-space: nowrap;
   }
 }
+
+/* 斗地主叫分 */
+.bid-panel {
+  margin: 18px 0 4px;
+  padding: 16px 18px;
+  border: 1px solid rgba(219, 181, 108, 0.34);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(64, 53, 39, 0.82), rgba(38, 31, 23, 0.9));
+}
+
+.bid-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.bid-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.bid-result b {
+  font-family: var(--font-calligraphy);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--gold-bright);
+}
+
+.bid-result > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.bid-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 6px;
+  color: var(--ink);
+  font-size: 12px;
+}

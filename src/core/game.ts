@@ -1243,7 +1243,7 @@ ${skill.desc}` : ''}`
     if ((cardType === 'trick' || cardType === 'delayed') && asName !== '无懈可击' && skillId !== 'recast') {
       this.wuxieWindowPending = true;
     }
-    if (cardType === 'trick' && skillId !== 'recast') {
+    if (skillId !== 'recast') {
       await this.trigger('cardUsed', { player: user, card, data: { as: asName } });
     }
 
@@ -2202,10 +2202,16 @@ ${skill.desc}` : ''}`
         this.currentPlayer?.alive &&
         this.currentPlayer.id !== player.id &&
         this.hasSkill(this.currentPlayer, 'wansha');
-      if (wansha) this.log(`【${this.currentPlayer.name}】的完杀生效，只有濒死角色可以使用桃`, 'skill');
+      if (wansha) this.log(`【${this.currentPlayer.name}】的完杀生效，只有你和濒死角色可以使用桃`, 'skill');
       for (const saver of this.turnOrder()) {
         if (!saver.alive) continue;
-        if (wansha && saver.id !== player.id) continue;
+        if (
+          wansha &&
+          saver.id !== player.id &&
+          saver.id !== this.currentPlayer?.id
+        ) {
+          continue;
+        }
         if (!this.hasPeach(saver)) continue;
         const resp = await this.askRespond(saver, '桃', {
           prompt: `【${player.name}】濒死，是否使用一张桃？`,

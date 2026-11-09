@@ -9,6 +9,7 @@ import { useGameStore } from '../store';
 export function PickScreen() {
   const preGame = useGameStore((s) => s.preGame);
   const confirm = useGameStore((s) => s.confirmLocalPick);
+  const bidLocal = useGameStore((s) => s.bidLocal);
   const [picked, setPicked] = useState(() => preGame?.candidates[0] ?? '');
   const [pairIndex, setPairIndex] = useState(0);
   const [detailHero, setDetailHero] = useState<string | null>(null);
@@ -24,8 +25,10 @@ export function PickScreen() {
   const pairHp = pairHeroes.reduce((sum, hero) => sum + hero.hp, 0);
   const pairSkills = [...new Set(pairHeroes.flatMap((hero) => hero.skillIds))];
   const gameMode = preGame.rules?.mode ?? 'identity';
+  const bid = preGame.bid;
+  const bidPending = !!bid && !bid.done;
   const myRole =
-    gameMode === 'guozhan' || gameMode === 'duel'
+    gameMode === 'guozhan' || gameMode === 'duel' || bidPending
       ? null
       : gameMode === 'landlord'
         ? preGame.roles[0] === 'lord'
@@ -61,7 +64,52 @@ export function PickScreen() {
           </button>
         </div>
 
-        <div className="pick-layout">
+        {bid && (
+          <section className="bid-panel">
+            <div className="room-card-title">叫 地 主</div>
+            {!bid.done ? (
+              <>
+                <p className="setup-hint">
+                  3 分最高，直接成为地主；全部不叫时首位玩家成为地主。地主额外获得 1 点体力上限。
+                </p>
+                <div className="bid-actions">
+                  {[0, 1, 2, 3].map((score) => (
+                    <button
+                      key={score}
+                      type="button"
+                      className={`btn ${score === 3 ? 'primary' : 'ghost'}`}
+                      onClick={() => bidLocal(score)}
+                    >
+                      {score === 0 ? '不叫' : `${score} 分`}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="bid-result">
+                <b>
+                  {bid.highestBidder === 0
+                    ? '你成为地主'
+                    : `${preGame.bots[bid.highestBidder - 1]?.name ?? '电脑'} 成为地主`}
+                </b>
+                <span>{bid.highest > 0 ? `最高 ${bid.highest} 分` : '全部不叫，首位玩家成为地主'}</span>
+                <div className="bid-list">
+                  <span>你：{bid.bids[0] ? `${bid.bids[0]} 分` : '不叫'}</span>
+                  {preGame.bots.map((bot, index) => (
+                    <span key={bot.name}>
+                      {bot.name}：{bid.bids[index + 1] ? `${bid.bids[index + 1]} 分` : '不叫'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        <div
+          className="pick-layout"
+          style={bidPending ? { display: 'none' } : undefined}
+        >
           <section className="pick-seats">
             <div className="room-card-title">座次与武将</div>
             <div className="pick-seat is-human">
@@ -217,7 +265,7 @@ export function PickScreen() {
           </section>
         </div>
 
-        <div className="setup-actions">
+        <div className="setup-actions" style={bidPending ? { display: 'none' } : undefined}>
           <span className="setup-picked">
             已选：<b>{selectedPair ? pairHeroes.map((hero) => hero.name).join(' / ') : selected?.name ?? '—'}</b>
           </span>

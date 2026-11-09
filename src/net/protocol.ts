@@ -77,9 +77,11 @@ export type HostPayload =
   | { t: 'end'; text: string; winner: string }
   | { t: 'chat'; message: ChatMessage }
   | { t: 'kicked'; reason: string }
+  | { t: 'versionMismatch'; message: string }
   | { t: 'error'; message: string };
 
 export type GuestPayload =
+  | { t: 'hello'; version: string }
   | { t: 'action'; action: GameAction }
   | { t: 'pickHero'; heroId: string }
   | { t: 'chat'; text: string }

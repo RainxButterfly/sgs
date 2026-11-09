@@ -17,6 +17,9 @@ import { DEFAULT_RULES, type CustomRules } from '../core/types';import {
   type SpectatorInfo,
 } from './protocol';
 
+const APP_VERSION =
+  typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0';
+
 function decideBot(state: GameState | undefined, request: AskRequest): GameAction {
   return safeBotAction(state, request, (error) => {
     const detail = error as Error | undefined;
@@ -606,6 +609,27 @@ export class LanHostManager {
     const guest = this.guests.find((g) => g.connId === from);
     const spectator = this.spectators.find((item) => item.connId === from);
     if (!guest && !spectator) return;
+    if (message.t === 'hello') {
+      if (!message.version || message.version === APP_VERSION) return;
+      this.sendTo(from, {
+        t: 'versionMismatch',
+        message: `版本不一致：房主是 v${APP_VERSION}，你是 v${message.version}。请双方更新到同一版本后再加入。`,
+      } satisfies HostPayload);
+      if (guest) {
+        this.guests = this.guests.filter((item) => item !== guest);
+        if (!this.started) {
+          this.guests.forEach((item, index) => {
+            item.playerId = index + 1;
+          });
+          this.refreshLobby();
+        }
+      } else if (spectator) {
+        this.spectators = this.spectators.filter((item) => item !== spectator);
+        this.broadcastSpectators();
+        this.refreshLobby();
+      }
+      return;
+    }
     if (message.t === 'chat') {
       const value = message.text.trim().slice(0, 200);
       if (!value) return;
@@ -922,6 +946,8 @@ interface ClientHooks {
   onChat: (message: ChatMessage) => void;
   onError: (message: string) => void;
   onKicked?: (reason: string) => void;
+  onVersionMismatch?: (message: string) => void;
+  onConnectTimeout?: () => void;
   onClosed: () => void;
 }
 
@@ -946,14 +972,30 @@ export class LanClientManager {
     const watch = spectate ? '&spectate=1' : '';
     const url = `ws://${ip}:${port}/ws?room=${encodeURIComponent(code)}&name=${encodeURIComponent(name)}${watch}`;
     this.relay = new RelayClient(url);
+    let welcomed = false;
+    const welcomeTimer = window.setTimeout(() => {
+      if (welcomed) return;
+      this.relay.close();
+      this.hooks.onConnectTimeout?.();
+    }, 10000);
+    this.relay.onOpen = () => {
+      window.setTimeout(() => {
+        this.relay.send({ t: 'hello', version: APP_VERSION } satisfies GuestPayload);
+      }, 150);
+    };
     this.relay.onServer = (event) => {
-      if (event.server === 'welcome') this.hooks.onWelcome?.(event.id);
-      else if (event.server === 'host-left') this.hooks.onError('房主已离开房间');
+      if (event.server === 'welcome') {
+        welcomed = true;
+        window.clearTimeout(welcomeTimer);
+        this.hooks.onWelcome?.(event.id);
+      } else if (event.server === 'host-left') this.hooks.onError('房主已离开房间');
     };
     this.relay.onPayload = (_from, payload) => this.handlePayload(payload);
     this.relay.onClose = () => {
+      window.clearTimeout(welcomeTimer);
       if (this.closedByUser) return;
-      this.hooks.onClosed();
+      if (!welcomed) this.hooks.onConnectTimeout?.();
+      else this.hooks.onClosed();
     };
     this.relay.connect();
   }
@@ -995,6 +1037,11 @@ export class LanClientManager {
       case 'kicked':
         this.closedByUser = true;
         this.hooks.onKicked?.(message.reason);
+        this.relay.close();
+        break;
+      case 'versionMismatch':
+        this.closedByUser = true;
+        this.hooks.onVersionMismatch?.(message.message);
         this.relay.close();
         break;
       case 'error':
