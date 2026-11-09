@@ -73,7 +73,9 @@ export function PickScreen() {
               </span>
               <span className="pick-seat-tag">
                 {preGame.lordIndex === 0
-                  ? '主公 · 已亮将'
+                  ? gameMode === 'landlord'
+                    ? '地主 · 已亮将'
+                    : '主公 · 已亮将'
                   : selectedPair
                     ? '双将 · 已选择'
                     : selected
@@ -87,15 +89,21 @@ export function PickScreen() {
               return (
                 <div key={bot.name + bot.heroId} className={`pick-seat ${isLord ? 'is-lord' : ''}`}>
                   <span className="pick-seat-label">电脑</span>
-                  <span className="pick-seat-hero">{isLord ? (hero?.name ?? '随机') : '未亮将'}</span>
-                  <span className="pick-seat-tag">{isLord ? '主公' : bot.name}</span>
+                  <span className="pick-seat-hero">
+                    {isLord || gameMode === 'landlord' ? (hero?.name ?? '随机') : '未亮将'}
+                  </span>
+                  <span className="pick-seat-tag">
+                    {isLord ? (gameMode === 'landlord' ? '地主' : '主公') : bot.name}
+                  </span>
                 </div>
               );
             })}
             <div className="pick-seat-note">
-              {preGame.lordIndex >= 0
-                ? '主公武将已经亮出，其余武将会在全部选择完成后亮出。'
-                : '其余空位由电脑自动选择武将。'}
+              {gameMode === 'landlord'
+                ? '斗地主身份公开，其他玩家的武将也会在选择阶段显示。'
+                : preGame.lordIndex >= 0
+                  ? '主公武将已经亮出，其余武将会在全部选择完成后亮出。'
+                  : '其余空位由电脑自动选择武将。'}
             </div>
           </section>
 

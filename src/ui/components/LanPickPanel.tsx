@@ -11,6 +11,7 @@ interface Props {
   me: LobbyPlayer;
   host: boolean;
   guozhan: boolean;
+  landlord?: boolean;
   startCount: number;
   code: string;
   lordPlayerId?: number | null;
@@ -28,6 +29,7 @@ export function LanPickPanel({
   me,
   host,
   guozhan: guozhanMode,
+  landlord,
   startCount,
   code,
   lordPlayerId,
@@ -79,7 +81,7 @@ export function LanPickPanel({
           <div className="room-card-title">座次与武将</div>
           {players.map((player) => {
             const isLord = lordPlayerId != null && player.playerId === lordPlayerId;
-            const showHero = isLord || revealed || player.connId === me.connId;
+            const showHero = isLord || revealed || landlord || player.connId === me.connId;
             const selectedIds = playerHeroIds(player);
             const hero = player.heroId && showHero ? HERO_MAP.get(player.heroId) : undefined;
             return (
@@ -87,7 +89,9 @@ export function LanPickPanel({
                 key={player.connId}
                 className={`pick-seat ${player.connId === me.connId ? 'is-human' : ''} ${isLord ? 'is-lord' : ''}`}
               >
-                <span className="pick-seat-label">{isLord ? '主公' : player.isHost ? '房主' : '玩家'}</span>
+                <span className="pick-seat-label">
+                  {isLord ? (landlord ? '地主' : '主公') : player.isHost ? '房主' : '玩家'}
+                </span>
                 <span className="pick-seat-hero">
                   {selectedIds.length
                     ? showHero
@@ -104,7 +108,7 @@ export function LanPickPanel({
             const isBotLord = !lordPlayerId && !!lordBotHero && lordSeat === seatIndex;
             return (
               <div key={`empty-${index}`} className={`pick-seat ${isBotLord ? 'is-lord' : ''}`}>
-                <span className="pick-seat-label">{isBotLord ? '主公' : '电脑'}</span>
+                <span className="pick-seat-label">{isBotLord ? (landlord ? '地主' : '主公') : '电脑'}</span>
                 <span className="pick-seat-hero">{isBotLord ? lordBotHero?.name : '自动补足'}</span>
                 <span className="pick-seat-tag">{isBotLord ? '电脑' : '空位'}</span>
               </div>

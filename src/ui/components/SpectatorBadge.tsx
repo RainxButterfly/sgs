@@ -49,16 +49,28 @@ export function SpectatorBadge({ compact = false }: { compact?: boolean }) {
                       <span className="spectator-name">{spectator.name}</span>
                       <code className="spectator-ip">{spectator.ip || 'IP 未知'}</code>
                       {lanRole === 'host' && (
-                        <button
-                          type="button"
-                          className="lobby-kick"
-                          onClick={() => {
-                            if (!window.confirm(`确定将观战者【${spectator.name}】移出观战席吗？`)) return;
-                            lanHost?.kickSpectator(spectator.connId);
-                          }}
-                        >
-                          移出
-                        </button>
+                        <span className="lobby-kick-group">
+                          <button
+                            type="button"
+                            className="lobby-kick"
+                            onClick={() => {
+                              if (!window.confirm(`确定将观战者【${spectator.name}】移出观战席吗？对方仍可重新加入。`)) return;
+                              lanHost?.kickSpectator(spectator.connId);
+                            }}
+                          >
+                            移出
+                          </button>
+                          <button
+                            type="button"
+                            className="lobby-kick permanent"
+                            onClick={() => {
+                              if (!window.confirm(`确定将观战者【${spectator.name}】永久移出吗？对方将无法再用这个名字加入。`)) return;
+                              lanHost?.kickSpectator(spectator.connId, true);
+                            }}
+                          >
+                            永移
+                          </button>
+                        </span>
                       )}
                     </li>
                   ))}

@@ -117,13 +117,19 @@ export function LobbyScreen() {
   );
   const picking = lobby.picking === true;
   const pickCount = Math.max(lobby.targetCount ?? startCount, players.length);
-  const kickPlayer = (playerId: number, name: string) => {
-    if (!window.confirm(`确定将【${name}】移出房间吗？`)) return;
-    lanHost?.kickPlayer(playerId);
+  const kickPlayer = (playerId: number, name: string, permanent = false) => {
+    const message = permanent
+      ? `确定将【${name}】永久移出房间吗？对方将无法再用这个名字加入。`
+      : `确定将【${name}】移出房间吗？对方仍可重新加入。`;
+    if (!window.confirm(message)) return;
+    lanHost?.kickPlayer(playerId, permanent);
   };
-  const kickSpectator = (connId: number, name: string) => {
-    if (!window.confirm(`确定将观战者【${name}】移出观战席吗？`)) return;
-    lanHost?.kickSpectator(connId);
+  const kickSpectator = (connId: number, name: string, permanent = false) => {
+    const message = permanent
+      ? `确定将观战者【${name}】永久移出吗？对方将无法再用这个名字加入。`
+      : `确定将观战者【${name}】移出观战席吗？对方仍可重新加入。`;
+    if (!window.confirm(message)) return;
+    lanHost?.kickSpectator(connId, permanent);
   };
   const gameModeLabel =
     gameMode === 'duel'
@@ -195,6 +201,7 @@ export function LobbyScreen() {
               me={me}
               host={host}
               guozhan={gameMode === 'guozhan'}
+              landlord={gameMode === 'landlord'}
               startCount={pickCount}
               code={lobby.room.code}
               lordPlayerId={lobby.lordPlayerId}
@@ -313,13 +320,22 @@ export function LobbyScreen() {
                   </span>
                   <span className="lobby-status">{player.connected ? '已入座' : '掉线'}</span>
                   {host && !player.isHost && (
-                    <button
-                      type="button"
-                      className="lobby-kick"
-                      onClick={() => kickPlayer(player.playerId, player.name)}
-                    >
-                      移出
-                    </button>
+                    <span className="lobby-kick-group">
+                      <button
+                        type="button"
+                        className="lobby-kick"
+                        onClick={() => kickPlayer(player.playerId, player.name)}
+                      >
+                        移出
+                      </button>
+                      <button
+                        type="button"
+                        className="lobby-kick permanent"
+                        onClick={() => kickPlayer(player.playerId, player.name, true)}
+                      >
+                        永移
+                      </button>
+                    </span>
                   )}
                 </div>
               ))}
@@ -342,13 +358,22 @@ export function LobbyScreen() {
                   <span className="lobby-name">{spectator.name}</span>
                   <span className="lobby-status">{spectator.ip || 'IP 未知'}</span>
                   {host && (
-                    <button
-                      type="button"
-                      className="lobby-kick"
-                      onClick={() => kickSpectator(spectator.connId, spectator.name)}
-                    >
-                      移出
-                    </button>
+                    <span className="lobby-kick-group">
+                      <button
+                        type="button"
+                        className="lobby-kick"
+                        onClick={() => kickSpectator(spectator.connId, spectator.name)}
+                      >
+                        移出
+                      </button>
+                      <button
+                        type="button"
+                        className="lobby-kick permanent"
+                        onClick={() => kickSpectator(spectator.connId, spectator.name, true)}
+                      >
+                        永移
+                      </button>
+                    </span>
                   )}
                 </div>
               ))}

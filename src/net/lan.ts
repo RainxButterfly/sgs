@@ -162,6 +162,7 @@ export class LanHostManager {
   private hostHeroIds: string[] = [];
   private guests: HostGuest[] = [];
   private spectators: SpectatorInfo[] = [];
+  private bannedNames = new Set<string>();
   private pending = new Map<number, { request: AskRequest; resolve: (action: GameAction) => void; timer: ReturnType<typeof setTimeout> }>();
   private stateTimer: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
@@ -387,6 +388,13 @@ export class LanHostManager {
     }
     if (event.server === 'join') {
       const joinName = event.name || `玩家${event.id}`;
+      if (this.bannedNames.has(joinName)) {
+        this.sendTo(event.id, {
+          t: 'kicked',
+          reason: '房主已将你永久移出房间，无法再次加入',
+        } satisfies HostPayload);
+        return;
+      }
       if (event.spectate) {
         const existing = this.spectators.find((item) => item.name === joinName);
         if (existing) {
@@ -523,11 +531,18 @@ export class LanHostManager {
     }
   }
 
-  kickPlayer(playerId: number): void {
+  kickPlayer(playerId: number, permanent = false): void {
     if (playerId === 0) return;
     const guest = this.guests.find((item) => item.playerId === playerId);
     if (!guest) return;
-    this.sendTo(guest.connId, { t: 'kicked', reason: '房主将你移出了房间' } satisfies HostPayload);
+    if (permanent) {
+      this.bannedNames.add(guest.name);
+      if (this.game) this.game.log(`房主永久移出【${guest.name}】`, 'system');
+    }
+    this.sendTo(guest.connId, {
+      t: 'kicked',
+      reason: permanent ? '房主已将你永久移出房间' : '房主将你移出了房间',
+    } satisfies HostPayload);
     this.guests = this.guests.filter((item) => item !== guest);
     if (this.started) {
       const player = this.game?.state.players[guest.playerId];
@@ -547,10 +562,17 @@ export class LanHostManager {
     this.refreshLobby();
   }
 
-  kickSpectator(connId: number): void {
+  kickSpectator(connId: number, permanent = false): void {
     const spectator = this.spectators.find((item) => item.connId === connId);
     if (!spectator) return;
-    this.sendTo(connId, { t: 'kicked', reason: '房主将你移出了观战席' } satisfies HostPayload);
+    if (permanent) {
+      this.bannedNames.add(spectator.name);
+      if (this.game) this.game.log(`房主永久移出观战者【${spectator.name}】`, 'system');
+    }
+    this.sendTo(connId, {
+      t: 'kicked',
+      reason: permanent ? '房主已将你永久移出观战席' : '房主将你移出了观战席',
+    } satisfies HostPayload);
     this.spectators = this.spectators.filter((item) => item.connId !== connId);
     this.broadcastSpectators();
     this.refreshLobby();

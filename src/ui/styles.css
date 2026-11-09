@@ -10704,3 +10704,116 @@ button {
   font-size: 11px;
   color: var(--muted);
 }
+
+.lobby-kick-group {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.lobby-kick.permanent {
+  border-color: rgba(210, 80, 60, 0.65);
+  color: #f0a090;
+}
+
+/* 对局记录：结果徽章与两行文字垂直居中对齐 */
+.history-detail-head {
+  min-height: 48px;
+}
+
+.history-detail-head > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.history-detail-head .history-result {
+  margin-top: 0;
+}
+
+/* 图鉴/选将滚动时背景固定，避免下方变黑 */
+.gallery-screen {
+  background: #1a1611;
+}
+
+.gallery-screen .ink-bg,
+.pick-screen .ink-bg {
+  position: fixed;
+  inset: 0;
+}
+
+/* 观战跟随与移动端紧凑视角面板 */
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
+  .spectator-screen .turn-round,
+  .spectator-screen .turn-player {
+    display: none;
+  }
+
+  .spectator-focus .hero-panel {
+    flex: 0 0 168px;
+    width: 168px;
+    max-height: 150px;
+    overflow: hidden;
+  }
+
+  .spectator-focus .hero-panel .hero-skills,
+  .spectator-focus .hero-panel .hero-equips {
+    display: none;
+  }
+
+  .spectator-focus .hero-panel .hero-title {
+    font-size: 10px;
+  }
+
+  .spectator-focus .hero-panel .hero-foot {
+    margin-top: 4px;
+    font-size: 9.5px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
+  .spectator-stage > .seat-position {
+    transform: none !important;
+    width: 100%;
+  }
+
+  .spectator-ring {
+    justify-content: center;
+  }
+
+  .spectator-focus .hero-panel {
+    flex: 0 0 200px;
+    width: 200px;
+  }
+
+  .spectator-focus .hero-panel .hero-name {
+    font-size: 16px;
+    white-space: nowrap;
+  }
+
+  .spectator-focus .hero-panel .role-tag {
+    padding: 0 4px;
+    font-size: 9px;
+  }
+
+  .spectator-focus .hero-panel .hero-detail-btn {
+    padding: 2px 6px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
+  .spectator-ring .seat .seat-hero {
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .spectator-ring .seat .role-badge {
+    padding: 0 3px;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+}

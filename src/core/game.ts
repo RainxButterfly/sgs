@@ -1175,14 +1175,38 @@ ${skill.desc}` : ''}`
     return true;
   }
 
+  private skillSignature(): string {
+    return [
+      this.state.deck.map((card) => card.id).join(','),
+      this.state.discard.map((card) => card.id).join(','),
+      ...this.players.map((player) =>
+        [
+          player.hp,
+          player.maxHp,
+          player.alive ? 1 : 0,
+          player.hand.map((card) => card.id).join(','),
+          Object.entries(player.equips)
+            .map(([slot, card]) => `${slot}:${card?.id ?? ''}`)
+            .join(','),
+          player.judgeZone.map((card) => card.id).join(','),
+          JSON.stringify(player.flags),
+        ].join('|'),
+      ),
+    ].join(';');
+  }
+
   async activateSkill(player: PlayerState, skillId: string): Promise<void> {
     const skill = SKILL_MAP.get(skillId);
     if (!skill?.active) return;
     if (skill.active.oncePerTurn && (player.usedThisTurn[skillId] ?? 0) > 0) return;
-    player.usedThisTurn[skillId] = (player.usedThisTurn[skillId] ?? 0) + 1;
+    const before = this.skillSignature();
+    await skill.active.run(this, player);
+    if (this.skillSignature() === before) return;
+    if (skill.active.oncePerTurn) {
+      player.usedThisTurn[skillId] = (player.usedThisTurn[skillId] ?? 0) + 1;
+    }
     this.emit({ type: 'skill', playerId: player.id, name: skill.name });
     this.log(`【${player.name}】发动【${skill.name}】`, 'skill');
-    await skill.active.run(this, player);
   }
 
   async useCard(

@@ -21,6 +21,7 @@ export function SpectatorScreen() {
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
   const [focusId, setFocusId] = useState(0);
+  const [followCurrent, setFollowCurrent] = useState(true);
 
   const exit = () => {
     if (!window.confirm('确定退出观战吗？')) return;
@@ -48,7 +49,9 @@ export function SpectatorScreen() {
   const n = Math.max(1, game.state.players.length);
   const currentId = game.state.current;
   const mode = n === 2 ? 'duel' : (game.state.rules?.mode ?? 'identity');
-  const focus = game.state.players[focusId] ?? game.state.players[0];
+  const focus = followCurrent
+    ? game.state.players[currentId] ?? game.state.players[focusId] ?? game.state.players[0]
+    : game.state.players[focusId] ?? game.state.players[0];
 
   return (
     <div className="spectator-screen">
@@ -73,7 +76,10 @@ export function SpectatorScreen() {
                 flashes={flashes}
                 speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
                 style={{ left: `${x}%`, top: `${y}%` }}
-                onClick={() => setFocusId(player.id)}
+                onClick={() => {
+                  setFollowCurrent(false);
+                  setFocusId(player.id);
+                }}
                 onDetail={() => setDetailPlayer(player.id)}
               />
             );
@@ -100,12 +106,22 @@ export function SpectatorScreen() {
               正在查看 <b>{focus.name}</b> 的手牌 · 第 {game.state.turn} 回合
             </span>
             <div className="spectator-switch">
+              <button
+                type="button"
+                className={`spectator-switch-btn ${followCurrent ? 'on' : ''}`}
+                onClick={() => setFollowCurrent((value) => !value)}
+              >
+                {followCurrent ? '跟随牌局' : '自由视角'}
+              </button>
               {game.state.players.map((player) => (
                 <button
                   key={player.id}
                   type="button"
                   className={`spectator-switch-btn ${player.id === focus.id ? 'on' : ''}`}
-                  onClick={() => setFocusId(player.id)}
+                  onClick={() => {
+                    setFollowCurrent(false);
+                    setFocusId(player.id);
+                  }}
                   title={`切换到 ${player.name} 的视角`}
                 >
                   {player.name}
