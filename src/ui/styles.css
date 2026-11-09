@@ -9952,3 +9952,23 @@ button {
 .prompt-bar {
   position: relative;
 }
+
+.prompt-bar.waiting-other {
+  border-color: rgba(177, 155, 230, 0.32);
+  background: linear-gradient(180deg, rgba(49, 44, 63, 0.94), rgba(33, 30, 43, 0.96));
+}
+
+.prompt-bar.waiting-other .prompt-idle {
+  color: #d8cff3;
+}
+
+.prompt-waiting-detail {
+  flex: 1;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

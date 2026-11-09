@@ -29,15 +29,27 @@ function valueOf(card: Card | undefined): number {
   return CARD_VALUE[card.name] ?? 45;
 }
 
+function knownRole(state: GameState, me: PlayerState, other: PlayerState): PlayerState['role'] | undefined {
+  if (other.id === me.id) return other.role;
+  const mode = state.rules?.mode ?? 'identity';
+  // 斗地主身份公开，国战按势力公开；身份场只公开主公、已明置和已阵亡角色。
+  if (mode === 'landlord' || mode === 'guozhan' || mode === 'duel') return other.role;
+  if (other.roleRevealed || !other.alive || other.role === 'lord') return other.role;
+  return undefined;
+}
+
 function isFriend(state: GameState, me: PlayerState, other: PlayerState): boolean {
   if (other.id === me.id) return true;
   const mode = state.rules?.mode ?? 'identity';
   if (mode === 'guozhan') return other.faction === me.faction;
   if (mode === 'landlord') return (me.role === 'lord') === (other.role === 'lord');
+  if (mode === 'duel') return false;
+  const role = knownRole(state, me, other);
+  if (!role) return false;
   if (me.role === 'lord' || me.role === 'loyalist') {
-    return other.role === 'lord' || other.role === 'loyalist';
+    return role === 'lord' || role === 'loyalist';
   }
-  if (me.role === 'rebel') return other.role === 'rebel';
+  if (me.role === 'rebel') return role === 'rebel';
   return false;
 }
 
@@ -47,13 +59,23 @@ function isEnemy(state: GameState, me: PlayerState, other: PlayerState): boolean
   if (mode === 'guozhan') return other.faction !== me.faction;
   if (mode === 'landlord') return (me.role === 'lord') !== (other.role === 'lord');
   if (mode === 'duel') return true;
+  const role = knownRole(state, me, other);
+  if (!role) return false;
   if (me.role === 'lord' || me.role === 'loyalist') {
-    return other.role === 'rebel' || other.role === 'traitor';
+    return role === 'rebel' || role === 'traitor';
   }
-  if (me.role === 'rebel') return other.role === 'lord' || other.role === 'loyalist';
-  const rebelsAlive = state.players.some((p) => p.alive && p.role === 'rebel');
-  if (rebelsAlive) return other.role === 'rebel' || other.role === 'loyalist';
-  return other.role === 'lord' || other.role === 'loyalist';
+  if (me.role === 'rebel') return role === 'lord' || role === 'loyalist';
+  if (me.role === 'traitor') {
+    const rebelsAlive = state.players.some((p) => p.alive && knownRole(state, me, p) === 'rebel');
+    if (rebelsAlive) return role === 'rebel' || role === 'loyalist';
+    return role === 'lord' || role === 'loyalist';
+  }
+  return false;
+}
+
+function isUnknown(state: GameState, me: PlayerState, other: PlayerState): boolean {
+  if (other.id === me.id || !other.alive) return false;
+  return !isFriend(state, me, other) && !isEnemy(state, me, other);
 }
 
 function friendsOf(state: GameState, me: PlayerState): PlayerState[] {
@@ -81,6 +103,8 @@ function scorePlay(state: GameState, me: PlayerState, option: NonNullable<AskReq
   const name = option.as;
   const targets = option.validTargets.map((id) => state.players[id]).filter((p) => p?.alive);
   const enemyTargets = targets.filter((p) => isEnemy(state, me, p));
+  const unknownTargets = targets.filter((p) => isUnknown(state, me, p));
+  const hostileTargets = enemyTargets.length ? enemyTargets : unknownTargets;
   const friends = friendsOf(state, me);
   switch (name) {
     case '桃':
@@ -96,37 +120,43 @@ function scorePlay(state: GameState, me: PlayerState, option: NonNullable<AskReq
       return woundedFriends > 0 ? 25 : 0;
     }
     case '杀': {
-      if (!enemyTargets.length) return 0;
-      const low = Math.min(...enemyTargets.map((p) => p.hp));
+      if (!hostileTargets.length) return 0;
+      const low = Math.min(...hostileTargets.map((p) => p.hp));
       return 70 + (low <= 1 ? 25 : 0);
     }
     case '决斗':
-      return enemyTargets.length ? 55 : 0;
+      return hostileTargets.length ? 55 : 0;
     case '过河拆桥':
-      return enemyTargets.length ? 52 : 0;
+      return hostileTargets.length ? 52 : 0;
     case '顺手牵羊':
-      return enemyTargets.length ? 58 : 0;
+      return hostileTargets.length ? 58 : 0;
     case '乐不思蜀': {
-      const valid = enemyTargets.filter((p) => !p.judgeZone.some((c) => c.name === '乐不思蜀'));
+      const valid = hostileTargets.filter((p) => !p.judgeZone.some((c) => c.name === '乐不思蜀'));
       return valid.length ? 56 : 0;
     }
     case '借刀杀人':
-      return enemyTargets.length ? 40 : 0;
+      return hostileTargets.length ? 40 : 0;
     case '南蛮入侵':
     case '万箭齐发': {
-      if (me.role === 'traitor' && (state.rules?.mode ?? 'identity') === 'identity') return 0;
-      const enemies = enemiesOf(state, me).length;
+      const mode = state.rules?.mode ?? 'identity';
+      if (mode === 'landlord') {
+        // 农民不能为了打地主而顺手打伤另一个农民。
+        return me.role === 'lord' ? 48 : 0;
+      }
+      if (me.role === 'traitor' && mode === 'identity') return 0;
+      const enemies =
+        enemiesOf(state, me).length + state.players.filter((p) => isUnknown(state, me, p)).length;
       const friendsCount = friendsOf(state, me).length;
-      return enemies >= friendsCount ? 44 : 0;
+      return enemies > friendsCount ? 44 : 0;
     }
     case '闪电':
       return 0;
     case '酒':
       return me.hand.some((card) => card.name === '杀') ? 80 : 0;
     case '火攻':
-      return enemyTargets.length ? 55 : 0;
+      return hostileTargets.length ? 55 : 0;
     case '兵粮寸断':
-      return enemyTargets.length ? 50 : 0;
+      return hostileTargets.length ? 50 : 0;
     case '铁索连环':
       return targets.some((p) => !p.chained) ? 20 : 0;
     default: {
@@ -150,15 +180,23 @@ function pickTargets(
   if (!option.targetMax) return [];
   const pool = option.validTargets.map((id) => state.players[id]).filter((p) => p?.alive);
   const enemies = pool.filter((p) => isEnemy(state, me, p));
+  const unknown = pool.filter((p) => isUnknown(state, me, p));
   const harmful = ['杀', '决斗', '过河拆桥', '顺手牵羊', '乐不思蜀', '借刀杀人', '火攻', '兵粮寸断'].includes(option.as);
   let chosen = enemies;
   if (!chosen.length) {
-    if (harmful) return [];
-    chosen = pool;
+    if (harmful) chosen = unknown;
+    else chosen = pool;
   }
+  if (!chosen.length) return [];
   if (option.as === '杀' || option.as === '决斗') chosen.sort((a, b) => a.hp - b.hp);
   if (option.as === '过河拆桥' || option.as === '顺手牵羊') chosen.sort((a, b) => b.hand.length - a.hand.length);
-  if (option.as === '乐不思蜀') chosen = chosen.filter((p) => !p.judgeZone.some((c) => c.name === '乐不思蜀'));
+  if (option.as === '乐不思蜀') {
+    chosen = chosen
+      .filter((p) => !p.judgeZone.some((c) => c.name === '乐不思蜀'))
+      .sort((a, b) => b.hand.length - a.hand.length);
+  }
+  if (option.as === '兵粮寸断') chosen.sort((a, b) => b.hand.length - a.hand.length);
+  if (option.as === '火攻') chosen.sort((a, b) => b.hand.length - a.hand.length);
   if (option.as === '铁索连环') chosen = chosen.filter((p) => !p.chained);
   if (!chosen.length) return [];
   let count = 1;
@@ -236,11 +274,13 @@ function choosePlayer(state: GameState, me: PlayerState, req: AskRequest): GameA
   const ids = req.players ?? [];
   const candidates = state.players.filter((p) => ids.includes(p.id));
   if (!candidates.length) return { type: 'cancel' };
-  const friendly = /青囊|结姻|仁德|回复|交给|救|英魂|节命|补牌/.test(req.prompt);
+  const friendly = /青囊|结姻|仁德|回复|交给|救|英魂|节命|补牌|明策|献图|赠物/.test(req.prompt);
   const enemies = candidates.filter((p) => isEnemy(state, me, p));
   const friends = candidates.filter((p) => isFriend(state, me, p));
+  const unknown = candidates.filter((p) => isUnknown(state, me, p));
   let pool = friendly ? friends : enemies;
-  if (!pool.length) pool = enemies.length ? enemies : candidates;
+  if (!pool.length && !friendly) pool = unknown;
+  if (!pool.length) pool = enemies.length ? enemies : unknown.length ? unknown : candidates;
   if (!pool.length) return { type: 'cancel' };
   pool.sort((a, b) => a.hp - b.hp);
   return { type: 'choosePlayers', playerIds: [pool[0].id] };
@@ -275,10 +315,17 @@ function chooseOption(state: GameState, me: PlayerState, req: AskRequest): GameA
   }
   if (ids.some((id) => ['spade', 'heart', 'club', 'diamond'].includes(id))) {
     const asker = state.players[state.current] ?? me;
-    const counts: Record<string, number> = { spade: 0, heart: 0, club: 0, diamond: 0 };
-    for (const card of asker.hand) counts[card.suit] += 1;
     const suits: string[] = ['spade', 'heart', 'club', 'diamond'];
-    const best = suits.sort((a, b) => counts[b] - counts[a])[0];
+    // 只能利用公开信息：询问别人的花色时不知道对方手牌。
+    const best =
+      asker.id === me.id
+        ? suits
+            .map((suit) => ({
+              suit,
+              count: me.hand.filter((card) => card.suit === suit).length,
+            }))
+            .sort((a, b) => b.count - a.count)[0].suit
+        : suits[Math.floor(Math.random() * suits.length)];
     return { type: 'chooseOption', optionId: best };
   }
   const preferred = options.find((o) => o.id !== 'no') ?? options[0];

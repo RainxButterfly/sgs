@@ -1780,6 +1780,7 @@ ${skill.desc}` : ''}`
           return { card: null, as: '闪', skillId: isBazhen ? 'bazhen' : 'bagua', virtual: true };
         }
         this.log(`【${player.name}】的${isBazhen ? '八阵' : '八卦阵'}判定失败`, 'judge');
+        excluded.add(res.cardId);
         ignoreArmor = true;
         continue;
       }

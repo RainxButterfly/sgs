@@ -168,3 +168,39 @@ describe('左慈化身', () => {
     expect(game.state.players[0].extraSkills.some((id) => equipment.has(id))).toBe(false);
   });
 });
+
+class BazhenIO extends SkillIO {
+  count = 0;
+  ask(req: AskRequest): Promise<GameAction> {
+    if (req.kind === 'respond' && req.respondName === '闪') {
+      this.count += 1;
+      const option = (req.cardOptions ?? []).find((item) => item.cardId.startsWith('__'));
+      return Promise.resolve(option ? { type: 'respondCard', cardId: option.cardId, as: option.as, skillId: option.skillId } : { type: 'cancel' });
+    }
+    return super.ask(req);
+  }
+}
+
+describe('八阵判定', () => {
+  it('判定失败后不会无限重复询问同一个八阵', async () => {
+    const io = new BazhenIO();
+    const game = new Game(
+      {
+        players: [
+          { name: '卧龙', heroId: 'wolong', isBot: false },
+          { name: '甲', heroId: 'liubei', isBot: false },
+          { name: '乙', heroId: 'caocao', isBot: false },
+        ],
+        seed: 20261121,
+        rules: { skillsEnabled: true },
+      },
+      io,
+    );
+    await (game as unknown as { askRespond: (player: unknown, name: string, opts: object) => Promise<unknown> }).askRespond(
+      game.state.players[0],
+      '闪',
+      { prompt: '请打出一张闪', canCancel: true },
+    );
+    expect(io.count).toBe(1);
+  });
+});

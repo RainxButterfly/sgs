@@ -8,15 +8,39 @@ export function PromptBar() {
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
   const humanId = useGameStore((s) => s.humanId);
+  const wuxieWindow = useGameStore((s) => s.wuxieWindow);
 
-  if (!game || !pending) {
+  if (!game) return null;
+  if (pending && pending.playerId !== humanId) {
+    const actor = game.state.players[pending.playerId];
+    return (
+      <div className="prompt-bar waiting-other">
+        <span className="prompt-turn-dot" />
+        <span className="prompt-idle">
+          等待 {actor?.name ?? `座位${pending.playerId}`} 响应
+        </span>
+        <span className="prompt-waiting-detail">
+          {pending.prompt}
+          {pending.detail ? ` · ${pending.detail}` : ''}
+        </span>
+      </div>
+    );
+  }
+
+  if (!pending) {
     const current = game?.state.players[game.state.current];
     const mine = current?.id === humanId;
     return (
       <div className={`prompt-bar idle ${mine ? 'mine' : ''}`}>
         <span className={`prompt-turn-dot ${mine ? 'mine' : ''}`} />
         <span className="prompt-idle">
-          {current ? (mine ? '轮到你行动' : `等待 ${current.name} 行动`) : '等待对局开始'}
+          {wuxieWindow
+            ? '无懈可击窗口结算中…'
+            : current
+              ? mine
+                ? '轮到你行动'
+                : `等待 ${current.name} 行动`
+              : '等待对局开始'}
         </span>
         {current && (
           <span className="prompt-idle-sub">
