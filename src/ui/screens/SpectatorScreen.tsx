@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { HeroDetailModal } from '../components/HeroDetail';
+import { HeroPanel } from '../components/HeroPanel';
+import { Hand } from '../components/Hand';
 import { LogPanel } from '../components/LogPanel';
 import { PlayerSeat } from '../components/PlayerSeat';
 import { TableCenter } from '../components/TableCenter';
@@ -17,6 +19,7 @@ export function SpectatorScreen() {
   const speechBubbles = useGameStore((s) => s.speechBubbles);
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
+  const [focusId, setFocusId] = useState(0);
 
   const exit = () => {
     if (!window.confirm('确定退出观战吗？')) return;
@@ -44,6 +47,7 @@ export function SpectatorScreen() {
   const n = Math.max(1, game.state.players.length);
   const currentId = game.state.current;
   const mode = n === 2 ? 'duel' : (game.state.rules?.mode ?? 'identity');
+  const focus = game.state.players[focusId] ?? game.state.players[0];
 
   return (
     <div className="spectator-screen">
@@ -62,9 +66,12 @@ export function SpectatorScreen() {
                 player={player}
                 mode={mode}
                 current={player.id === currentId}
+                clickable
+                selected={player.id === focus.id}
                 flashes={flashes}
                 speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
                 style={{ left: `${x}%`, top: `${y}%` }}
+                onClick={() => setFocusId(player.id)}
                 onDetail={() => setDetailPlayer(player.id)}
               />
             );
@@ -74,13 +81,42 @@ export function SpectatorScreen() {
           <TableCenter />
         </div>
       </div>
-      <footer className="spectator-foot">
-        <span className="spectator-tag">观战中</span>
-        <span>身份与手牌已隐藏 · 第 {game.state.turn} 回合</span>
-        <button type="button" className="btn ghost small" onClick={openChat}>
-          聊天{chatUnread > 0 && <span className="chat-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
-        </button>
-      </footer>
+      <div className="spectator-focus">
+        <div className="spectator-view-tag">观战视角</div>
+        <HeroPanel
+          player={focus}
+          mode={mode}
+          current={focus.id === currentId}
+          flashes={flashes}
+          speech={speechBubbles.find((bubble) => bubble.playerId === focus.id) ?? null}
+          handLimitModifier={game.state.rules?.handLimitModifier ?? 0}
+          onDetail={() => setDetailPlayer(focus.id)}
+        />
+        <div className="spectator-focus-main">
+          <div className="spectator-focus-head">
+            <span>
+              正在查看 <b>{focus.name}</b> 的手牌 · 第 {game.state.turn} 回合
+            </span>
+            <div className="spectator-switch">
+              {game.state.players.map((player) => (
+                <button
+                  key={player.id}
+                  type="button"
+                  className={`spectator-switch-btn ${player.id === focus.id ? 'on' : ''}`}
+                  onClick={() => setFocusId(player.id)}
+                  title={`切换到 ${player.name} 的视角`}
+                >
+                  {player.name}
+                </button>
+              ))}
+              <button type="button" className="btn ghost small" onClick={openChat}>
+                聊天{chatUnread > 0 && <span className="chat-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
+              </button>
+            </div>
+          </div>
+          <Hand player={focus} pending={null} onSelect={() => undefined} />
+        </div>
+      </div>
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />
       {detailPlayer !== null && game.state.players[detailPlayer] && (
         <HeroDetailModal

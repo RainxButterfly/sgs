@@ -20,6 +20,32 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.6.8',
+    date: '2026-11-09',
+    title: '观战视角与手牌查看',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '观战席支持切换到任意玩家视角，下方像自己视角一样显示该玩家的武将、装备、判定区和手牌。',
+          '顶栏和底部提供玩家切换按钮，点击座位也能切换视角，并标注「观战视角」。',
+        ],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '观战界面不再被大段出牌列表遮挡，牌桌、判定和观战信息分开布局。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '观战视角在手机端改为可滚动布局，避免手牌和武将信息互相挤压。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.6.7',
     date: '2026-11-09',
     title: '对局信息与牌桌视觉',

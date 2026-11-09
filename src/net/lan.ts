@@ -6,6 +6,7 @@ import { smartBotAction } from '../core/smartBot';
 import type { AskRequest, GameAction, GameEvent, GameIO, Role } from '../core/types';
 import { DEFAULT_RULES, type CustomRules } from '../core/types';import {
   redactState,
+  spectateState,
   type ChatMessage,
   type GuestPayload,
   type HostPayload,
@@ -372,7 +373,7 @@ export class LanHostManager {
         if (this.started && this.game) {
           this.sendTo(event.id, {
             t: 'state',
-            state: redactState(this.game.state, -1),
+            state: spectateState(this.game.state),
           });
         }
         this.broadcastSpectators();
@@ -425,7 +426,7 @@ export class LanHostManager {
             this.sendTo(event.id, { t: 'spectate' });
             this.sendTo(event.id, {
               t: 'state',
-              state: redactState(this.game.state, -1),
+              state: spectateState(this.game.state),
             });
           }
           this.broadcastSpectators();
@@ -441,7 +442,7 @@ export class LanHostManager {
           this.sendTo(event.id, { t: 'spectate' });
           this.sendTo(event.id, {
             t: 'state',
-            state: redactState(this.game.state, -1),
+            state: spectateState(this.game.state),
           });
           this.game.log(`【${joinName}】进入观战`, 'system');
         }
@@ -620,7 +621,7 @@ export class LanHostManager {
     for (const spectator of this.spectators) {
       this.sendTo(spectator.connId, {
         t: 'state',
-        state: redactState(this.game.state, -1),
+        state: spectateState(this.game.state),
       });
     }
   }
@@ -766,7 +767,7 @@ export class LanHostManager {
     }
     for (const spectator of this.spectators) {
       this.sendTo(spectator.connId, { t: 'spectate' });
-      this.sendTo(spectator.connId, { t: 'state', state: redactState(game.state, -1) });
+      this.sendTo(spectator.connId, { t: 'state', state: spectateState(game.state) });
     }
     this.broadcastSpectators();
     this.hooks.onGame(game);

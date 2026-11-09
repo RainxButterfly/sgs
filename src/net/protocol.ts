@@ -106,6 +106,18 @@ function redactPlayer(player: PlayerState, viewerId: number, over: boolean): Pla
   };
 }
 
+export function spectateState(state: GameState): GameState {
+  return {
+    ...state,
+    seed: 0,
+    deck: [],
+    deckCount: state.deck.length,
+    discard: state.discard,
+    discardCount: state.discard.length,
+    log: state.log.slice(-150),
+  };
+}
+
 export function redactState(state: GameState, viewerId: number): GameState {
   const roleCounts: Record<Role, number> = { lord: 0, loyalist: 0, rebel: 0, traitor: 0 };
   for (const player of state.players) {
