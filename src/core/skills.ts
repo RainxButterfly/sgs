@@ -2482,6 +2482,21 @@ const SKILLS: SkillDef[] = [
       },
     ],
   },
+  {
+    id: 'bahu',
+    name: '跋扈',
+    desc: '锁定技，准备阶段开始时摸一张牌，出牌阶段使用【杀】的次数上限+1。',
+  },
+  {
+    id: 'feiyang',
+    name: '飞扬',
+    desc: '判定阶段开始时，若你的判定区有牌，你可以弃置两张牌并弃置一张判定牌。',
+  },
+  {
+    id: 'gongku',
+    name: '共苦',
+    desc: '限定技，队友阵亡后，你可以选择回复 1 点体力或摸两张牌。',
+  },
 ];
 
 function grantRandomSkills(game: Game, owner: PlayerState, count: number): string[] {
@@ -2492,7 +2507,7 @@ function grantRandomSkills(game: Game, owner: PlayerState, count: number): strin
       !skill.lord &&
       !existing.has(skill.id) &&
       !equipmentSkills.has(skill.id) &&
-      !['huashen', 'xinsheng', 'zhiba'].includes(skill.id),
+      !['huashen', 'xinsheng', 'zhiba', 'bahu', 'feiyang', 'gongku'].includes(skill.id),
   ).map((skill) => skill.id);
   const gained: string[] = [];
   for (let i = 0; i < count && pool.length > 0; i += 1) {

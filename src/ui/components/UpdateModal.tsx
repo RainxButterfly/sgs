@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MANUAL_UPDATE_URL } from '../update';
+import { MANUAL_UPDATE_URL, openUpdateUrl } from '../update';
 import { useGameStore } from '../store';
 
 function formatBytes(value: number): string {
@@ -20,6 +20,7 @@ export function UpdateModal() {
   const install = useGameStore((s) => s.installUpdate);
   const check = useGameStore((s) => s.checkUpdate);
   const [copied, setCopied] = useState(false);
+  const [browserMessage, setBrowserMessage] = useState<string | null>(null);
 
   if (!open) return null;
 
@@ -61,6 +62,16 @@ export function UpdateModal() {
     ? 0
     : Math.min(100, Math.round((progress.downloaded / progress.total) * 100));
   const busy = state === 'downloading' || state === 'installing';
+  const openInBrowser = async () => {
+    const url = info?.raw.urls?.[0] ?? info?.raw.url ?? MANUAL_UPDATE_URL;
+    setBrowserMessage(null);
+    try {
+      await openUpdateUrl(url);
+      setBrowserMessage('已打开浏览器，请在浏览器中下载并安装');
+    } catch (error) {
+      setBrowserMessage(`打开浏览器失败：${(error as Error).message}`);
+    }
+  };
   const mirrorText = mirror ? `镜像 ${mirror.index}/${mirror.total}` : '正在连接镜像';
 
   return (
@@ -126,6 +137,14 @@ export function UpdateModal() {
             {state === 'downloading' && (
               <div className="update-hint">
                 请保持应用开启。当前镜像卡住时会自动切换到下一个。
+              </div>
+            )}
+            {state === 'downloading' && info?.android && (
+              <div className="update-inline-actions">
+                <button type="button" className="btn ghost" onClick={() => void openInBrowser()}>
+                  在浏览器中下载
+                </button>
+                {browserMessage && <span className="update-inline-hint">{browserMessage}</span>}
               </div>
             )}
           </>

@@ -161,13 +161,14 @@ export class Game {
       const hero = heroes[0] ?? HERO_MAP.get(PLAYABLE_HEROES[0].id)!;
       for (const id of heroIds) usedHeroes.add(id);
       if (mode === 'guozhan') guozhanCounts[hero.faction] += 1;
-      const isLord = roles[i] === 'lord' && mode !== 'duel' && count > 2;
+      const isLandlord = mode === 'landlord' && roles[i] === 'lord';
+      const isLord = roles[i] === 'lord' && mode !== 'duel' && mode !== 'landlord' && count > 2;
       const halfReward =
         heroes.length > 1 && heroes.reduce((sum, item) => sum + item.hp, 0) % 2 === 1;
       const baseHp = heroes.length > 1
         ? Math.floor(heroes.reduce((sum, item) => sum + item.hp, 0) / 2)
         : hero.hp;
-      const maxHp = Math.max(1, baseHp + (isLord ? 1 : 0) + rules.hpModifier);
+      const maxHp = Math.max(1, baseHp + (isLord || isLandlord ? 1 : 0) + rules.hpModifier);
       const skills = rules.skillsEnabled
         ? [
             ...new Set(
@@ -188,7 +189,7 @@ export class Game {
         faction: hero.faction,
         gender: hero.gender,
         role: roles[i],
-        roleRevealed: isLord || rules.revealRoles,
+        roleRevealed: isLord || isLandlord || mode === 'landlord' || rules.revealRoles,
         maxHp,
         hp: maxHp,
         alive: true,
@@ -208,6 +209,13 @@ export class Game {
         isBot: p.isBot ?? false,
       };
     });
+
+    if (mode === 'landlord') {
+      for (const p of players) {
+        p.skills.push(p.role === 'lord' ? 'bahu' : 'gongku');
+        if (p.role === 'lord') p.skills.push('feiyang');
+      }
+    }
 
     const lordHuangtian = players.some(
       (p) => p.role === 'lord' && p.skills.includes('huangtian'),
@@ -261,6 +269,8 @@ export class Game {
     for (const p of players) {
       if (mode === 'duel' || count === 2) {
         this.log(`【${p.name}】选择了武将【${p.heroName}】`, 'system');
+      } else if (mode === 'landlord') {
+        this.log(`【${p.name}】以${p.role === 'lord' ? '地主' : '农民'}身份登场，选择武将【${p.heroName}】`, 'system');
       } else if (p.role === 'lord') {
         this.log(`【${p.name}】以主公身份登场，选择武将【${p.heroName}】`, 'system');
       } else if (rules.revealRoles) {
@@ -851,7 +861,10 @@ ${skill.desc}` : ''}`
       if (player.flags.tianyiFail || player.flags.xianzhenFail) return false;
       const unlimited =
         this.skillsOf(player).some((s) => s.unlimitedSha) || player.flags.xianzhenWin !== undefined;
-      const limit = 1 + (player.flags.tianyi ? 1 : 0);
+      const limit =
+        1 +
+        (player.flags.tianyi ? 1 : 0) +
+        (this.state.rules.mode === 'landlord' && player.role === 'lord' ? 1 : 0);
       return unlimited || (player.usedThisTurn.sha ?? 0) < limit;
     }
     return true;
@@ -2214,7 +2227,36 @@ ${skill.desc}` : ''}`
     player.pojun = [];
     for (const c of cards) this.toDiscard(c);
     this.emit({ type: 'death', playerId: player.id, role: player.role });
-    this.log(`【${player.name}】阵亡，身份是【${ROLE_NAME[player.role]}】`, 'death');
+    const deathRole =
+      this.state.rules.mode === 'landlord'
+        ? player.role === 'lord'
+          ? '地主'
+          : '农民'
+        : ROLE_NAME[player.role];
+    this.log(`【${player.name}】阵亡，身份是【${deathRole}】`, 'death');
+
+    if (this.state.rules.mode === 'landlord' && player.role === 'rebel') {
+      const teammate = this.players.find((p) => p.alive && p.role === 'rebel' && p.id !== player.id);
+      if (teammate && !teammate.flags.gongku) {
+        const choice = await this.askOption(
+          teammate,
+          '共苦：队友阵亡，选择回复 1 点体力或摸两张牌',
+          [
+            { id: 'heal', label: '回复 1 点体力' },
+            { id: 'draw', label: '摸两张牌' },
+          ],
+          undefined,
+          true,
+        );
+        if (choice === 'heal') {
+          teammate.flags.gongku = 1;
+          this.heal(teammate, teammate, 1, { reason: '共苦' });
+        } else if (choice === 'draw') {
+          teammate.flags.gongku = 1;
+          this.drawCards(teammate, 2, '共苦');
+        }
+      }
+    }
 
     if (killer && killer.alive && this.state.rules.mode === 'identity') {
       if (player.role === 'rebel') {
@@ -2248,6 +2290,16 @@ ${skill.desc}` : ''}`
       }
       return;
     }
+    if (this.state.rules.mode === 'landlord') {
+      const landlord = this.players.find((p) => p.role === 'lord');
+      const farmers = alive.filter((p) => p.role === 'rebel');
+      if (!landlord?.alive) {
+        this.endGame('rebel', '地主阵亡，农民取得胜利！');
+      } else if (farmers.length === 0) {
+        this.endGame('lord', '两名农民均已阵亡，地主取得胜利！');
+      }
+      return;
+    }
     const lord = this.players.find((p) => p.role === 'lord');
     if (!lord || !lord.alive) {
       if (alive.length === 1 && alive[0].role === 'traitor') {
@@ -2271,7 +2323,42 @@ ${skill.desc}` : ''}`
 
   // ---------- 阶段 ----------
 
+  private async feiyang(player: PlayerState): Promise<void> {
+    if (
+      this.state.rules.mode !== 'landlord' ||
+      player.role !== 'lord' ||
+      !player.judgeZone.length ||
+      player.flags.feiyang
+    ) {
+      return;
+    }
+    const handAndEquips = [...player.hand, ...Object.values(player.equips).filter((c): c is Card => !!c)];
+    if (handAndEquips.length < 2) return;
+    const ok = await this.confirm(
+      player,
+      '是否发动【飞扬】？',
+      '弃置两张牌，再弃置自己判定区的一张牌',
+    );
+    if (!ok) return;
+    const judgePick = await this.askCards(
+      player,
+      player.judgeZone,
+      1,
+      1,
+      '飞扬：选择一张判定牌弃置',
+      undefined,
+      false,
+    );
+    if (!judgePick.length) return;
+    const picked = await this.askCards(player, handAndEquips, 2, 2, '飞扬：选择两张牌弃置');
+    if (picked.length !== 2) return;
+    player.flags.feiyang = 1;
+    this.log(`【${player.name}】发动【飞扬】`, 'skill');
+    await this.discardCards(player, [...picked, ...judgePick], '飞扬');
+  }
+
   private async judgePhase(player: PlayerState): Promise<void> {
+    await this.feiyang(player);
     while (player.judgeZone.length > 0 && player.alive && !this.state.over) {
       const card = player.judgeZone.pop()!;
       if (card.name === '乐不思蜀') {
@@ -2369,7 +2456,7 @@ ${skill.desc}` : ''}`
   }
 
   private resetTurnFlags(player: PlayerState): void {
-    const persistent = new Set(['niepan', 'luanwu', 'zaoxian', 'ruoyu', 'hunzi', 'huashen', 'zhiji']);
+    const persistent = new Set(['niepan', 'luanwu', 'zaoxian', 'ruoyu', 'hunzi', 'huashen', 'zhiji', 'gongku']);
     for (const key of Object.keys(player.flags)) {
       if (!persistent.has(key)) delete player.flags[key];
     }
@@ -2399,6 +2486,8 @@ ${skill.desc}` : ''}`
       await this.trigger('phaseStart', { player, data: phaseData });
       if (phaseData.skip) {
         this.log(`【${player.name}】跳过了${phaseName(phase)}`);
+      } else if (phase === 'prepare' && this.state.rules.mode === 'landlord' && player.role === 'lord') {
+        this.drawCards(player, 1, '跋扈');
       } else if (phase === 'judge') {
         await this.judgePhase(player);
       } else if (phase === 'draw') {

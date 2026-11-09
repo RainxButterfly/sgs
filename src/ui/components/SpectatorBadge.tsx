@@ -6,6 +6,7 @@ export function SpectatorBadge({ compact = false }: { compact?: boolean }) {
   const spectators = useGameStore((s) => s.spectators);
   const room = useGameStore((s) => s.room);
   const lanRole = useGameStore((s) => s.lanRole);
+  const lanHost = useGameStore((s) => s.lanHost);
   const [open, setOpen] = useState(false);
   const count = spectators.length;
   if (!lanRole) return null;
@@ -47,6 +48,18 @@ export function SpectatorBadge({ compact = false }: { compact?: boolean }) {
                       <span className="spectator-avatar">{spectator.name.slice(0, 1)}</span>
                       <span className="spectator-name">{spectator.name}</span>
                       <code className="spectator-ip">{spectator.ip || 'IP 未知'}</code>
+                      {lanRole === 'host' && (
+                        <button
+                          type="button"
+                          className="lobby-kick"
+                          onClick={() => {
+                            if (!window.confirm(`确定将观战者【${spectator.name}】移出观战席吗？`)) return;
+                            lanHost?.kickSpectator(spectator.connId);
+                          }}
+                        >
+                          移出
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>

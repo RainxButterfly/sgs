@@ -158,6 +158,11 @@ export async function checkAndroidUpdate(): Promise<AppUpdateInfo | null> {
   };
 }
 
+export async function openUpdateUrl(url: string): Promise<void> {
+  if (!isTauri() || !isAndroidApp()) throw new Error('仅安卓版支持浏览器下载');
+  await invoke('open_update_url', { url });
+}
+
 export interface UpdateMirrorInfo {
   index: number;
   total: number;

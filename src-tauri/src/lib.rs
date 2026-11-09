@@ -389,6 +389,25 @@ async fn android_battery(app: tauri::AppHandle) -> Result<i32, String> {
         .map_err(|error| error.to_string())
 }
 
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn open_update_url(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    let state = app
+        .try_state::<InstallerState>()
+        .ok_or_else(|| "手机浏览器不可用".to_string())?;
+    state
+        .0
+        .run_mobile_plugin::<serde_json::Value>("openUrl", serde_json::json!({ "url": url }))
+        .map(|_| ())
+        .map_err(|error| error.to_string())
+}
+
+#[cfg(not(target_os = "android"))]
+#[tauri::command]
+fn open_update_url(_url: String) -> Result<(), String> {
+    Err("仅安卓版支持浏览器下载".to_string())
+}
+
 #[cfg(not(target_os = "android"))]
 #[tauri::command]
 fn android_battery() -> Result<i32, String> {
@@ -403,13 +422,15 @@ async fn download_update(app: &tauri::AppHandle, url: &str) -> Result<Vec<u8>, S
         .user_agent("sanguosha-xinghe-updater/0.1")
         .build()
         .map_err(|error| error.to_string())?;
-    let mut response = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|error| format!("下载更新失败：{error}"))?
-        .error_for_status()
-        .map_err(|error| format!("下载更新失败：{error}"))?;
+    let mut response = tokio::time::timeout(
+        Duration::from_secs(20),
+        client.get(url).send(),
+    )
+    .await
+    .map_err(|_| "镜像响应超时".to_string())?
+    .map_err(|error| format!("下载更新失败：{error}"))?
+    .error_for_status()
+    .map_err(|error| format!("下载更新失败：{error}"))?;
     let total = response.content_length().unwrap_or(0);
     let mut data = Vec::with_capacity(total as usize);
     let mut downloaded = 0u64;
@@ -902,6 +923,7 @@ pub fn run() {
             check_android_update,
             prepare_portable_update,
             install_android_update,
+            open_update_url,
             android_battery,
             data_dir_info,
             set_data_dir,

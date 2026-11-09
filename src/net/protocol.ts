@@ -76,6 +76,7 @@ export type HostPayload =
   | { t: 'event'; ev: GameEvent }
   | { t: 'end'; text: string; winner: string }
   | { t: 'chat'; message: ChatMessage }
+  | { t: 'kicked'; reason: string }
   | { t: 'error'; message: string };
 
 export type GuestPayload =

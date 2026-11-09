@@ -523,6 +523,42 @@ export class LanHostManager {
     }
   }
 
+  kickPlayer(playerId: number): void {
+    if (playerId === 0) return;
+    const guest = this.guests.find((item) => item.playerId === playerId);
+    if (!guest) return;
+    this.sendTo(guest.connId, { t: 'kicked', reason: '房主将你移出了房间' } satisfies HostPayload);
+    this.guests = this.guests.filter((item) => item !== guest);
+    if (this.started) {
+      const player = this.game?.state.players[guest.playerId];
+      if (player) player.isBot = true;
+      const pending = this.pending.get(guest.playerId);
+      if (pending) {
+        clearTimeout(pending.timer);
+        this.pending.delete(guest.playerId);
+        pending.resolve(decideBot(this.game?.state, pending.request));
+      }
+      this.game?.log(`【${guest.name}】被房主移出，由电脑接管`, 'system');
+      return;
+    }
+    this.guests.forEach((item, index) => {
+      item.playerId = index + 1;
+    });
+    this.refreshLobby();
+  }
+
+  kickSpectator(connId: number): void {
+    const spectator = this.spectators.find((item) => item.connId === connId);
+    if (!spectator) return;
+    this.sendTo(connId, { t: 'kicked', reason: '房主将你移出了观战席' } satisfies HostPayload);
+    this.spectators = this.spectators.filter((item) => item.connId !== connId);
+    this.broadcastSpectators();
+    this.refreshLobby();
+    if (this.started && this.game) {
+      this.game.log(`【${spectator.name}】被房主移出观战`, 'system');
+    }
+  }
+
   setAiSpeed(value: number): void {
     this.aiSpeed = Math.max(0, Math.min(1200, Math.round(value)));
   }
@@ -863,6 +899,7 @@ interface ClientHooks {
   onEnd: (text: string, winner: string) => void;
   onChat: (message: ChatMessage) => void;
   onError: (message: string) => void;
+  onKicked?: (reason: string) => void;
   onClosed: () => void;
 }
 
@@ -932,6 +969,11 @@ export class LanClientManager {
         break;
       case 'chat':
         this.hooks.onChat(message.message);
+        break;
+      case 'kicked':
+        this.closedByUser = true;
+        this.hooks.onKicked?.(message.reason);
+        this.relay.close();
         break;
       case 'error':
         this.hooks.onError(message.message);

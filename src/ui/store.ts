@@ -950,6 +950,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }, 1400);
       },
       onError: (message) => set({ netError: message }),
+      onKicked: (reason) => {
+        clearSavedLanSession();
+        set({
+          netError: reason,
+          lanClient: null,
+          lanRole: null,
+          lanConnId: -1,
+          game: null,
+          pending: null,
+          lobby: null,
+          room: null,
+          screen: 'menu',
+          spectate: false,
+          spectators: [],
+          suspended: false,
+          savedLanSession: null,
+          chatMessages: [],
+          result: null,
+        });
+      },
       onClosed: () =>
         set({
           netError: '连接已断开，可以尝试回归房间',

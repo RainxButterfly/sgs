@@ -93,6 +93,7 @@ export function LobbyScreen() {
   }
 
   const players = lobby.players;
+  const spectators = lobby.spectators ?? [];
   const maxTotal = lobby.seatCount ?? lobby.maxPlayers;
   const me = host ? players.find((player) => player.isHost) : players.find((player) => player.connId === lanConnId);
   const mode = lobby.mode ?? 'standard';
@@ -116,6 +117,14 @@ export function LobbyScreen() {
   );
   const picking = lobby.picking === true;
   const pickCount = Math.max(lobby.targetCount ?? startCount, players.length);
+  const kickPlayer = (playerId: number, name: string) => {
+    if (!window.confirm(`确定将【${name}】移出房间吗？`)) return;
+    lanHost?.kickPlayer(playerId);
+  };
+  const kickSpectator = (connId: number, name: string) => {
+    if (!window.confirm(`确定将观战者【${name}】移出观战席吗？`)) return;
+    lanHost?.kickSpectator(connId);
+  };
   const gameModeLabel =
     gameMode === 'duel'
       ? '1v1 单挑'
@@ -303,6 +312,15 @@ export function LobbyScreen() {
                         : '待选将'}
                   </span>
                   <span className="lobby-status">{player.connected ? '已入座' : '掉线'}</span>
+                  {host && !player.isHost && (
+                    <button
+                      type="button"
+                      className="lobby-kick"
+                      onClick={() => kickPlayer(player.playerId, player.name)}
+                    >
+                      移出
+                    </button>
+                  )}
                 </div>
               ))}
               {host &&
@@ -312,6 +330,29 @@ export function LobbyScreen() {
                     <span className="lobby-name">电脑将补足</span>
                   </div>
                 ))}
+            </div>
+          </section>
+
+          <section className="player-list-card spectator-card">
+            <div className="room-card-title">观战席（{spectators.length}）</div>
+            <div className="player-list">
+              {spectators.map((spectator) => (
+                <div key={spectator.connId} className="lobby-player spectator-player">
+                  <span className="lobby-seat">观战</span>
+                  <span className="lobby-name">{spectator.name}</span>
+                  <span className="lobby-status">{spectator.ip || 'IP 未知'}</span>
+                  {host && (
+                    <button
+                      type="button"
+                      className="lobby-kick"
+                      onClick={() => kickSpectator(spectator.connId, spectator.name)}
+                    >
+                      移出
+                    </button>
+                  )}
+                </div>
+              ))}
+              {spectators.length === 0 && <div className="lobby-empty">还没有人观战</div>}
             </div>
           </section>
         </div>

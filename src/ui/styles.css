@@ -10565,3 +10565,142 @@ button {
     padding: 8px;
   }
 }
+
+/* 大厅观战席与房主移出 */
+.spectator-card {
+  grid-column: 1 / -1;
+}
+
+.spectator-player {
+  border-left-color: rgba(177, 155, 230, 0.5);
+}
+
+.lobby-kick {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border: 1px solid rgba(210, 122, 100, 0.45);
+  border-radius: 3px;
+  background: transparent;
+  color: #d98a78;
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.lobby-kick:hover {
+  background: rgba(210, 122, 100, 0.12);
+}
+
+.lobby-empty {
+  padding: 10px;
+  font-size: 11.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* 横屏手机观战：座位横排、视角信息贴底，不再使用桌面环形布局 */
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
+  .spectator-screen .brand {
+    display: none;
+  }
+
+  .spectator-screen .topbar {
+    min-height: 46px;
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  .spectator-screen .top-actions .btn.small {
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  .spectator-stage {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .spectator-ring {
+    position: relative;
+    inset: auto;
+    flex: 0 0 auto;
+    display: flex;
+    gap: 6px;
+    padding: 6px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .spectator-ring .seat {
+    position: relative;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    flex: 0 0 150px;
+    width: 150px;
+    font-size: 11px;
+  }
+
+  .spectator-stage > .seat-position {
+    position: relative;
+    left: auto !important;
+    top: auto !important;
+    flex: 1;
+    min-height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .spectator-focus {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 8px;
+    max-height: 34vh;
+    overflow-y: auto;
+    padding: 6px 8px;
+  }
+
+  .spectator-focus .hero-panel {
+    flex: 0 0 190px;
+    width: 190px;
+    padding: 8px 10px;
+  }
+
+  .spectator-focus-main {
+    min-height: 0;
+  }
+
+  .spectator-focus-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+  }
+
+  .spectator-switch {
+    max-width: 100%;
+  }
+
+  .spectator-focus-main .hand-cards {
+    max-height: 76px;
+    justify-content: flex-start;
+  }
+
+  .spectator-view-tag {
+    display: none;
+  }
+}
+
+.update-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.update-inline-hint {
+  font-size: 11px;
+  color: var(--muted);
+}
