@@ -20,6 +20,7 @@ export type SkillEvent =
   | 'shanUsed'
   | 'handLost'
   | 'equipLost'
+  | 'discardPhaseEnd'
   | 'dying'
   | 'death';
 
@@ -2073,33 +2074,59 @@ const SKILLS: SkillDef[] = [
   {
     id: 'zhijian',
     name: '直谏',
-    desc: '出牌阶段限一次，你可以将一张装备牌交给一名其他角色，然后摸一张牌。',
+    desc: '出牌阶段，你可以将一张装备牌置于一名其他角色的装备区（不得替换原装备），然后摸一张牌。',
     active: {
-      oncePerTurn: true,
       usable: (_game, owner) => owner.hand.some((c) => c.type === 'equip'),
       run: async (game, owner) => {
         const equips = owner.hand.filter((c) => c.type === 'equip');
         const picked = await game.askCards(owner, equips, 1, 1, '直谏：选择一张装备牌', undefined, false);
         if (!picked.length) return;
-        const target = await game.askPlayer(owner, others(game, owner), '直谏：选择一名其他角色');
+        const card = picked[0];
+        const slot = card.equipSlot;
+        if (!slot) return;
+        const candidates = others(game, owner).filter((p) => !p.equips[slot]);
+        if (!candidates.length) return;
+        const target = await game.askPlayer(owner, candidates, '直谏：选择一名对应装备栏为空的其他角色');
         if (!target) return;
-        game.gainCard(target, picked[0], owner, true);
-        game.drawCards(owner, 1, '直谏');
+        if (await game.equipFromHandTo(owner, target, card)) {
+          game.drawCards(owner, 1, '直谏');
+        }
       },
     },
   },
   {
     id: 'guzheng',
     name: '固政',
-    desc: '其他角色的回合结束时，你可以摸一张牌。',
+    desc: '其他角色的弃牌阶段结束时，你可以将此阶段其弃置的一张牌交给该角色，然后你获得其余的牌。',
     triggers: [
       {
-        event: 'turnEnd',
-        when: (c) => c.player.id !== c.owner.id && c.owner.alive,
+        event: 'discardPhaseEnd',
+        when: (c) =>
+          !!c.player &&
+          c.player.id !== c.owner.id &&
+          Array.isArray(c.data.cards) &&
+          (c.data.cards as Card[]).length > 0,
         optional: true,
-        prompt: '是否发动【固政】摸一张牌？',
+        prompt: '是否发动【固政】？',
         effect: async (c) => {
-          c.game.drawCards(c.owner, 1, '固政');
+          const discarded = (c.data.cards as Card[] | undefined) ?? [];
+          const returned = await c.game.askCards(
+            c.owner,
+            discarded,
+            1,
+            1,
+            '固政：选择一张还给该角色',
+            '取消则不发动',
+            true,
+          );
+          if (!returned.length) return;
+          const chosen = returned[0];
+          c.game.gainFromDiscard(c.player!, chosen, true);
+          for (const card of discarded) {
+            if (card.id === chosen.id) continue;
+            c.game.gainFromDiscard(c.owner, card, false);
+          }
+          c.game.log(`【${c.owner.name}】发动固政`, 'skill');
         },
       },
     ],

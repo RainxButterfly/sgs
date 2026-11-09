@@ -488,6 +488,18 @@ export class Game {
     if (player.alive) await this.notifyHandLost(player);
   }
 
+  gainFromDiscard(player: PlayerState, card: Card, isPublic = true): void {
+    const index = this.state.discard.findIndex((item) => item.id === card.id);
+    if (index < 0) return;
+    this.state.discard.splice(index, 1);
+    player.hand.push(card);
+    this.emit({ type: 'gain', playerId: player.id, cards: [card], public: isPublic });
+    this.log(
+      `【${player.name}】${isPublic ? `获得了 ${cardLabel(card)}` : '获得了一张牌'}（固政）`,
+      'skill',
+    );
+  }
+
   gainCard(player: PlayerState, card: Card, from?: PlayerState, isPublic = true): void {
     const fromHand = from ? this.removeFromHand(from, card) : false;
     const fromEquip = from ? this.removeFromEquip(from, card) : false;
@@ -1404,6 +1416,17 @@ ${skill.desc}` : ''}`
     );
     user.usedThisTurn.sha = (user.usedThisTurn.sha ?? 0) + 1;
     await this.useSha(user, card, targetIds);
+  }
+
+  async equipFromHandTo(owner: PlayerState, target: PlayerState, card: Card): Promise<boolean> {
+    const slot = card.equipSlot;
+    if (!slot || target.equips[slot]) return false;
+    if (!this.removeFromHand(owner, card)) return false;
+    target.equips[slot] = card;
+    this.emit({ type: 'equip', playerId: target.id, slot, card });
+    this.log(`【${owner.name}】将 ${cardLabel(card)} 置于【${target.name}】的装备区`, 'skill');
+    if (owner.alive) await this.notifyHandLost(owner);
+    return true;
   }
 
   private async equipCard(player: PlayerState, card: Card): Promise<void> {
@@ -2481,14 +2504,15 @@ ${skill.desc}` : ''}`
 
   private async discardPhase(player: PlayerState): Promise<void> {
     const limit = this.handLimit(player);
-    if (player.hand.length <= limit) return;
+    if (player.hand.length <= limit) {
+      await this.trigger('discardPhaseEnd', { player, data: { cards: [] } });
+      return;
+    }
     const need = player.hand.length - limit;
     const picked = await this.askCards(player, player.hand, need, need, `弃牌阶段：请弃置 ${need} 张手牌`, undefined, false);
-    if (picked.length) await this.discardCards(player, picked, '弃牌阶段');
-    else {
-      const auto = player.hand.slice(0, need);
-      await this.discardCards(player, auto, '弃牌阶段');
-    }
+    const discarded = picked.length ? picked : player.hand.slice(0, need);
+    await this.discardCards(player, discarded, '弃牌阶段');
+    await this.trigger('discardPhaseEnd', { player, data: { cards: discarded } });
   }
 
   private resetTurnFlags(player: PlayerState): void {
