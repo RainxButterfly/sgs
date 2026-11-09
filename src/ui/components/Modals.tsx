@@ -151,19 +151,39 @@ export function OptionModal() {
   const choose = useGameStore((s) => s.chooseOption);
   const cancel = useGameStore((s) => s.cancelPrompt);
   if (!pending || pending.kind !== 'chooseOption') return null;
+  const skillName = pending.prompt.match(/【([^】]+)】/)?.[1];
+  const skill = skillName
+    ? [...SKILL_MAP.values()].find((item) => item.name === skillName)
+    : undefined;
+  const isSkill = !!skill && /发动|使用|是否/.test(pending.prompt);
+  const label = (id: string, fallback: string) => {
+    if (!isSkill) return fallback;
+    if (id === 'yes') return `发动【${skillName}】`;
+    if (id === 'no') return '不发动';
+    return fallback;
+  };
   return (
-    <Overlay title={pending.prompt}>
-      {pending.detail && <div className="modal-desc">{pending.detail}</div>}
-      <div className="option-list">
+    <Overlay title={isSkill ? '技能发动' : pending.prompt}>
+      {isSkill && (
+        <div className="skill-prompt">
+          <span className="skill-prompt-seal">技</span>
+          <div>
+            <b>{skill.name}</b>
+            <p>{pending.detail || skill.desc}</p>
+          </div>
+        </div>
+      )}
+      {!isSkill && pending.detail && <div className="modal-desc">{pending.detail}</div>}
+      <div className={`option-list ${isSkill ? 'skill-option-list' : ''}`}>
         {(pending.options ?? []).map((option) => (
           <button
             key={option.id}
             type="button"
-            className="option-button"
+            className={`option-button ${isSkill && option.id === 'yes' ? 'primary-choice' : ''}`}
             onClick={() => choose(option.id)}
             title={option.desc}
           >
-            <span>{option.label}</span>
+            <span>{label(option.id, option.label)}</span>
             {option.desc && <em>{option.desc}</em>}
           </button>
         ))}

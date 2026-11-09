@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cardDisplayName } from '../labels';
+import { cardDisplayName, rankText, shortCardName, SUIT_CHAR } from '../labels';
 import { DiscardModal } from './DiscardModal';
 import { useGameSnapshot, useGameStore } from '../store';
 import { CardView } from './CardView';
@@ -104,7 +104,13 @@ export function TableCenter() {
           <span className="discard-verb">{lastDiscard.reason ?? '弃置'}</span>
           <span className="discard-cards">
             {lastDiscard.cards.map((card) => (
-              <CardView key={card.id} card={card} size="sm" />
+              <span key={card.id} className="discard-chip">
+                <em>
+                  {SUIT_CHAR[card.suit]}
+                  {rankText(card.rank)}
+                </em>
+                {shortCardName(cardDisplayName(card))}
+              </span>
             ))}
           </span>
         </div>

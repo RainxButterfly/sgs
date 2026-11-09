@@ -92,6 +92,7 @@ export function PromptBar() {
               选择自己
             </button>
           )}
+          {skills.length > 0 && <span className="prompt-skill-label">技能</span>}
           {skills.map((skill) => (
             <button
               key={skill.id}

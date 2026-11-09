@@ -162,7 +162,7 @@ export class Game {
       if (mode === 'guozhan') guozhanCounts[hero.faction] += 1;
       const isLord = roles[i] === 'lord' && mode !== 'duel' && count > 2;
       const baseHp = heroes.length > 1 ? heroes.reduce((sum, item) => sum + item.hp, 0) : hero.hp;
-      const maxHp = Math.max(1, baseHp + (isLord ? 1 : 0) + rules.hpModifier);
+      const maxHp = Math.max(1, Math.ceil(baseHp + (isLord ? 1 : 0) + rules.hpModifier));
       const skills = rules.skillsEnabled
         ? [
             ...new Set(

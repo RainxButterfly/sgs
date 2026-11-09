@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
-import { cardDisplayName, playerHeroNames } from '../labels';
+import { cardDisplayName, playerHeroNames, rankText, shortCardName, SUIT_CHAR } from '../labels';
 import { compositionText } from '../composition';
 import { CardView } from '../components/CardView';
 import { DiscardModal } from '../components/DiscardModal';
@@ -293,7 +293,13 @@ export function MobileGameScreen() {
             <b>{targetName(lastDiscard.playerId)}</b>
             <span>{lastDiscard.reason ?? '弃置'}</span>
             {lastDiscard.cards.map((card) => (
-              <CardView key={card.id} card={card} size="sm" />
+              <span key={card.id} className="discard-chip">
+                <em>
+                  {SUIT_CHAR[card.suit]}
+                  {rankText(card.rank)}
+                </em>
+                {shortCardName(cardDisplayName(card))}
+              </span>
             ))}
           </div>
         )}
