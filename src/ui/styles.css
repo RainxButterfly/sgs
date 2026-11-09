@@ -11084,3 +11084,186 @@ button {
 .m-seat-head .countdown-ring b {
   font-size: 8px;
 }
+
+/* 小屏横屏：五谷结算窗口收紧，避免占满整块屏幕 */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .harvest-modal {
+    width: min(760px, 96vw);
+    max-height: 94dvh;
+    overflow-y: auto;
+    padding: 10px 12px;
+  }
+
+  .harvest-modal .modal-head {
+    padding-bottom: 4px;
+  }
+
+  .harvest-modal .modal-title {
+    font-size: 18px;
+  }
+
+  .harvest-cards {
+    gap: 6px;
+    padding: 4px 0 8px;
+  }
+
+  .harvest-cards .card {
+    width: 54px;
+    height: 80px;
+  }
+
+  .harvest-slot {
+    min-width: 58px;
+    gap: 3px;
+  }
+
+  .harvest-owner {
+    max-width: 70px;
+    font-size: 9px;
+  }
+
+  .harvest-status {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .harvest-picks {
+    padding-top: 6px;
+    font-size: 10px;
+  }
+
+  .harvest-modal .modal-actions {
+    padding-top: 6px;
+  }
+}
+
+/* 很矮的横屏手机：压缩座位和手牌，把空间让给牌桌 */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .m-seat {
+    min-height: 86px;
+    padding: 4px 6px;
+  }
+
+  .m-seat-skills {
+    display: none;
+  }
+
+  .m-seat-equips {
+    font-size: 9px;
+  }
+
+  .m-hand {
+    padding-bottom: 2px;
+  }
+
+  .m-hand .hand-cards {
+    padding-top: 0;
+  }
+
+  .m-hand .card {
+    width: 56px;
+    height: 76px;
+  }
+
+  .m-hand .card-name {
+    font-size: 11px;
+    max-width: 48px;
+  }
+
+  .m-feed .card {
+    width: 42px;
+    height: 58px;
+  }
+
+  .m-feed-item {
+    width: 96px;
+  }
+
+  .m-table {
+    min-height: 110px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .m-self {
+    padding: 3px 6px;
+    gap: 2px;
+  }
+
+  .m-self-main {
+    gap: 3px;
+  }
+
+  .m-self-equips {
+    display: none;
+  }
+
+  .m-self-meter {
+    margin-top: 1px;
+  }
+
+  .m-detail-btn {
+    min-height: 20px;
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .m-piles {
+    display: none;
+  }
+
+  .m-feed .card {
+    width: 38px;
+    height: 52px;
+  }
+
+  .m-feed-item {
+    width: 88px;
+  }
+
+  .m-feed-who b {
+    font-size: 10px;
+  }
+
+  .m-feed-who span {
+    font-size: 9px;
+  }
+
+  .m-feed-who i {
+    font-size: 8.5px;
+  }
+
+  .skill-notice {
+    max-width: 280px;
+    padding: 5px 7px;
+  }
+
+  .skill-notice b {
+    font-size: 10.5px;
+  }
+
+  .skill-notice p {
+    font-size: 9.5px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  .m-seat-equips {
+    display: none;
+  }
+
+  .m-seat-stats {
+    margin-top: 2px;
+  }
+
+  .m-prompt .prompt-bar {
+    padding: 4px 7px;
+    gap: 3px;
+  }
+
+  .m-prompt .prompt-title {
+    font-size: 12px;
+  }
+}

@@ -20,6 +20,21 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.8',
+    date: '2026-11-09',
+    title: '小屏手机布局优化',
+    sections: [
+      {
+        kind: 'polish',
+        items: [
+          '五谷丰登结算窗口在小屏横屏手机上收紧卡牌和间距，不再占满整个屏幕。',
+          '很矮的横屏手机压缩顶部座位、自己的信息和手牌，隐藏座位装备/牌堆行，把更多空间留给牌桌和出牌记录。',
+          '小屏手牌和牌桌记录卡牌同步缩小，出牌记录不再被底部响应条截断。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.7',
     date: '2026-11-09',
     title: '界面收紧与技能细节',
