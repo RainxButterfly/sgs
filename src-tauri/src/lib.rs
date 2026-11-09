@@ -42,6 +42,12 @@ struct UpdateProgress {
     total: u64,
 }
 
+#[derive(Clone, Serialize)]
+struct UpdateMirror {
+    index: u32,
+    total: u32,
+}
+
 fn manifest_urls(name: &str) -> Vec<String> {
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -185,7 +191,14 @@ async fn prepare_portable_update(
 ) -> Result<(), String> {
     let mut errors: Vec<String> = Vec::new();
     let mut data: Option<Vec<u8>> = None;
-    for url in &urls {
+    for (index, url) in urls.iter().enumerate() {
+        let _ = app.emit(
+            "update-mirror",
+            UpdateMirror {
+                index: index as u32 + 1,
+                total: urls.len() as u32,
+            },
+        );
         match download_update(&app, url).await {
             Ok(bytes) => {
                 let mut hasher = Sha256::new();
@@ -311,7 +324,14 @@ async fn install_android_update(
 ) -> Result<(), String> {
     let mut errors: Vec<String> = Vec::new();
     let mut data: Option<Vec<u8>> = None;
-    for url in &urls {
+    for (index, url) in urls.iter().enumerate() {
+        let _ = app.emit(
+            "update-mirror",
+            UpdateMirror {
+                index: index as u32 + 1,
+                total: urls.len() as u32,
+            },
+        );
         match download_update(&app, url).await {
             Ok(bytes) => {
                 let mut hasher = Sha256::new();
@@ -377,7 +397,9 @@ fn android_battery() -> Result<i32, String> {
 
 async fn download_update(app: &tauri::AppHandle, url: &str) -> Result<Vec<u8>, String> {
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(600))
+        .connect_timeout(Duration::from_secs(10))
+        .read_timeout(Duration::from_secs(20))
+        .timeout(Duration::from_secs(300))
         .user_agent("sanguosha-xinghe-updater/0.1")
         .build()
         .map_err(|error| error.to_string())?;

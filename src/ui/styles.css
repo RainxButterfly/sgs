@@ -5572,7 +5572,7 @@ button {
 
 /* ---------- 手机横屏布局 ---------- */
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .mobile-game {
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
@@ -6070,7 +6070,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-seat {
     overflow: visible;
   }
@@ -6148,7 +6148,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-top-actions button {
     min-height: 32px;
     padding: 4px 9px;
@@ -6181,7 +6181,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-seat-head {
     gap: 3px;
   }
@@ -6228,7 +6228,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-seat .m-role {
     position: absolute;
     top: -6px;
@@ -6266,7 +6266,7 @@ button {
   color: #a9e6b9;
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-device-status {
     min-width: 32px;
     font-size: 8.5px;
@@ -6277,7 +6277,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .lobby-grid {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
     gap: 8px;
@@ -6416,7 +6416,7 @@ button {
   text-align: right;
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-seat {
     height: 74px;
   }
@@ -6576,7 +6576,7 @@ button {
   color: var(--muted);
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .address-list {
     gap: 2px;
     margin: 1px 0 4px;
@@ -6684,7 +6684,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-hand .hand-cards {
     justify-content: center;
     justify-content: safe center;
@@ -6785,7 +6785,7 @@ button {
   color: var(--muted);
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-history {
     display: none;
   }
@@ -6825,7 +6825,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .mobile-game {
     display: grid;
     grid-template-columns: 208px minmax(0, 1fr);
@@ -6931,7 +6931,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-hand .card {
     width: 64px;
     height: 86px;
@@ -6943,7 +6943,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-history {
     display: flex;
     flex-direction: row;
@@ -6981,7 +6981,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-history {
     flex: 0 0 24px;
   }
@@ -6993,7 +6993,7 @@ button {
   }
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .mobile-game.is-prompting .m-piles,
   .mobile-game.is-prompting .m-history {
     display: none;
@@ -7318,7 +7318,7 @@ button {
   font-size: 11px;
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .chat-panel {
     top: 0;
     width: min(430px, 62vw);
@@ -7456,7 +7456,7 @@ button {
   font-size: 10px;
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-seat-judges {
     top: 24px;
     right: 3px;
@@ -7527,7 +7527,7 @@ button {
   font-size: 12px;
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .discard-modal {
     max-height: calc(100dvh - 10px);
   }
@@ -9994,7 +9994,7 @@ button {
   margin-left: 0;
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .lobby-hero-grid.pair-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
@@ -10087,7 +10087,7 @@ button {
   flex: 1;
 }
 
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .m-seat {
     flex: 0 0 140px;
     width: 140px;
@@ -10149,7 +10149,7 @@ button {
 }
 
 /* 高分辨率横屏手机也使用紧凑布局（CSS 宽度可能超过 1100） */
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1400px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1400px) and (pointer: coarse) {
   .lobby-hero-grid.pair-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
@@ -10236,7 +10236,7 @@ button {
 }
 
 /* 横屏手机选将：座次里的双将名完整换行显示 */
-@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) {
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
   .pick-seat {
     align-items: flex-start;
     flex-wrap: wrap;

@@ -275,6 +275,7 @@ interface GameStore {
   updateInfo: AppUpdateInfo | null;
   updateState: UpdateState;
   updateProgress: { downloaded: number; total: number };
+  updateMirror: { index: number; total: number } | null;
   updateError: string | null;
   updateModalOpen: boolean;
   bgImage: string | null;
@@ -440,6 +441,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   updateInfo: null,
   updateState: 'idle',
   updateProgress: { downloaded: 0, total: 0 },
+  updateMirror: null,
   updateError: null,
   updateModalOpen: false,
   bgImage: initialBackground.image,
@@ -1068,26 +1070,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({
       updateState: 'downloading',
       updateProgress: { downloaded: 0, total: 0 },
+      updateMirror: null,
       updateError: null,
       updateModalOpen: true,
     });
     try {
       if (info.android) {
-        await installAndroidUpdate(info, (downloaded, total) =>
-          set({ updateProgress: { downloaded, total } }),
+        await installAndroidUpdate(
+          info,
+          (downloaded, total) => set({ updateProgress: { downloaded, total } }),
+          (mirror) => set({ updateMirror: mirror }),
         );
-        set({ updateState: 'latest', updateInfo: null, updateModalOpen: false });
+        set({ updateState: 'latest', updateInfo: null, updateModalOpen: false, updateMirror: null });
         return;
       }
-      await installAppUpdate(info, (downloaded, total) =>
-        set({ updateProgress: { downloaded, total } }),
+      await installAppUpdate(
+        info,
+        (downloaded, total) => set({ updateProgress: { downloaded, total } }),
+        (mirror) => set({ updateMirror: mirror }),
       );
-      set({ updateState: 'installing' });
+      set({ updateState: 'installing', updateMirror: null });
     } catch (error) {
       set({
         updateState: 'error',
         updateError: `更新失败：${(error as Error).message}`,
         updateModalOpen: true,
+        updateMirror: null,
       });
     }
   },

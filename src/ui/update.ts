@@ -158,32 +158,46 @@ export async function checkAndroidUpdate(): Promise<AppUpdateInfo | null> {
   };
 }
 
+export interface UpdateMirrorInfo {
+  index: number;
+  total: number;
+}
+
 export async function installAndroidUpdate(
   info: AppUpdateInfo,
   onProgress: (downloaded: number, total: number) => void,
+  onMirror?: (mirror: UpdateMirrorInfo) => void,
 ): Promise<void> {
-  const unlisten = await listen<{ downloaded: number; total: number }>(
+  const unlistenProgress = await listen<{ downloaded: number; total: number }>(
     'portable-update-progress',
     (event) => onProgress(event.payload.downloaded, event.payload.total),
   );
+  const unlistenMirror = onMirror
+    ? await listen<UpdateMirrorInfo>('update-mirror', (event) => onMirror(event.payload))
+    : null;
   try {
     await invoke('install_android_update', {
       urls: info.raw.urls?.length ? info.raw.urls : [info.raw.url],
       sha256: info.raw.sha256,
     });
   } finally {
-    unlisten();
+    unlistenProgress();
+    unlistenMirror?.();
   }
 }
 
 export async function installAppUpdate(
   info: AppUpdateInfo,
   onProgress: (downloaded: number, total: number) => void,
+  onMirror?: (mirror: UpdateMirrorInfo) => void,
 ): Promise<void> {
-  const unlisten = await listen<{ downloaded: number; total: number }>(
+  const unlistenProgress = await listen<{ downloaded: number; total: number }>(
     'portable-update-progress',
     (event) => onProgress(event.payload.downloaded, event.payload.total),
   );
+  const unlistenMirror = onMirror
+    ? await listen<UpdateMirrorInfo>('update-mirror', (event) => onMirror(event.payload))
+    : null;
   try {
     await invoke('prepare_portable_update', {
       urls: info.raw.urls?.length ? info.raw.urls : [info.raw.url],
@@ -191,6 +205,7 @@ export async function installAppUpdate(
     });
     await new Promise((resolve) => setTimeout(resolve, 300));
   } finally {
-    unlisten();
+    unlistenProgress();
+    unlistenMirror?.();
   }
 }

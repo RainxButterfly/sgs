@@ -13,6 +13,7 @@ export function UpdateModal() {
   const state = useGameStore((s) => s.updateState);
   const info = useGameStore((s) => s.updateInfo);
   const progress = useGameStore((s) => s.updateProgress);
+  const mirror = useGameStore((s) => s.updateMirror);
   const error = useGameStore((s) => s.updateError);
   const appVersion = useGameStore((s) => s.appVersion);
   const close = useGameStore((s) => s.closeUpdateModal);
@@ -55,9 +56,12 @@ export function UpdateModal() {
     setCopied(success);
     if (success) window.setTimeout(() => setCopied(false), 1500);
   };
-  const percent =
-    progress.total > 0 ? Math.min(100, Math.round((progress.downloaded / progress.total) * 100)) : 0;
+  const unknownTotal = progress.total <= 0;
+  const percent = unknownTotal
+    ? 0
+    : Math.min(100, Math.round((progress.downloaded / progress.total) * 100));
   const busy = state === 'downloading' || state === 'installing';
+  const mirrorText = mirror ? `镜像 ${mirror.index}/${mirror.total}` : '正在连接镜像';
 
   return (
     <div className="modal-backdrop" onClick={busy ? undefined : close}>
@@ -97,25 +101,33 @@ export function UpdateModal() {
             <div className="update-status">
               {state === 'downloading'
                 ? info?.android
-                  ? '正在下载安装包…'
-                  : '正在下载更新…'
+                  ? `正在下载安装包…（${mirrorText}）`
+                  : `正在下载更新…（${mirrorText}）`
                 : info?.android
                   ? '正在打开系统安装器…'
                   : '正在安装，应用即将重启…'}
             </div>
-            <div className="update-bar">
-              <span style={{ width: `${percent}%` }} />
+            <div className={`update-bar${state === 'downloading' && unknownTotal ? ' indeterminate' : ''}`}>
+              <span style={state === 'downloading' && unknownTotal ? undefined : { width: `${percent}%` }} />
             </div>
             <div className="update-percent">
-              {percent}%
-              {progress.total > 0 && (
-                <span>
-                  {' '}
-                  （{formatBytes(progress.downloaded)} / {formatBytes(progress.total)}）
-                </span>
+              {unknownTotal ? (
+                <>已下载 {formatBytes(progress.downloaded)}</>
+              ) : (
+                <>
+                  {percent}%
+                  <span>
+                    {' '}
+                    （{formatBytes(progress.downloaded)} / {formatBytes(progress.total)}）
+                  </span>
+                </>
               )}
             </div>
-            {state === 'downloading' && <div className="update-hint">请保持应用开启。</div>}
+            {state === 'downloading' && (
+              <div className="update-hint">
+                请保持应用开启。当前镜像卡住时会自动切换到下一个。
+              </div>
+            )}
           </>
         )}
 
