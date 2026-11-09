@@ -981,6 +981,7 @@ export class LanHostManager {
       {
         players,
         seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
+      direction: Math.random() < 0.5 ? 1 : -1,
         roles,
         rules: this.mode === 'custom' || gameMode !== 'identity' ? this.rules : { military: this.rules.military },
       },

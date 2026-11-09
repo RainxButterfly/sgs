@@ -102,7 +102,11 @@ export interface GameState {
   deck: Card[];
   discard: Card[];
   current: number;
+  /** 本局第一位行动者，用于计算一、二、三号桌位 */
+  startPlayer: number;
   turn: number;
+  /** 1 顺时针，-1 逆时针；每局开始时随机 */
+  direction: 1 | -1;
   phase: Phase;
   over: boolean;
   winner: Role | Faction | 'draw' | null;
@@ -152,6 +156,8 @@ export interface CardOption {
   validTargets: number[];
   targetMin: number;
   targetMax: number;
+  /** 此选项不受距离限制（如弓骑） */
+  ignoreDistance?: boolean;
   /** 两段式目标：键为第一个目标，值为该目标可选中的后续目标 */
   targetAfter?: Record<number, number[]>;
 }

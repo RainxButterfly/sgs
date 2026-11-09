@@ -1,5 +1,5 @@
 import type { Game } from './game';
-import type { Card, PlayerState } from './types';
+import { SUIT_CN, type Card, type PlayerState } from './types';
 import { EQUIP_SKILL_ID } from './equipment';
 
 export type SkillEvent =
@@ -15,6 +15,8 @@ export type SkillEvent =
   | 'judgeAfter'
   | 'cardUsed'
   | 'cardTargeted'
+  | 'cardGained'
+  | 'maxHpChanged'
   | 'shaTargeted'
   | 'shaDodged'
   | 'shanUsed'
@@ -53,6 +55,7 @@ export interface ActiveSkillDef {
 export interface ViewAsRule {
   as: string;
   usage: 'play' | 'respond' | 'both';
+  fromEquip?: boolean;
   filter: (game: Game, owner: PlayerState, card: Card) => boolean;
   condition?: (game: Game, owner: PlayerState) => boolean;
 }
@@ -114,7 +117,7 @@ const SKILLS: SkillDef[] = [
         optional: true,
         prompt: '是否发动【奸雄】获得造成伤害的牌？',
         effect: async (c) => {
-          if (c.card) c.game.gainCard(c.owner, c.card);
+          if (c.card) await c.game.gainCard(c.owner, c.card);
         },
       },
     ],
@@ -141,9 +144,7 @@ const SKILLS: SkillDef[] = [
           if (!card) return;
           const slot = card.equipSlot;
           const isPublic = !!slot || source.judgeZone.some((x) => x.id === card.id);
-          c.game.gainCard(c.owner, card, source, isPublic);
-          if (slot) await c.game.trigger('equipLost', { player: source, card, data: {} });
-          else await c.game.afterHandChange(source);
+          await c.game.gainCard(c.owner, card, source, isPublic);
         },
       },
     ],
@@ -226,7 +227,7 @@ const SKILLS: SkillDef[] = [
             chosen.add(target.id);
             const card = c.game.randomItem(target.hand);
             if (card) {
-              c.game.gainCard(c.owner, card, target, false);
+              await c.game.gainCard(c.owner, card, target, false);
               await c.game.afterHandChange(target);
             }
           }
@@ -263,7 +264,7 @@ const SKILLS: SkillDef[] = [
         prompt: '是否发动【天妒】获得判定牌？',
         effect: async (c) => {
           if (!c.card) return;
-          c.game.gainCard(c.owner, c.card);
+          await c.game.gainCard(c.owner, c.card);
           c.data.gained = true;
         },
       },
@@ -293,7 +294,7 @@ const SKILLS: SkillDef[] = [
                 true,
               );
               if (!target || target.id === c.owner.id) continue;
-              c.game.gainCard(target, card, c.owner, false);
+              await c.game.gainCard(target, card, c.owner, false);
             }
             await c.game.afterHandChange(c.owner);
           }
@@ -349,7 +350,7 @@ const SKILLS: SkillDef[] = [
         if (!cards.length) return;
         const target = await game.askPlayer(owner, others(game, owner), '仁德：选择一名角色');
         if (!target) return;
-        for (const card of cards) game.gainCard(target, card, owner, false);
+        for (const card of cards) await game.gainCard(target, card, owner, false);
         await game.afterHandChange(owner);
         owner.flags.rende = (owner.flags.rende ?? 0) + cards.length;
         if ((owner.flags.rende ?? 0) >= 2 && !owner.flags.rendeHeal) {
@@ -364,12 +365,25 @@ const SKILLS: SkillDef[] = [
     name: '激将',
     desc: '主公技，当你需要使用或打出【杀】时，你可以令其他蜀势力角色选择是否打出一张【杀】（视为由你使用或打出）。',
     lord: true,
+    active: {
+      usable: (game, owner) =>
+        game.shaTargets(owner).length > 0 &&
+        game.players.some(
+          (p) => p.alive && p.id !== owner.id && p.faction === 'shu' && p.hand.length > 0,
+        ),
+      run: async (game, owner) => {
+        const target = await game.askPlayer(owner, game.shaTargets(owner), '激将：选择【杀】的目标');
+        if (!target) return;
+        const used = await game.useJijiang(owner, target.id);
+        if (!used) game.log('没有蜀势力角色响应激将', 'system');
+      },
+    },
   },
   {
     id: 'wusheng',
     name: '武圣',
     desc: '你可以将一张红色牌当【杀】使用或打出。',
-    viewAs: [{ as: '杀', usage: 'both', filter: (game, owner, card) => game.isRedCard(owner, card) }],
+    viewAs: [{ as: '杀', usage: 'both', fromEquip: true, filter: (game, owner, card) => game.isRedCard(owner, card) }],
   },
   {
     id: 'paoxiao',
@@ -500,7 +514,7 @@ const SKILLS: SkillDef[] = [
     id: 'qixi',
     name: '奇袭',
     desc: '你可以将一张黑色牌当【过河拆桥】使用。',
-    viewAs: [{ as: '过河拆桥', usage: 'play', filter: (game, owner, card) => game.isBlackCard(owner, card) }],
+    viewAs: [{ as: '过河拆桥', usage: 'play', fromEquip: true, filter: (game, owner, card) => game.isBlackCard(owner, card) }],
   },
   {
     id: 'keji',
@@ -526,9 +540,8 @@ const SKILLS: SkillDef[] = [
     active: {
       usable: (_g, owner) => owner.alive,
       run: async (game, owner) => {
-        await game.loseHp(owner, 1, undefined, { deferDying: true });
-        game.drawCards(owner, 2, '苦肉');
-        if (owner.alive && owner.hp <= 0) await game.dying(owner);
+        await game.loseHp(owner, 1);
+        if (owner.alive) game.drawCards(owner, 2, '苦肉');
       },
     },
   },
@@ -570,7 +583,7 @@ const SKILLS: SkillDef[] = [
         );
         if (!picked.length) return;
         const card = picked[0];
-        game.gainCard(target, card, owner, true);
+        await game.gainCard(target, card, owner, true);
         await game.afterHandChange(owner);
         if (card.suit !== suit) await game.damage(owner, target, 1, undefined, '反间');
       },
@@ -580,7 +593,7 @@ const SKILLS: SkillDef[] = [
     id: 'guose',
     name: '国色',
     desc: '你可以将一张方块牌当【乐不思蜀】使用。',
-    viewAs: [{ as: '乐不思蜀', usage: 'play', filter: (_g, _o, card) => card.suit === 'diamond' }],
+    viewAs: [{ as: '乐不思蜀', usage: 'play', fromEquip: true, filter: (_g, _o, card) => card.suit === 'diamond' }],
   },
   {
     id: 'liuli',
@@ -604,6 +617,9 @@ const SKILLS: SkillDef[] = [
         prompt: '是否发动【流离】转移此【杀】？',
         effect: async (c) => {
           const source = c.source!;
+          const cost = await c.game.askCards(c.owner, allCards(c.owner), 1, 1, '流离：弃置一张牌', undefined, true);
+          if (!cost.length) return;
+          await c.game.discardCards(c.owner, cost, '流离');
           const valid = c.game.players.filter(
             (p) =>
               p.alive &&
@@ -611,11 +627,9 @@ const SKILLS: SkillDef[] = [
               p.id !== source.id &&
               c.game.distance(c.owner, p) <= c.game.attackRange(c.owner),
           );
-          const target = await c.game.askPlayer(c.owner, valid, '流离：选择转移目标', '需弃置一张牌', true);
+          if (!valid.length) return;
+          const target = await c.game.askPlayer(c.owner, valid, '流离：选择转移目标', undefined, true);
           if (!target) return;
-          const cost = await c.game.askCards(c.owner, allCards(c.owner), 1, 1, '流离：弃置一张牌', undefined, true);
-          if (!cost.length) return;
-          await c.game.discardCards(c.owner, cost, '流离');
           c.data.newTarget = target.id;
         },
       },
@@ -692,6 +706,7 @@ const SKILLS: SkillDef[] = [
       {
         as: '桃',
         usage: 'respond',
+        fromEquip: true,
         filter: (game, owner, card) => game.isRedCard(owner, card),
         condition: (game, owner) => game.currentPlayer?.id !== owner.id,
       },
@@ -700,17 +715,18 @@ const SKILLS: SkillDef[] = [
   {
     id: 'qingnang',
     name: '青囊',
-    desc: '出牌阶段限一次，你可以弃置一张手牌，令一名角色回复 1 点体力。',
+    desc: '出牌阶段限一次，你可以弃置一张手牌，令一名已受伤的角色回复 1 点体力。',
     active: {
       oncePerTurn: true,
-      usable: (_g, owner) => owner.hand.length > 0,
+      usable: (_g, owner) =>
+        owner.hand.length > 0 && _g.players.some((p) => p.alive && p.hp < p.maxHp),
       run: async (game, owner) => {
         const card = await game.askCards(owner, owner.hand, 1, 1, '青囊：弃置一张手牌');
         if (!card.length) return;
         const target = await game.askPlayer(
           owner,
-          game.players.filter((p) => p.alive),
-          '青囊：选择一名角色回复体力',
+          game.players.filter((p) => p.alive && p.hp < p.maxHp),
+          '青囊：选择一名已受伤的角色回复体力',
         );
         if (!target) return;
         await game.discardCards(owner, card, '青囊');
@@ -897,7 +913,7 @@ const SKILLS: SkillDef[] = [
         event: 'damageDone',
         when: (c) =>
           c.source?.id === c.owner.id &&
-          c.card?.name === '杀' &&
+          (c.card?.name === '杀' || c.data.reason === '杀') &&
           !!c.target &&
           !!(c.target.equips.horsePlus || c.target.equips.horseMinus),
         optional: true,
@@ -962,14 +978,15 @@ const SKILLS: SkillDef[] = [
   {
     id: 'kuanggu',
     name: '狂骨',
-    desc: '锁定技，当你对距离 1 以内的一名角色造成伤害后，你回复 1 点体力。',
+    desc: '锁定技，当你对距离 1 以内的一名角色造成 1 点伤害后，你回复 1 点体力。',
     locked: true,
     triggers: [
       {
         event: 'damageDone',
         when: (c) => c.source?.id === c.owner.id && !!c.target && c.game.distance(c.owner, c.target) <= 1,
         effect: async (c) => {
-          c.game.heal(c.owner, c.owner, 1, { reason: '狂骨' });
+          const amount = Math.max(1, Number(c.data.amount ?? 1));
+          c.game.heal(c.owner, c.owner, amount, { reason: '狂骨' });
         },
       },
     ],
@@ -1028,7 +1045,7 @@ const SKILLS: SkillDef[] = [
           c.data.cancel = true;
           const amount = Number(c.data.amount ?? 1);
           c.game.log(`【${c.owner.name}】发动天香，将伤害转移给【${target.name}】`, 'skill');
-          await c.game.damage(c.source ?? null, target, amount, c.card, '天香');
+          await c.game.damage(c.source ?? null, target, amount, c.card, '天香', c.data.element as Card['element']);
           if (target.alive) {
             c.game.drawCards(target, Math.max(0, target.maxHp - target.hp), '天香');
           }
@@ -1051,22 +1068,24 @@ const SKILLS: SkillDef[] = [
   {
     id: 'leiji',
     name: '雷击',
-    desc: '当你使用或打出【闪】时，你可以进行判定，若结果为黑桃，你选择一名角色，对其造成 2 点雷电伤害。',
+    desc: '当你使用或打出【闪】时，你可以令一名角色进行判定，若结果为黑桃，你对其造成 2 点雷电伤害。',
     triggers: [
       {
         event: 'shanUsed',
         when: (c) => c.owner.id === c.player.id,
         optional: true,
-        prompt: '是否发动【雷击】进行判定？',
+        prompt: '是否发动【雷击】？',
         effect: async (c) => {
-          const judged = await c.game.judge(c.owner, '雷击');
-          if (judged.suit !== 'spade') return;
           const target = await c.game.askPlayer(
             c.owner,
-            others(c.game, c.owner),
-            '雷击：选择一名角色造成 2 点伤害',
+            c.game.players.filter((p) => p.alive),
+            '雷击：选择一名角色进行判定',
           );
-          if (target) await c.game.damage(c.owner, target, 2, undefined, '雷击', 'thunder');
+          if (!target) return;
+          const judged = await c.game.judge(target, '雷击');
+          if (judged.suit !== 'spade') return;
+          c.game.log(`雷击判定为黑桃，对【${target.name}】造成 2 点雷电伤害`, 'skill');
+          await c.game.damage(c.owner, target, 2, undefined, '雷击', 'thunder');
         },
       },
     ],
@@ -1074,20 +1093,21 @@ const SKILLS: SkillDef[] = [
   {
     id: 'guidao',
     name: '鬼道',
-    desc: '在一名角色的判定牌生效前，你可以打出一张黑色手牌代替之。',
+    desc: '在一名角色的判定牌生效前，你可以打出一张黑色牌代替之。',
     triggers: [
       {
         event: 'judgeBefore',
-        when: (c) => c.owner.hand.some((card) => black(card)),
+        when: (c) => allCards(c.owner).some((card) => black(card)),
         optional: true,
         prompt: '是否发动【鬼道】替换判定牌？',
         effect: async (c) => {
-          const pool = c.owner.hand.filter((card) => black(card));
-          const picked = await c.game.askCards(c.owner, pool, 1, 1, '鬼道：选择一张黑色手牌替换判定牌');
+          const pool = allCards(c.owner).filter((card) => black(card));
+          const picked = await c.game.askCards(c.owner, pool, 1, 1, '鬼道：选择一张黑色牌替换判定牌');
           if (!picked.length) return;
-          if (c.game.stageHandCard(c.owner, picked[0])) {
+          if (await c.game.stageAnyCard(c.owner, picked[0])) {
             c.data.judgeCard = picked[0];
             c.data.judgeSkill = '鬼道';
+            c.data.judgeSkillOwner = c.owner.id;
           }
         },
       },
@@ -1113,7 +1133,7 @@ const SKILLS: SkillDef[] = [
         const pool = owner.hand.filter((card) => card.name === '闪' || card.name === '闪电');
         const picked = await game.askCards(owner, pool, 1, 1, '黄天：选择一张闪或闪电交给主公');
         if (!picked.length) return;
-        game.gainCard(lord, picked[0], owner, true);
+        await game.gainCard(lord, picked[0], owner, true);
         await game.afterHandChange(owner);
       },
     },
@@ -1163,7 +1183,7 @@ const SKILLS: SkillDef[] = [
         } else {
           await game.loseHp(owner, 1);
         }
-        if (!owner.alive || game.state.over) return;
+        if (game.state.over) return;
         await game.damage(owner, target, 1, undefined, '强袭');
       },
     },
@@ -1214,7 +1234,8 @@ const SKILLS: SkillDef[] = [
               '节命：选择一名角色补牌',
             );
             if (!target) continue;
-            const count = Math.min(5, Math.max(0, target.maxHp - target.hand.length));
+            const limit = Math.min(5, target.maxHp);
+            const count = Math.max(0, limit - target.hand.length);
             if (count > 0) c.game.drawCards(target, count, '节命');
           }
         },
@@ -1268,15 +1289,15 @@ const SKILLS: SkillDef[] = [
           if (!choice) return;
           if (choice === 'drawx') {
             c.game.drawCards(target, lost, '英魂');
-            if (target.hand.length) {
-              const cards = await c.game.askCards(target, target.hand, 1, 1, '英魂：弃置一张牌', undefined, false);
+            if (allCards(target).length) {
+              const cards = await c.game.askCards(target, allCards(target), 1, 1, '英魂：弃置一张牌', undefined, false);
               if (cards.length) await c.game.discardCards(target, cards, '英魂');
             }
           } else {
             c.game.drawCards(target, 1, '英魂');
-            const count = Math.min(lost, target.hand.length);
+            const count = Math.min(lost, allCards(target).length);
             if (count > 0) {
-              const cards = await c.game.askCards(target, target.hand, count, count, '英魂：弃置手牌', undefined, false);
+              const cards = await c.game.askCards(target, allCards(target), count, count, '英魂：弃置牌', undefined, false);
               if (cards.length) await c.game.discardCards(target, cards, '英魂');
             }
           }
@@ -1316,7 +1337,7 @@ const SKILLS: SkillDef[] = [
             half,
             `好施：选择 ${half} 张手牌交给【${target.name}】`,
           );
-          for (const card of cards) c.game.gainCard(target, card, c.owner, false);
+          for (const card of cards) await c.game.gainCard(target, card, c.owner, false);
           await c.game.afterHandChange(c.owner);
         },
       },
@@ -1349,7 +1370,7 @@ const SKILLS: SkillDef[] = [
           if (cost.length !== diff) return;
           await game.discardCards(owner, cost, '缔盟');
         }
-        game.swapHands(first, second);
+        await game.swapHands(first, second);
       },
     },
   },
@@ -1439,7 +1460,7 @@ const SKILLS: SkillDef[] = [
     triggers: [
       {
         event: 'damageDone',
-        when: (c) => c.source?.id === c.owner.id && c.card?.name === '杀' && !!c.target,
+        when: (c) => c.source?.id === c.owner.id && (c.card?.name === '杀' || c.data.reason === '杀') && !!c.target,
         optional: true,
         prompt: '是否发动【烈刃】与目标拼点？',
         effect: async (c) => {
@@ -1451,9 +1472,7 @@ const SKILLS: SkillDef[] = [
           if (!card) return;
           const slot = card.equipSlot;
           const isPublic = !!slot || target.judgeZone.some((x) => x.id === card.id);
-          c.game.gainCard(c.owner, card, target, isPublic);
-          if (slot) await c.game.trigger('equipLost', { player: target, card, data: {} });
-          else await c.game.afterHandChange(target);
+          await c.game.gainCard(c.owner, card, target, isPublic);
         },
       },
     ],
@@ -1465,7 +1484,7 @@ const SKILLS: SkillDef[] = [
     triggers: [
       {
         event: 'damageDone',
-        when: (c) => c.card?.name === '杀' && !!c.target && allCards(c.owner).length > 0,
+        when: (c) => (c.card?.name === '杀' || c.data.reason === '杀') && !!c.target && allCards(c.owner).length > 0,
         optional: true,
         prompt: '是否发动【悲歌】？',
         effect: async (c) => {
@@ -1480,9 +1499,10 @@ const SKILLS: SkillDef[] = [
           } else if (judged.suit === 'diamond') {
             c.game.drawCards(target, 2, '悲歌');
           } else if (judged.suit === 'club' && source) {
-            const count = Math.min(2, source.hand.length);
+            const pool = allCards(source);
+            const count = Math.min(2, pool.length);
             if (count > 0) {
-              const cards = await c.game.askCards(source, source.hand, count, count, '悲歌：弃置手牌', undefined, false);
+              const cards = await c.game.askCards(source, pool, count, count, '悲歌：弃置两张牌', undefined, false);
               if (cards.length) await c.game.discardCards(source, cards, '悲歌');
             }
           } else if (judged.suit === 'spade' && source) {
@@ -1505,6 +1525,7 @@ const SKILLS: SkillDef[] = [
         effect: async (c) => {
           if (!c.source) return;
           c.source.skills = [];
+          c.source.extraSkills = [];
           c.game.log(`【${c.source.name}】被断肠，失去所有技能`, 'skill');
         },
       },
@@ -1534,18 +1555,25 @@ const SKILLS: SkillDef[] = [
   {
     id: 'zhiji',
     name: '志继',
-    desc: '觉醒技，回合开始时，若你没有手牌，你减 1 点体力上限，然后获得【观星】。',
+    desc: '觉醒技，准备阶段开始时，若你没有手牌，你回复 1 点体力或摸两张牌，然后减 1 点体力上限，获得【观星】。',
     locked: true,
     triggers: [
       {
-        event: 'turnStart',
-        when: (c) => isCurrent(c) && c.owner.hand.length === 0 && !c.owner.flags.zhiji,
-        optional: true,
-        prompt: '是否发动【志继】觉醒？',
+        event: 'phaseStart',
+        when: (c) =>
+          isCurrent(c) &&
+          c.data.phase === 'prepare' &&
+          c.owner.hand.length === 0 &&
+          !c.owner.flags.zhiji,
         effect: async (c) => {
           c.owner.flags.zhiji = 1;
-          c.owner.maxHp = Math.max(1, c.owner.maxHp - 1);
-          c.owner.hp = Math.min(c.owner.hp, c.owner.maxHp);
+          const choice = await c.game.askOption(c.owner, '志继：选择一项', [
+            { id: 'heal', label: '回复 1 点体力' },
+            { id: 'draw', label: '摸两张牌' },
+          ]);
+          if (choice === 'heal') c.game.heal(c.owner, c.owner, 1, { reason: '志继' });
+          else c.game.drawCards(c.owner, 2, '志继');
+          await c.game.changeMaxHp(c.owner, -1);
           if (!c.owner.skills.includes('guanxing')) c.owner.skills.push('guanxing');
           c.game.log(`【${c.owner.name}】觉醒，减少 1 点体力上限并获得观星`, 'skill');
         },
@@ -1690,7 +1718,7 @@ const SKILLS: SkillDef[] = [
   {
     id: 'bazhen',
     name: '八阵',
-    desc: '锁定技，若你没有装备防具，当你需要使用或打出【闪】时，你可以进行判定，若为红色则视为打出一张【闪】。',
+    desc: '锁定技，若你没有装备防具，视为装备着【八卦阵】。',
     locked: true,
   },
   {
@@ -1739,7 +1767,7 @@ const SKILLS: SkillDef[] = [
             ...Object.values(target.equips).filter((x): x is Card => !!x),
             ...target.judgeZone,
           ];
-          for (const card of cards) c.game.gainCard(c.owner, card, target, true);
+          await c.game.gainCards(c.owner, cards, target, true);
           c.game.log(`【${c.owner.name}】行殇获得了【${target.name}】的所有牌`, 'skill');
         },
       },
@@ -1790,11 +1818,12 @@ const SKILLS: SkillDef[] = [
   {
     id: 'duanliang',
     name: '断粮',
-    desc: '你可以将一张黑色基本牌或黑色装备牌当【兵粮寸断】使用。',
+    desc: '你可以将一张黑色基本牌或黑色装备牌当【兵粮寸断】使用；你可以对距离为 2 的角色使用【兵粮寸断】。',
     viewAs: [
       {
         as: '兵粮寸断',
         usage: 'play',
+        fromEquip: true,
         filter: (_game, _owner, card) => black(card) && (card.type === 'basic' || card.type === 'equip'),
       },
     ],
@@ -1840,8 +1869,7 @@ const SKILLS: SkillDef[] = [
               ])
             : 'hp';
           if (choice === 'max' && canLowerMax) {
-            c.owner.maxHp -= 1;
-            c.owner.hp = Math.min(c.owner.hp, c.owner.maxHp);
+            await c.game.changeMaxHp(c.owner, -1);
             c.game.log(`【${c.owner.name}】崩坏减少了 1 点体力上限`, 'skill');
           } else {
             await c.game.loseHp(c.owner, 1);
@@ -1935,14 +1963,13 @@ const SKILLS: SkillDef[] = [
   {
     id: 'qiaobian',
     name: '巧变',
-    desc: '出牌阶段限一次，你可以弃置一张手牌并跳过判定、摸牌、出牌或弃牌阶段之一。跳过摸牌阶段，你可以获得至多两名角色各一张手牌；跳过出牌或弃牌阶段，你可以移动场上的一张装备牌。',
+    desc: '你可以弃置一张手牌并跳过判定、摸牌、出牌或弃牌阶段之一。跳过摸牌阶段，你可以获得至多两名角色各一张手牌；跳过出牌阶段，你可以移动场上一张装备牌。',
     triggers: [
       {
         event: 'phaseStart',
         when: (c) =>
           isCurrent(c) &&
           ['judge', 'draw', 'play', 'discard'].includes(String(c.data.phase)) &&
-          !c.owner.flags.qiaobian &&
           c.owner.hand.length > 0,
         optional: true,
         prompt: '是否发动【巧变】弃一张手牌跳过当前阶段？',
@@ -1958,7 +1985,6 @@ const SKILLS: SkillDef[] = [
           );
           if (!cost.length) return;
           await c.game.discardCards(c.owner, cost, '巧变');
-          c.owner.flags.qiaobian = 1;
           c.data.skip = true;
           const phase = String(c.data.phase);
           if (phase === 'draw') {
@@ -1978,9 +2004,9 @@ const SKILLS: SkillDef[] = [
               if (!target) break;
               chosen.add(target.id);
               const card = c.game.randomItem(target.hand);
-              if (card) c.game.gainCard(c.owner, card, target, false);
+              if (card) await c.game.gainCard(c.owner, card, target, false);
             }
-          } else if (phase === 'play' || phase === 'discard') {
+          } else if (phase === 'play') {
             const sources = c.game.players.filter((p) =>
               Object.values(p.equips).some(Boolean),
             );
@@ -2055,18 +2081,19 @@ const SKILLS: SkillDef[] = [
   {
     id: 'zaoxian',
     name: '凿险',
-    desc: '觉醒技，回合开始时，若你的“田”不少于三张，你减 1 点体力上限，然后获得【急袭】。',
+    desc: '觉醒技，准备阶段开始时，若你的“田”不少于三张，你减 1 点体力上限，然后获得【急袭】。',
     locked: true,
     triggers: [
       {
-        event: 'turnStart',
-        when: (c) => isCurrent(c) && c.owner.fields.length >= 3 && !c.owner.flags.zaoxian,
-        optional: true,
-        prompt: '是否发动【凿险】觉醒？',
+        event: 'phaseStart',
+        when: (c) =>
+          isCurrent(c) &&
+          c.data.phase === 'prepare' &&
+          c.owner.fields.length >= 3 &&
+          !c.owner.flags.zaoxian,
         effect: async (c) => {
           c.owner.flags.zaoxian = 1;
-          c.owner.maxHp = Math.max(1, c.owner.maxHp - 1);
-          c.owner.hp = Math.min(c.owner.hp, c.owner.maxHp);
+          await c.game.changeMaxHp(c.owner, -1);
           if (!c.owner.extraSkills.includes('jixi')) c.owner.extraSkills.push('jixi');
           c.game.log(`【${c.owner.name}】觉醒，获得急袭`, 'skill');
         },
@@ -2076,9 +2103,8 @@ const SKILLS: SkillDef[] = [
   {
     id: 'jixi',
     name: '急袭',
-    desc: '出牌阶段限一次，你可以将一张“田”当【顺手牵羊】使用。',
+    desc: '你可以将一张“田”当【顺手牵羊】使用。',
     active: {
-      oncePerTurn: true,
       usable: (game, owner) =>
         owner.fields.length > 0 &&
         others(game, owner).some((p) => game.hasAnyCard(p) && game.distance(owner, p) <= 1),
@@ -2179,11 +2205,9 @@ const SKILLS: SkillDef[] = [
           c.data.phase === 'prepare' &&
           !c.owner.flags.ruoyu &&
           c.owner.hp <= Math.min(...c.game.alivePlayers().map((p) => p.hp)),
-        optional: true,
-        prompt: '是否发动【若愚】觉醒？',
         effect: async (c) => {
           c.owner.flags.ruoyu = 1;
-          c.owner.maxHp += 1;
+          await c.game.changeMaxHp(c.owner, 1);
           c.game.heal(c.owner, c.owner, 1, { reason: '若愚' });
           if (!c.owner.extraSkills.includes('jijiang') && !c.owner.skills.includes('jijiang')) {
             c.owner.extraSkills.push('jijiang');
@@ -2211,7 +2235,9 @@ const SKILLS: SkillDef[] = [
         event: 'cardTargeted',
         when: (c) =>
           c.target?.id === c.owner.id &&
-          (c.card?.name === '决斗' || (c.card?.name === '杀' && red(c.card))),
+          (c.data.as === '决斗' ||
+            (c.data.as === '杀' && !!c.card && red(c.card)) ||
+            (c.card?.name === '决斗' || (c.card?.name === '杀' && red(c.card)))),
         effect: async (c) => {
           c.game.drawCards(c.owner, 1, '激昂');
         },
@@ -2231,12 +2257,9 @@ const SKILLS: SkillDef[] = [
           c.data.phase === 'prepare' &&
           c.owner.hp === 1 &&
           !c.owner.flags.hunzi,
-        optional: true,
-        prompt: '是否发动【魂姿】觉醒？',
         effect: async (c) => {
           c.owner.flags.hunzi = 1;
-          c.owner.maxHp = Math.max(1, c.owner.maxHp - 1);
-          c.owner.hp = Math.min(c.owner.hp, c.owner.maxHp);
+          await c.game.changeMaxHp(c.owner, -1);
           for (const id of ['yingzi', 'yinghun']) {
             if (!c.owner.skills.includes(id) && !c.owner.extraSkills.includes(id)) c.owner.extraSkills.push(id);
           }
@@ -2266,6 +2289,10 @@ const SKILLS: SkillDef[] = [
           (p) => p.role === 'lord' && p.alive && p.skills.includes('zhiba'),
         );
         if (!lord) return;
+        if (lord.flags.hunzi) {
+          const refuse = await game.confirm(lord, '是否拒绝【制霸】拼点？', '你已觉醒，可以拒绝此拼点');
+          if (refuse) return;
+        }
         const result = await game.pindianWithCards(owner, lord, '制霸');
         if (!result || result.win) return;
         const take = await game.confirm(lord, '是否获得双方拼点的牌？');
@@ -2393,9 +2420,8 @@ const SKILLS: SkillDef[] = [
   {
     id: 'guhuo',
     name: '蛊惑',
-    desc: '出牌阶段限一次，你可以将一张手牌声明为一种基本牌或非延时锦囊牌。其他角色可以质疑：若为红色，质疑者各失去 1 点体力，此牌按声明生效；若为黑色，此牌无效且你失去 1 点体力。',
+    desc: '你可以将一张手牌声明为一种基本牌或非延时锦囊牌。其他角色可以依次质疑：若为真，质疑者各失去 1 点体力；若为假，质疑者各摸一张牌。无论真假，被质疑的牌均置入弃牌堆；仅当此牌为红桃且为真时，仍按声明结算。',
     active: {
-      oncePerTurn: true,
       usable: (_game, owner) => owner.hand.length > 0,
       run: async (game, owner) => {
         const names = [
@@ -2412,6 +2438,7 @@ const SKILLS: SkillDef[] = [
           '五谷丰登',
           '火攻',
           '铁索连环',
+          '借刀杀人',
         ];
         const picked = await game.askCards(owner, owner.hand, 1, 1, '蛊惑：选择一张手牌', undefined, false);
         if (picked.length !== 1) return;
@@ -2424,48 +2451,102 @@ const SKILLS: SkillDef[] = [
         );
         if (!declared) return;
         const otherAlive = () => others(game, owner).filter((p) => p.alive);
-        let target: PlayerState | null = null;
+        const targets: number[] = [];
         if (declared === '杀') {
-          target = await game.askPlayer(owner, game.shaTargets(owner), '蛊惑：选择杀的目标');
+          const target = await game.askPlayer(owner, game.shaTargets(owner), '蛊惑：选择杀的目标');
+          if (!target) return;
+          targets.push(target.id);
         } else if (declared === '决斗') {
-          target = await game.askPlayer(owner, otherAlive(), '蛊惑：选择决斗目标');
+          const target = await game.askPlayer(owner, otherAlive(), '蛊惑：选择决斗目标');
+          if (!target) return;
+          targets.push(target.id);
         } else if (declared === '过河拆桥') {
-          target = await game.askPlayer(owner, otherAlive().filter((p) => game.hasAnyCard(p)), '蛊惑：选择过河拆桥目标');
+          const target = await game.askPlayer(
+            owner,
+            otherAlive().filter((p) => game.hasAnyCard(p)),
+            '蛊惑：选择过河拆桥目标',
+          );
+          if (!target) return;
+          targets.push(target.id);
         } else if (declared === '顺手牵羊') {
-          target = await game.askPlayer(
+          const target = await game.askPlayer(
             owner,
             otherAlive().filter((p) => game.hasAnyCard(p) && game.distance(owner, p) <= 1),
             '蛊惑：选择顺手牵羊目标',
           );
+          if (!target) return;
+          targets.push(target.id);
         } else if (declared === '火攻') {
-          target = await game.askPlayer(owner, otherAlive().filter((p) => p.hand.length > 0), '蛊惑：选择火攻目标');
+          const target = await game.askPlayer(
+            owner,
+            otherAlive().filter((p) => p.hand.length > 0),
+            '蛊惑：选择火攻目标',
+          );
+          if (!target) return;
+          targets.push(target.id);
+        } else if (declared === '铁索连环') {
+          const target = await game.askPlayer(
+            owner,
+            game.players.filter((p) => p.alive),
+            '蛊惑：选择铁索连环的目标',
+          );
+          if (!target) return;
+          targets.push(target.id);
+        } else if (declared === '借刀杀人') {
+          const holder = await game.askPlayer(
+            owner,
+            otherAlive().filter(
+              (p) => !!p.equips.weapon && game.liangdaoVictims(p, owner).length > 0,
+            ),
+            '蛊惑：选择持有武器的角色',
+          );
+          if (!holder) return;
+          const victim = await game.askPlayer(
+            owner,
+            game.liangdaoVictims(holder, owner),
+            '蛊惑：选择被杀的目标',
+          );
+          if (!victim) return;
+          targets.push(holder.id, victim.id);
         }
-        if (['杀', '决斗', '过河拆桥', '顺手牵羊', '火攻'].includes(declared) && !target) return;
         const card = picked[0];
         const questioners: PlayerState[] = [];
         for (const p of otherAlive()) {
-          const yes = await game.confirm(p, `是否质疑【${owner.name}】的蛊惑？`, '质疑后若为红色，你将失去 1 点体力');
+          const yes = await game.confirm(
+            p,
+            `是否质疑【${owner.name}】的蛊惑？`,
+            '若此牌为真，你将失去 1 点体力；若为假，你摸一张牌',
+          );
           if (yes) questioners.push(p);
         }
+        let resolves = true;
         if (questioners.length > 0) {
           game.revealCards(owner.id, [card], '蛊惑质疑');
           game.log(
-            `【${owner.name}】展示蛊惑牌【${card.name}】（${black(card) ? '黑色' : '红色'}）`,
+            `【${owner.name}】展示蛊惑牌【${card.name}】（${SUIT_CN[card.suit]}）`,
             'judge',
           );
           const isTrue = card.name === declared;
-          if (!isTrue && black(card)) {
-            await game.discardCards(owner, [card], '蛊惑');
-            await game.loseHp(owner, 1);
-            game.log('蛊惑为黑色且与声明不符，此牌无效', 'skill');
-            return;
+          if (isTrue) {
+            for (const p of questioners) {
+              if (p.alive) await game.loseHp(p, 1, owner);
+            }
+            game.log('蛊惑为真，质疑者各失去 1 点体力', 'skill');
+            resolves = card.suit === 'heart';
+            if (resolves) game.log('蛊惑牌为红桃，仍按声明结算', 'skill');
+          } else {
+            for (const p of questioners) {
+              if (p.alive) game.drawCards(p, 1, '蛊惑');
+            }
+            game.log('蛊惑为假，质疑者各摸一张牌，此牌作废', 'skill');
+            resolves = false;
           }
-          for (const p of questioners) {
-            if (p.alive) await game.loseHp(p, 1, owner);
-          }
-          game.log('蛊惑为红色，质疑者各失去 1 点体力', 'skill');
         }
-        await game.useCard(owner, card, declared, target ? [target.id] : [], 'guhuo');
+        if (!resolves) {
+          await game.discardCards(owner, [card], '蛊惑');
+          return;
+        }
+        await game.useCard(owner, card, declared, targets, 'guhuo');
       },
     },
   },
@@ -2531,19 +2612,62 @@ const SKILLS: SkillDef[] = [
     ],
   },
   {
+    id: 'xunxun',
+    name: '恂恂',
+    desc: '摸牌阶段，你可以改为观看牌堆顶的四张牌，获得其中两张，然后将其余的牌置于牌堆底。',
+    triggers: [
+      {
+        event: 'drawPhase',
+        when: (c) => isCurrent(c),
+        optional: true,
+        prompt: '是否发动【恂恂】观看牌堆顶四张牌？',
+        effect: async (c) => {
+          if (c.game.state.deck.length === 0) c.game.reshuffle();
+          const top = c.game.state.deck.splice(-4);
+          if (!top.length) return;
+          c.data.skip = true;
+          const picked = await c.game.askCards(
+            c.owner,
+            top,
+            2,
+            2,
+            '恂恂：选择获得其中两张牌',
+            '其余牌置于牌堆底',
+            false,
+          );
+          const gained = picked.length === 2 ? picked : top.slice(-2);
+          for (const card of gained) {
+            c.owner.hand.push(card);
+            c.game.emit({ type: 'gain', playerId: c.owner.id, cards: [card], public: false });
+          }
+          const rest = top.filter((card) => !gained.some((item) => item.id === card.id));
+          c.game.state.deck.unshift(...rest);
+          c.game.log(`【${c.owner.name}】恂恂获得了 ${gained.map((card) => `【${card.name}】`).join('、')}`, 'skill');
+        },
+      },
+    ],
+  },
+  {
     id: 'wangxi',
     name: '忘隙',
-    desc: '当你受到伤害后，你可以令伤害来源摸一张牌，然后你摸一张牌。',
+    desc: '当你对其他角色造成 1 点伤害后，或受到其他角色造成的 1 点伤害后，你可以与该角色各摸一张牌。',
     triggers: [
       {
         event: 'damageDone',
-        when: (c) => c.target?.id === c.owner.id && !!c.source && c.source.alive,
+        when: (c) => {
+          if (!c.source || !c.target || c.source.id === c.target.id) return false;
+          return c.source.id === c.owner.id || c.target.id === c.owner.id;
+        },
         optional: true,
         prompt: '是否发动【忘隙】令双方各摸一张牌？',
         effect: async (c) => {
-          if (!c.source?.alive) return;
-          c.game.drawCards(c.source, 1, '忘隙');
-          c.game.drawCards(c.owner, 1, '忘隙');
+          const other = c.source!.id === c.owner.id ? c.target! : c.source!;
+          if (!other.alive) return;
+          const amount = Math.max(1, Number(c.data.amount ?? 1));
+          for (let i = 0; i < amount; i += 1) {
+            c.game.drawCards(c.owner, 1, '忘隙');
+            c.game.drawCards(other, 1, '忘隙');
+          }
         },
       },
     ],
@@ -2551,8 +2675,22 @@ const SKILLS: SkillDef[] = [
   {
     id: 'enyuan',
     name: '恩怨',
-    desc: '当你受到伤害后，你可以令伤害来源交给你一张手牌，否则其失去 1 点体力。',
+    desc: '当你一次获得一名其他角色的至少两张牌后，你可以令其摸一张牌；当你受到 1 点伤害后，你可以令伤害来源交给你一张手牌，否则其失去 1 点体力。',
     triggers: [
+      {
+        event: 'cardGained',
+        when: (c) =>
+          c.player?.id === c.owner.id &&
+          !!c.source &&
+          c.source.id !== c.owner.id &&
+          Number(c.data.count ?? 0) >= 2 &&
+          c.source.alive,
+        optional: true,
+        prompt: '是否发动【恩怨】令其摸一张牌？',
+        effect: async (c) => {
+          if (c.source?.alive) c.game.drawCards(c.source, 1, '恩怨');
+        },
+      },
       {
         event: 'damageDone',
         when: (c) => c.target?.id === c.owner.id && !!c.source && c.source.alive,
@@ -2560,48 +2698,84 @@ const SKILLS: SkillDef[] = [
         prompt: '是否发动【恩怨】？',
         effect: async (c) => {
           const source = c.source!;
-          if (source.hand.length === 0) {
-            await c.game.loseHp(source, 1, c.owner);
-            return;
-          }
-          const choice = await c.game.askOption(
-            source,
-            `恩怨：交给【${c.owner.name}】一张手牌，或失去 1 点体力`,
-            [
-              { id: 'give', label: '交给一张手牌' },
-              { id: 'hp', label: '失去 1 点体力' },
-            ],
-            undefined,
-            false,
-          );
-          if (choice === 'give') {
-            const picked = await c.game.askCards(source, source.hand, 1, 1, '恩怨：选择交给对方的手牌', undefined, false);
-            if (picked.length) {
-              c.game.gainCard(c.owner, picked[0], source, false);
-              return;
+          const times = Math.max(1, Number(c.data.amount ?? 1));
+          for (let i = 0; i < times; i += 1) {
+            if (!source.alive || !c.owner.alive) return;
+            if (source.hand.length === 0) {
+              await c.game.loseHp(source, 1, c.owner);
+              continue;
             }
+            const choice = await c.game.askOption(
+              source,
+              `恩怨：交给【${c.owner.name}】一张手牌，或失去 1 点体力`,
+              [
+                { id: 'give', label: '交给一张手牌' },
+                { id: 'hp', label: '失去 1 点体力' },
+              ],
+              undefined,
+              false,
+            );
+            if (choice === 'give') {
+              const picked = await c.game.askCards(source, source.hand, 1, 1, '恩怨：选择交给对方的手牌', undefined, false);
+              if (picked.length) {
+                await c.game.gainCard(c.owner, picked[0], source, false);
+                continue;
+              }
+            }
+            await c.game.loseHp(source, 1, c.owner);
           }
-          await c.game.loseHp(source, 1, c.owner);
         },
       },
     ],
   },
   {
+    id: 'xuanhuo',
+    name: '眩惑',
+    desc: '出牌阶段限一次，你可以将一张红桃手牌交给一名其他角色，然后获得该角色一张牌。',
+    active: {
+      oncePerTurn: true,
+      usable: (game, owner) =>
+        owner.hand.some((card) => card.suit === 'heart') &&
+        others(game, owner).some((p) => p.alive),
+      run: async (game, owner) => {
+        const hearts = owner.hand.filter((card) => card.suit === 'heart');
+        const give = await game.askCards(owner, hearts, 1, 1, '眩惑：选择一张红桃手牌交给其他角色', undefined, true);
+        if (give.length !== 1) return;
+        const target = await game.askPlayer(owner, others(game, owner), '眩惑：选择一名其他角色');
+        if (!target) return;
+        await game.gainCard(target, give[0], owner, true);
+        if (!game.hasAnyCard(target)) return;
+        const card = await game.pickCardFrom(target, owner, '眩惑：获得其一张牌');
+        if (card) await game.gainCard(owner, card, target, true);
+      },
+    },
+  },
+  {
     id: 'qianxi',
     name: '潜袭',
-    desc: '当你使用【杀】指定目标后，你可以进行判定；若为红色，此杀不可被闪避。',
+    desc: '准备阶段开始时，你可以进行判定，然后令一名距离为 1 的角色本回合不能使用或打出与判定结果颜色相同的牌。',
     triggers: [
       {
-        event: 'shaTargeted',
-        when: (c) => c.source?.id === c.owner.id,
+        event: 'phaseStart',
+        when: (c) =>
+          isCurrent(c) &&
+          c.data.phase === 'prepare' &&
+          others(c.game, c.owner).some((p) => c.game.distance(c.owner, p) <= 1),
         optional: true,
         prompt: '是否发动【潜袭】进行判定？',
         effect: async (c) => {
           const judged = await c.game.judge(c.owner, '潜袭');
-          if (red(judged)) {
-            c.data.noShan = true;
-            c.game.log('潜袭判定为红色，此杀不可闪避', 'skill');
-          }
+          const targets = others(c.game, c.owner).filter((p) => c.game.distance(c.owner, p) <= 1);
+          if (!targets.length) return;
+          const target = await c.game.askPlayer(c.owner, targets, '潜袭：选择一名距离为 1 的角色');
+          if (!target) return;
+          const color = red(judged) ? 1 : 2;
+          target.flags.qianxiColor = color;
+          target.flags.qianxiTurn = c.game.state.turn;
+          c.game.log(
+            `【${target.name}】本回合不能使用或打出${color === 1 ? '红色' : '黑色'}牌`,
+            'skill',
+          );
         },
       },
     ],
@@ -2632,11 +2806,12 @@ const SKILLS: SkillDef[] = [
   {
     id: 'pojun',
     name: '破军',
-    desc: '当你使用【杀】指定目标后，你可以将目标至多 X 张牌置于其武将牌上（X 为其体力值）；你的回合结束时，其收回这些牌。',
+    desc: '当你于出牌阶段使用【杀】指定目标后，你可以将目标至多 X 张牌置于其武将牌上（X 为其体力值）；当前回合结束时，其收回这些牌。',
     triggers: [
       {
         event: 'shaTargeted',
         when: (c) =>
+          c.game.state.phase === 'play' &&
           c.source?.id === c.owner.id &&
           !!c.target &&
           c.target.alive &&
@@ -2645,7 +2820,7 @@ const SKILLS: SkillDef[] = [
         prompt: '是否发动【破军】将目标的牌置于其武将牌上？',
         effect: async (c) => {
           const target = c.target!;
-          const limit = Math.min(5, Math.max(1, target.hp));
+          const limit = Math.max(1, target.hp);
           for (let i = 0; i < limit; i += 1) {
             if (!c.game.hasAnyCard(target)) break;
             const card = await c.game.pickCardFrom(target, c.owner, `破军：选择第 ${i + 1} 张牌`);
@@ -2654,6 +2829,24 @@ const SKILLS: SkillDef[] = [
               c.game.log(`【${c.owner.name}】将【${target.name}】的【${card.name}】置于其武将牌上`, 'skill');
             }
           }
+        },
+      },
+    ],
+  },
+  {
+    id: 'zhichi',
+    name: '智迟',
+    desc: '锁定技，当你于回合外受到伤害后，本回合【杀】和普通锦囊牌对你无效。',
+    locked: true,
+    triggers: [
+      {
+        event: 'damageDone',
+        when: (c) =>
+          c.target?.id === c.owner.id &&
+          c.game.currentPlayer?.id !== c.owner.id,
+        effect: async (c) => {
+          c.owner.flags.zhichi = c.game.state.turn;
+          c.game.log(`【${c.owner.name}】智迟生效，本回合【杀】和普通锦囊牌对其无效`, 'skill');
         },
       },
     ],
@@ -2673,7 +2866,7 @@ const SKILLS: SkillDef[] = [
         if (!picked.length) return;
         const target = await game.askPlayer(owner, others(game, owner), '明策：选择一名角色');
         if (!target) return;
-        game.gainCard(target, picked[0], owner, false);
+        await game.gainCard(target, picked[0], owner, false);
         await game.afterHandChange(owner);
         const victimPool = game.shaTargets(target);
         const victim = victimPool.length
@@ -2696,6 +2889,19 @@ const SKILLS: SkillDef[] = [
         }
       },
     },
+  },
+  {
+    id: 'jinjiu',
+    name: '禁酒',
+    desc: '锁定技，你的【酒】均视为【杀】。',
+    locked: true,
+    viewAs: [
+      {
+        as: '杀',
+        usage: 'play',
+        filter: (_game, _owner, card) => card.name === '酒',
+      },
+    ],
   },
   {
     id: 'xianzhen',
@@ -2722,12 +2928,78 @@ const SKILLS: SkillDef[] = [
     },
   },
   {
+    id: 'jiefan',
+    name: '解烦',
+    desc: '限定技，出牌阶段，你可以选择一名角色，令攻击范围内含有该角色的所有角色依次选择一项：弃置一张武器牌；或令该角色摸一张牌。',
+    active: {
+      usable: (_game, owner) => !owner.flags.jiefan,
+      run: async (game, owner) => {
+        const target = await game.askPlayer(
+          owner,
+          game.players.filter((p) => p.alive),
+          '解烦：选择一名角色',
+        );
+        if (!target) return;
+        owner.flags.jiefan = 1;
+        const attackers = game.players.filter(
+          (p) => p.alive && p.id !== target.id && game.distance(p, target) <= game.attackRange(p),
+        );
+        for (const attacker of attackers) {
+          const weapons = [
+            ...attacker.hand.filter((card) => card.equipSlot === 'weapon'),
+            ...(attacker.equips.weapon ? [attacker.equips.weapon] : []),
+          ];
+          const choice = await game.askOption(attacker, '解烦：请选择一项', [
+            { id: 'draw', label: `令【${target.name}】摸一张牌` },
+            { id: 'weapon', label: '弃置一张武器牌', desc: weapons.length ? undefined : '没有武器牌' },
+          ]);
+          if (choice === 'weapon' && weapons.length) {
+            const picked = await game.askCards(attacker, weapons, 1, 1, '解烦：弃置一张武器牌', undefined, false);
+            if (picked.length) {
+              await game.discardCards(attacker, picked, '解烦');
+              continue;
+            }
+          }
+          game.drawCards(target, 1, '解烦');
+        }
+        game.log(`【${owner.name}】发动解烦，目标为【${target.name}】`, 'skill');
+      },
+    },
+  },
+  {
     id: 'yicong',
     name: '义从',
-    desc: '锁定技，你计算与其他角色的距离 -1；其他角色计算与你的距离 +1。',
+    desc: '锁定技，若你的体力值大于 2，你计算与其他角色的距离 -1；若你的体力值不大于 2，其他角色计算与你的距离 +1。',
     locked: true,
-    distanceFrom: () => -1,
-    distanceTo: () => 1,
+    distanceFrom: (_game, owner) => (owner.hp > 2 ? -1 : 0),
+    distanceTo: (_game, owner) => (owner.hp <= 2 ? 1 : 0),
+  },
+  {
+    id: 'suishi',
+    name: '随势',
+    desc: '锁定技，当其他角色进入濒死状态时，若伤害来源与你势力相同，你摸一张牌；当与你势力相同的其他角色死亡时，你失去 1 点体力。',
+    locked: true,
+    triggers: [
+      {
+        event: 'dying',
+        when: (c) =>
+          c.player.id !== c.owner.id &&
+          !!c.source &&
+          c.source.faction === c.owner.faction,
+        effect: async (c) => {
+          c.game.drawCards(c.owner, 1, '随势');
+        },
+      },
+      {
+        event: 'death',
+        when: (c) =>
+          c.target?.id !== c.owner.id &&
+          c.target?.faction === c.owner.faction,
+        effect: async (c) => {
+          await c.game.loseHp(c.owner, 1);
+        },
+      },
+    ],
   },
   {
     id: 'sijian',
@@ -2763,7 +3035,49 @@ const SKILLS: SkillDef[] = [
       {
         as: '杀',
         usage: 'both',
+        fromEquip: true,
         filter: (_game, _owner, card) => !!card.equipSlot,
+      },
+    ],
+  },
+  {
+    id: 'juyi',
+    name: '举义',
+    desc: '觉醒技，准备阶段开始时，若你已受伤且体力上限大于全场角色数，你将手牌摸至等同于体力上限的张数，然后获得【崩坏】和【威重】。',
+    locked: true,
+    triggers: [
+      {
+        event: 'phaseStart',
+        when: (c) =>
+          isCurrent(c) &&
+          c.data.phase === 'prepare' &&
+          !c.owner.flags.juyi &&
+          c.owner.hp < c.owner.maxHp &&
+          c.owner.maxHp > c.game.alivePlayers().length,
+        effect: async (c) => {
+          c.owner.flags.juyi = 1;
+          const count = Math.max(0, c.owner.maxHp - c.owner.hand.length);
+          if (count > 0) c.game.drawCards(c.owner, count, '举义');
+          for (const id of ['benghuai', 'weizhong']) {
+            if (!c.owner.extraSkills.includes(id)) c.owner.extraSkills.push(id);
+          }
+          c.game.log(`【${c.owner.name}】举义觉醒，获得崩坏与威重`, 'skill');
+        },
+      },
+    ],
+  },
+  {
+    id: 'weizhong',
+    name: '威重',
+    desc: '锁定技，当你的体力上限变化时，你摸一张牌。',
+    locked: true,
+    triggers: [
+      {
+        event: 'maxHpChanged',
+        when: (c) => c.player.id === c.owner.id,
+        effect: async (c) => {
+          c.game.drawCards(c.owner, 1, '威重');
+        },
       },
     ],
   },
@@ -2777,7 +3091,7 @@ const SKILLS: SkillDef[] = [
         event: 'death',
         when: (c) => c.player.id !== c.owner.id,
         effect: async (c) => {
-          c.owner.maxHp += 1;
+          await c.game.changeMaxHp(c.owner, 1);
           c.game.heal(c.owner, c.owner, 1, { reason: '功獒' });
           c.game.log(`【${c.owner.name}】的功獒生效，体力上限 +1`, 'skill');
         },
@@ -2809,7 +3123,22 @@ function grantRandomSkills(game: Game, owner: PlayerState, count: number): strin
       !skill.lord &&
       !existing.has(skill.id) &&
       !equipmentSkills.has(skill.id) &&
-      !['huashen', 'xinsheng', 'zhiba', 'bahu', 'feiyang', 'gongku'].includes(skill.id),
+      ![
+        'huashen',
+        'xinsheng',
+        'zhiba',
+        'bahu',
+        'feiyang',
+        'gongku',
+        'niepan',
+        'luanwu',
+        'hunzi',
+        'zhiji',
+        'zaoxian',
+        'ruoyu',
+        'jiefan',
+        'gongao',
+      ].includes(skill.id),
   ).map((skill) => skill.id);
   const gained: string[] = [];
   for (let i = 0; i < count && pool.length > 0; i += 1) {

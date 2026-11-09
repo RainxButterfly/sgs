@@ -21,6 +21,7 @@ interface Props {
   clickable?: boolean;
   revealRoles?: boolean;
   mark?: Role | null;
+  tableNo?: string;
   onMark?: () => void;
   flash?: Flash | null;
   flashes?: Flash[];
@@ -40,6 +41,7 @@ export function PlayerSeat({
   clickable,
   revealRoles,
   mark,
+  tableNo,
   onMark,
   flash,
   flashes,
@@ -107,6 +109,7 @@ export function PlayerSeat({
         </span>
       ))}
       <div className="seat-head">
+        {tableNo && <span className="seat-table-no">{tableNo}</span>}
         <span className="faction-badge">{showFaction ? FACTION_NAME[player.faction] : '暗'}</span>
         <span className="seat-hero">{heroLabel}</span>
         {player.ambition && <span className="ambition-tag">野心家</span>}

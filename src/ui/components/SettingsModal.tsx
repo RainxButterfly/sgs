@@ -10,6 +10,7 @@ export function SettingsModal() {
   const open = useGameStore((s) => s.settingsOpen);
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
+  const selfCardSide = useGameStore((s) => s.selfCardSide);
   const close = useGameStore((s) => s.closeSettings);
   const openChangelog = useGameStore((s) => s.openChangelog);
   const openAbout = useGameStore((s) => s.openAbout);
@@ -19,6 +20,7 @@ export function SettingsModal() {
   const setAiSpeed = useGameStore((s) => s.setAiSpeed);
   const setBgImage = useGameStore((s) => s.setBgImage);
   const setBgDim = useGameStore((s) => s.setBgDim);
+  const setSelfCardSide = useGameStore((s) => s.setSelfCardSide);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -187,6 +189,27 @@ export function SettingsModal() {
               disabled={!bgImage}
             >
               恢复默认
+            </button>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">个人信息卡位置</div>
+          <p className="settings-section-desc">决定对局中自己的武将信息卡放在牌桌左侧还是右侧。</p>
+          <div className="settings-actions">
+            <button
+              type="button"
+              className={`btn ghost ${selfCardSide === 'left' ? 'on' : ''}`}
+              onClick={() => setSelfCardSide('left')}
+            >
+              放在左侧
+            </button>
+            <button
+              type="button"
+              className={`btn ghost ${selfCardSide === 'right' ? 'on' : ''}`}
+              onClick={() => setSelfCardSide('right')}
+            >
+              放在右侧
             </button>
           </div>
         </div>

@@ -550,7 +550,7 @@ export const HEROES: HeroData[] = [
     gender: 'male',
     hp: 4,
     title: '人马一体',
-    skillIds: ['mengjin'],
+    skillIds: ['mashu', 'mengjin'],
     quote: '宁死不降！',
   },
   {
@@ -731,7 +731,6 @@ export const HEROES: HeroData[] = [
   {
     id: 'zuoci',
     name: '左慈',
-    disabled: true,
     faction: 'qun',
     gender: 'male',
     hp: 3,
@@ -766,7 +765,7 @@ export const HEROES: HeroData[] = [
     gender: 'male',
     hp: 3,
     title: '深明大义',
-    skillIds: ['wangxi'],
+    skillIds: ['xunxun', 'wangxi'],
     quote: '以和为贵，以退为进。',
   },
   {
@@ -776,7 +775,7 @@ export const HEROES: HeroData[] = [
     gender: 'male',
     hp: 3,
     title: '玄德之谋主',
-    skillIds: ['enyuan'],
+    skillIds: ['enyuan', 'xuanhuo'],
     quote: '睚眦必报，恩怨分明。',
   },
   {
@@ -786,7 +785,7 @@ export const HEROES: HeroData[] = [
     gender: 'male',
     hp: 4,
     title: '临危受命',
-    skillIds: ['qianxi'],
+    skillIds: ['mashu', 'qianxi'],
     quote: '西凉铁骑，踏破敌阵。',
   },
   {
@@ -816,7 +815,7 @@ export const HEROES: HeroData[] = [
     gender: 'male',
     hp: 4,
     title: '江表之虎',
-    skillIds: ['gongqi'],
+    skillIds: ['gongqi', 'jiefan'],
     quote: '弓马娴熟，可当一面。',
   },
   {
@@ -826,7 +825,7 @@ export const HEROES: HeroData[] = [
     gender: 'male',
     hp: 3,
     title: '刚直壮烈',
-    skillIds: ['mingce'],
+    skillIds: ['mingce', 'zhichi'],
     quote: '公台之谋，可惜不遇明主。',
   },
   {
@@ -836,7 +835,7 @@ export const HEROES: HeroData[] = [
     gender: 'male',
     hp: 4,
     title: '陷阵营',
-    skillIds: ['xianzhen'],
+    skillIds: ['xianzhen', 'jinjiu'],
     quote: '陷阵之志，有死无生。',
   },
   {
@@ -856,7 +855,7 @@ export const HEROES: HeroData[] = [
     gender: 'male',
     hp: 3,
     title: '刚而犯上',
-    skillIds: ['sijian'],
+    skillIds: ['sijian', 'suishi'],
     quote: '忠言逆耳，良药苦口。',
   },
   {
@@ -866,7 +865,7 @@ export const HEROES: HeroData[] = [
     gender: 'male',
     hp: 4,
     title: '功獒',
-    skillIds: ['gongao'],
+    skillIds: ['gongao', 'juyi'],
     quote: '功成之日，岂能无我。',
   },
 ];

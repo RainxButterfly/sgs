@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroPanel } from '../components/HeroPanel';
@@ -7,6 +7,8 @@ import { LogPanel } from '../components/LogPanel';
 import { PlayerSeat } from '../components/PlayerSeat';
 import { TableCenter } from '../components/TableCenter';
 import { TopBar } from '../components/TopBar';
+import { PHASE_NAME } from '../../core/types';
+import { tableSeatLabel } from '../labels';
 import { useGameSnapshot, useGameStore } from '../store';
 
 export function SpectatorScreen() {
@@ -22,6 +24,27 @@ export function SpectatorScreen() {
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
   const [focusId, setFocusId] = useState(0);
   const [followCurrent, setFollowCurrent] = useState(true);
+
+  useEffect(() => {
+    if (!game) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+      if (event.key === ' ') {
+        event.preventDefault();
+        setFollowCurrent((value) => !value);
+        return;
+      }
+      const index = Number(event.key) - 1;
+      const player = game.state.players[index];
+      if (player) {
+        setFollowCurrent(false);
+        setFocusId(player.id);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [game]);
 
   const exit = () => {
     if (!window.confirm('确定退出观战吗？')) return;
@@ -52,6 +75,10 @@ export function SpectatorScreen() {
   const focus = followCurrent
     ? game.state.players[currentId] ?? game.state.players[focusId] ?? game.state.players[0]
     : game.state.players[focusId] ?? game.state.players[0];
+  const current = game.state.players[currentId] ?? game.state.players[0];
+  const latestEvent = [...game.state.log].reverse().find((entry) => entry.kind !== 'system');
+
+
 
   return (
     <div className="spectator-screen">
@@ -73,6 +100,7 @@ export function SpectatorScreen() {
                 clickable
                 revealRoles
                 selected={player.id === focus.id}
+                tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, player.id, n)}
                 flashes={flashes}
                 speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
                 style={{ left: `${x}%`, top: `${y}%` }}
@@ -99,9 +127,18 @@ export function SpectatorScreen() {
           speech={speechBubbles.find((bubble) => bubble.playerId === focus.id) ?? null}
           handLimitModifier={game.state.rules?.handLimitModifier ?? 0}
           selfView
+          tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, focus.id, n)}
           onDetail={() => setDetailPlayer(focus.id)}
         />
         <div className="spectator-focus-main">
+          <div className="spectator-live">
+            <span className="spectator-live-dot" />
+            <span className="spectator-live-turn">第 {game.state.turn} 回合 · {game.state.direction === 1 ? '顺' : '逆'}</span>
+            <b>{current?.name ?? '等待开始'}</b>
+            <span>{PHASE_NAME[game.state.phase]}</span>
+            {latestEvent && <span className="spectator-live-event">{latestEvent.text}</span>}
+            <span className="spectator-live-hint">数字键切换视角 · 空格跟随</span>
+          </div>
           <div className="spectator-focus-head">
             <span>
               正在查看 <b>{focus.name}</b> 的手牌 · 第 {game.state.turn} 回合

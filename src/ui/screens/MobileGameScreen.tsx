@@ -4,6 +4,7 @@ import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
 import { cardDisplayName, factionKnown, playerHeroNames, rankText, shortCardName, visibleHeroNames, visibleSkillIds, SUIT_CHAR } from '../labels';
 import { compositionText } from '../composition';
+import { tableSeatLabel } from '../labels';
 import { CardView } from '../components/CardView';
 import { CountdownRing } from '../components/CountdownRing';
 import { DiscardModal } from '../components/DiscardModal';
@@ -33,21 +34,30 @@ function judgeIcon(name: string): string {
   return JUDGE_ICON[name] ?? name.slice(0, 1);
 }
 
-function equipNames(player: PlayerState): string[] {
-  return (['weapon', 'armor', 'horsePlus', 'horseMinus'] as const)
-    .map((slot) => {
-      const card = player.equips[slot];
-      if (!card) return null;
-      if (slot === 'horsePlus') return `+1马 ${card.name}`;
-      if (slot === 'horseMinus') return `-1马 ${card.name}`;
-      return card.name;
-    })
-    .filter((name): name is string => !!name);
+
+const EQUIP_ICON: Record<'weapon' | 'armor' | 'horsePlus' | 'horseMinus', string> = {
+  weapon: '武',
+  armor: '防',
+  horsePlus: '+',
+  horseMinus: '−',
+};
+
+function equipBadges(player: PlayerState) {
+  return (['weapon', 'armor', 'horsePlus', 'horseMinus'] as const).map((slot) => {
+    const card = player.equips[slot];
+    if (!card) return null;
+    return (
+      <span key={slot} className={`m-equip-badge equip-${slot}`} title={`${EQUIP_ICON[slot]} ${card.name}`}>
+        {EQUIP_ICON[slot]}
+      </span>
+    );
+  });
 }
 
 export function MobileGameScreen() {
   const { game } = useGameSnapshot();
   const humanId = useGameStore((s) => s.humanId);
+  const selfCardSide = useGameStore((s) => s.selfCardSide);
   const pending = useGameStore((s) => s.pending);
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
@@ -146,7 +156,6 @@ export function MobileGameScreen() {
   const humanSkills = visibleSkillIds(human, mode, true)
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
-  const humanEquips = equipNames(human);
   const feed = cardHistory.slice(-8);
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
@@ -181,8 +190,15 @@ export function MobileGameScreen() {
 
   const prompting = pending?.playerId === humanId;
 
+  const humanTableNo = tableSeatLabel(
+    game.state.startPlayer,
+    game.state.direction,
+    human.id,
+    game.state.players.length,
+  );
+
   return (
-    <div className={`mobile-game ${prompting ? 'is-prompting' : ''}`}>
+    <div className={`mobile-game self-card-${selfCardSide} ${prompting ? 'is-prompting' : ''}`}>
       <div className="game-bg" style={{ backgroundImage: `url(${bgImage ?? defaultBg})` }} />
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
 
@@ -195,7 +211,7 @@ export function MobileGameScreen() {
         <span className="m-turn">
           <b>{mine ? '轮到你' : `等待 ${current?.name ?? ''}`}</b>
           <em>
-            第 {game.state.turn} 回合 · {current?.heroName ?? ''} · {PHASE_NAME[game.state.phase]}
+            第 {game.state.turn} 回合 · {game.state.direction === 1 ? '顺时针' : '逆时针'} · {current?.heroName ?? ''} · {PHASE_NAME[game.state.phase]}
           </em>
           {composition && <span className="m-composition">{composition}</span>}
         </span>
@@ -226,7 +242,12 @@ export function MobileGameScreen() {
             .map((id) => SKILL_MAP.get(id)?.name)
             .filter(Boolean)
             .slice(0, 3);
-          const equips = equipNames(player);
+          const tableNo = tableSeatLabel(
+            game.state.startPlayer,
+            game.state.direction,
+            player.id,
+            game.state.players.length,
+          );
           const seatTimer =
             wuxieWindow && wuxieDeadline
               ? { deadline: wuxieDeadline, totalMs: 4000 }
@@ -266,10 +287,11 @@ export function MobileGameScreen() {
                   </span>
                 ))}
               <div className="m-seat-head">
+                <span className="m-seat-no">{tableNo}</span>
                 <span className="faction-badge">
                   {factionKnown(player, mode) ? FACTION_NAME[player.faction] : '暗'}
                 </span>
-                <b>{visibleHeroNames(player, mode)}</b>
+                <b title={visibleHeroNames(player, mode)}>{visibleHeroNames(player, mode)}</b>
                 {player.ambition && <span className="ambition-tag">野心家</span>}
                 {role && <span className={`m-role role-${player.role}`}>{role}</span>}
                 {seatTimer && player.alive && (
@@ -313,24 +335,22 @@ export function MobileGameScreen() {
                 <span className="m-hp">
                   {Math.max(0, player.hp)}/{player.maxHp}
                 </span>
-                <span>手牌 {player.hand.length}</span>
-                {player.chained && <span className="m-tag m-chain" title="铁索连环：横置">铁索·横置</span>}
+                <span className="m-hand-count" title={`手牌 ${player.hand.length} 张`}>牌 {player.hand.length}</span>
+                {player.chained && <span className="m-tag m-chain" title="铁索连环：横置">横置</span>}
                 {(player.pojun?.length ?? 0) > 0 && <span className="m-tag">破军 {(player.pojun ?? []).length}</span>}
                 {player.flipped && <span className="m-tag">翻面</span>}
+              </div>
+              <div className="m-seat-gear">
+                {equipBadges(player)}
+                {player.judgeZone.map((card) => (
+                  <span key={card.id} className={`m-judge-icon judge-${card.name}`} title={card.name}>
+                    {judgeIcon(card.name)}
+                  </span>
+                ))}
               </div>
               <div className="m-hp-meter">
                 <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
               </div>
-              <div className="m-seat-equips">装备 {equips.join(' · ') || '无'}</div>
-              {player.judgeZone.length > 0 && (
-                <div className="m-seat-judges">
-                  {player.judgeZone.map((card) => (
-                    <span key={card.id} className={`m-judge-icon judge-${card.name}`} title={card.name}>
-                      {judgeIcon(card.name)}
-                    </span>
-                  ))}
-                </div>
-              )}
               <div className="m-seat-skills">{skills.join(' · ') || '无技能'}</div>
               {player.id === currentId && <span className="m-current">行动中</span>}
               {selectedTarget ? (
@@ -350,6 +370,7 @@ export function MobileGameScreen() {
           <button type="button" className="m-pile-button" onClick={() => setDiscardOpen(true)}>
             弃牌 {game.state.discardCount ?? game.state.discard.length}
           </button>
+          {composition && <span className="m-table-composition">{composition}</span>}
         </div>
         {lastDiscard && (
           <div className="m-discard-strip">
@@ -400,6 +421,31 @@ export function MobileGameScreen() {
         )}
       </div>
 
+      <div className="m-prompt">
+        <PromptBar />
+      </div>
+
+      <div className="m-bottom">
+        <aside className="m-quick-actions">
+          <button type="button" onClick={() => setLogOpen(true)}>
+            战报
+          </button>
+          <button type="button" onClick={openChat}>
+            聊天{chatUnread > 0 && <span className="chat-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
+          </button>
+          <button type="button" onClick={() => useGameStore.getState().openSettings()}>
+            设置
+          </button>
+        </aside>
+      <div className="m-hand">
+        <Hand
+          player={human}
+          pending={pending}
+          selectedCardId={selected?.cardId}
+          onSelect={(id) => useGameStore.getState().selectCard(id)}
+        />
+      </div>
+
       <div className={`m-self ${human.alive ? '' : 'is-dead'}`}>
         {!human.alive && <span className="m-self-dead">阵亡</span>}
         {(() => {
@@ -418,41 +464,43 @@ export function MobileGameScreen() {
               {item.amount}
             </span>
           ))}
-        <button type="button" className="m-self-main" onClick={() => setDetailPlayer(human.id)}>
+        <div className="m-self-head">
+          <span className="m-self-table-no">{humanTableNo}</span>
           <span className={`faction-badge faction-${human.faction}`}>{FACTION_NAME[human.faction]}</span>
-          <b>{visibleHeroNames(human, mode, true)}</b>
+          <b title={visibleHeroNames(human, mode, true)}>{visibleHeroNames(human, mode, true)}</b>
           {roleText(human, mode, true) && <span className="m-self-role">{roleText(human, mode, true)}</span>}
-          <span className="m-self-hp">
-            {Math.max(0, human.hp)}/{human.maxHp}
-          </span>
-          <span className="m-self-limit">手牌上限 {handLimit}</span>
-          {human.chained && <span className="m-tag m-chain" title="铁索连环：横置">铁索·横置</span>}
+          {human.ambition && <span className="ambition-tag">野心家</span>}
+          <button
+            type="button"
+            className="m-self-info"
+            aria-label="查看武将详细"
+            title="查看详细"
+            onClick={() => setDetailPlayer(human.id)}
+          >
+            i
+          </button>
+        </div>
+        <div className="m-self-stats">
+          <span className="m-self-hp">{Math.max(0, human.hp)}/{human.maxHp}</span>
+          <span className="m-self-limit">手牌 {human.hand.length}/{handLimit}</span>
+          {human.chained && <span className="m-tag m-chain" title="铁索连环：横置">横置</span>}
           {(human.pojun?.length ?? 0) > 0 && <span className="m-tag">破军 {(human.pojun ?? []).length}</span>}
           {human.flipped && <span className="m-tag">翻面</span>}
-          <span className="m-self-equips">装备 {humanEquips.join(' · ') || '无'}</span>
-          {human.judgeZone.length > 0 && (
-            <span className="m-self-judges">
-              {human.judgeZone.map((card) => (
-                <span key={card.id} className={`m-judge-icon judge-${card.name}`} title={card.name}>
-                  {judgeIcon(card.name)}
-                </span>
-              ))}
+        </div>
+        <div className="m-self-gear">
+          {equipBadges(human)}
+          {human.judgeZone.map((card) => (
+            <span key={card.id} className={`m-judge-icon judge-${card.name}`} title={card.name}>
+              {judgeIcon(card.name)}
             </span>
+          ))}
+          {equipBadges(human).every((item) => !item) && human.judgeZone.length === 0 && (
+            <span className="m-self-empty">无装备/判定</span>
           )}
-          {((wuxieWindow && wuxieDeadline) ||
-            (pending?.playerId === human.id && pending.timeout && promptDeadline)) && (
-            <CountdownRing
-              deadline={(wuxieWindow && wuxieDeadline ? wuxieDeadline : promptDeadline) as number}
-              totalMs={wuxieWindow ? 4000 : pending?.timeout ?? 1}
-              size={22}
-              className="m-self-timer"
-            />
-          )}
-          <span className="m-hp-meter m-self-meter">
-            <i style={{ width: `${Math.max(0, Math.min(100, (human.hp / human.maxHp) * 100))}%` }} />
-          </span>
-          <span className="m-self-skills">{humanSkills.join(' · ') || '无技能'}</span>
-        </button>
+        </div>
+        <div className="m-self-skill-list">
+          {humanSkills.length > 0 ? humanSkills.map((skill) => <span key={skill}>{skill}</span>) : <em>无技能</em>}
+        </div>
         {mode === 'guozhan' && human.generalRevealed?.some((value) => !value) && (
           <span className="m-reveal-row">
             {human.generalRevealed.map((revealed, index) =>
@@ -469,22 +517,17 @@ export function MobileGameScreen() {
             )}
           </span>
         )}
-        <button type="button" className="m-detail-btn" onClick={() => setDetailPlayer(human.id)}>
-          详情
-        </button>
+        {((wuxieWindow && wuxieDeadline) ||
+          (pending?.playerId === human.id && pending.timeout && promptDeadline)) && (
+          <CountdownRing
+            deadline={(wuxieWindow && wuxieDeadline ? wuxieDeadline : promptDeadline) as number}
+            totalMs={wuxieWindow ? 4000 : pending?.timeout ?? 1}
+            size={20}
+            className="m-self-timer"
+          />
+        )}
       </div>
 
-      <div className="m-prompt">
-        <PromptBar />
-      </div>
-
-      <div className="m-hand">
-        <Hand
-          player={human}
-          pending={pending}
-          selectedCardId={selected?.cardId}
-          onSelect={(id) => useGameStore.getState().selectCard(id)}
-        />
       </div>
 
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />

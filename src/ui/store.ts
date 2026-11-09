@@ -59,6 +59,7 @@ interface SavedLanSession {
 
 const LAN_SESSION_KEY = 'sgk-lan-session';
 const AI_SPEED_KEY = 'sgs-ai-speed';
+const SELF_CARD_SIDE_KEY = 'sgs-self-card-side';
 
 function loadAiSpeed(): number {
   try {
@@ -68,6 +69,23 @@ function loadAiSpeed(): number {
     return Number.isFinite(value) ? Math.max(0, Math.min(1200, value)) : 420;
   } catch {
     return 420;
+  }
+}
+
+function loadSelfCardSide(): 'left' | 'right' {
+  try {
+    return localStorage.getItem(SELF_CARD_SIDE_KEY) === 'left' ? 'left' : 'right';
+  } catch {
+    return 'right';
+  }
+}
+
+function saveSelfCardSide(value: 'left' | 'right'): void {
+  try {
+    localStorage.setItem(SELF_CARD_SIDE_KEY, value);
+    scheduleDataSnapshot();
+  } catch {
+    // ignore storage failures
   }
 }
 
@@ -291,6 +309,7 @@ interface GameStore {
   updateModalOpen: boolean;
   bgImage: string | null;
   bgDim: number;
+  selfCardSide: 'left' | 'right';
   settingsOpen: boolean;
   historyOpen: boolean;
   changelogOpen: boolean;
@@ -351,6 +370,7 @@ interface GameStore {
   setAiSpeed: (value: number) => void;
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
+  setSelfCardSide: (side: 'left' | 'right') => void;
   event: (ev: GameEvent) => void;
   ask: (req: AskRequest) => Promise<GameAction>;
   submit: (action: GameAction) => void;
@@ -467,6 +487,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   updateModalOpen: false,
   bgImage: initialBackground.image,
   bgDim: initialBackground.dim,
+  selfCardSide: loadSelfCardSide(),
   settingsOpen: false,
   historyOpen: false,
   changelogOpen: false,
@@ -499,7 +520,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })),
     ];
     const game = new Game(
-      { players, seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0, rules },
+      { players, seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
+      direction: Math.random() < 0.5 ? 1 : -1, rules },
       io,
     );
     set({
@@ -685,6 +707,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       {
         players,
         seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
+      direction: Math.random() < 0.5 ? 1 : -1,
         roles: preGame.roles,
         rules: preGame.rules,
       },
@@ -1305,6 +1328,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const next = Math.min(90, Math.max(0, Math.round(dim)));
     set({ bgDim: next });
     saveBackgroundSettings({ image: get().bgImage, dim: next });
+  },
+  setSelfCardSide: (side) => {
+    saveSelfCardSide(side);
+    set({ selfCardSide: side });
   },
 
   leaveLan: () => {

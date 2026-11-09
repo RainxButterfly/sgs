@@ -22,6 +22,7 @@ interface Props {
   selfView?: boolean;
   onReveal?: (index: number) => void;
   onDetail?: () => void;
+  tableNo?: string;
 }
 
 export function HeroPanel({
@@ -35,6 +36,7 @@ export function HeroPanel({
   selfView = false,
   onReveal,
   onDetail,
+  tableNo,
 }: Props) {
   const hero = HERO_MAP.get(player.heroId);
   const titles = (player.heroIds?.length ? player.heroIds : [player.heroId])
@@ -88,6 +90,7 @@ export function HeroPanel({
         <div className="hero-emblem">{showFaction ? FACTION_NAME[player.faction] : '暗'}</div>
         <div className="hero-identity">
           <div className="hero-name-row">
+            {tableNo && <span className="hero-table-no">{tableNo}</span>}
             <span className="hero-name">{heroLabel}</span>
             {roleLabel && <span className={`role-tag role-${player.role}`}>{roleLabel}</span>}
             {onDetail && (

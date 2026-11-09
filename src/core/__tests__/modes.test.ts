@@ -96,7 +96,7 @@ describe('对局模式', () => {
 });
 
 describe('苦肉结算', () => {
-  it('先摸两张牌，再处理濒死', async () => {
+  it('先处理濒死，救回后再摸两张牌', async () => {
     const io = new SimIO();
     const game = new Game(
       {
@@ -117,7 +117,7 @@ describe('苦肉结算', () => {
     const dyingIndex = texts.findIndex((text) => text.includes('进入濒死状态'));
     expect(drawIndex).toBeGreaterThan(-1);
     expect(dyingIndex).toBeGreaterThan(-1);
-    expect(drawIndex).toBeLessThan(dyingIndex);
+    expect(dyingIndex).toBeLessThan(drawIndex);
   });
 });
 

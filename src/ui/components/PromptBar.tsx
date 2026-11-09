@@ -62,6 +62,9 @@ export function PromptBar() {
   if (pending.kind === 'play') {
     const cardOptions = pending.cardOptions ?? [];
     const skills = pending.skillOptions ?? [];
+    const own = game.state.players[humanId];
+    const handIds = new Set(own?.hand.map((card) => card.id) ?? []);
+    const equipOptions = cardOptions.filter((item) => !handIds.has(item.cardId));
     const option = selected
       ? cardOptions.find(
           (o) =>
@@ -129,6 +132,17 @@ export function PromptBar() {
               选择自己
             </button>
           )}
+          {equipOptions.map((item) => (
+            <button
+              key={`${item.cardId}-${item.as}-${item.skillId ?? ''}`}
+              type="button"
+              className="btn ghost skill-btn"
+              title={`使用装备区的牌：${item.label ?? item.as}`}
+              onClick={() => useGameStore.getState().selectCard(item.cardId)}
+            >
+              {item.label ?? `${SKILL_MAP.get(item.skillId ?? '')?.name ?? '转化'}·${item.as}`}
+            </button>
+          ))}
           {skills.length > 0 && <span className="prompt-skill-label">技能</span>}
           {skills.map((skill) => (
             <button
@@ -165,6 +179,9 @@ export function PromptBar() {
   if (pending.kind === 'respond') {
     const synthetic = (pending.cardOptions ?? []).filter((o) => o.cardId.startsWith('__'));
     const real = (pending.cardOptions ?? []).filter((o) => !o.cardId.startsWith('__'));
+    const own = game.state.players[humanId];
+    const handIds = new Set(own?.hand.map((card) => card.id) ?? []);
+    const equipOptions = real.filter((o) => !handIds.has(o.cardId));
     const selectedOption = selected
       ? real.find(
           (o) =>
@@ -219,6 +236,23 @@ export function PromptBar() {
           </div>
         </div>
         <div className="prompt-actions">
+          {equipOptions.map((o) => (
+            <button
+              key={`${o.cardId}-${o.as}-${o.skillId ?? ''}`}
+              type="button"
+              className="btn ghost skill-btn"
+              onClick={() =>
+                useGameStore.getState().submit({
+                  type: 'respondCard',
+                  cardId: o.cardId,
+                  as: o.as,
+                  skillId: o.skillId,
+                })
+              }
+            >
+              {o.label ?? `${SKILL_MAP.get(o.skillId ?? '')?.name ?? '转化'}·${o.as}`}
+            </button>
+          ))}
           {synthetic.map((o) => (
             <button
               key={`${o.cardId}-${o.skillId}`}

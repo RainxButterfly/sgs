@@ -80,3 +80,11 @@ export function playerHeroNames(player: PlayerState): string {
   const names = ids.map((id) => HERO_MAP.get(id)?.name).filter((name): name is string => !!name);
   return names.length ? names.join('·') : player.heroName;
 }
+
+const TABLE_NUMERALS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+
+export function tableSeatLabel(startPlayer: number, direction: 1 | -1, playerId: number, total: number): string {
+  if (total <= 0) return '';
+  const offset = ((playerId - startPlayer) * direction + total * 1000) % total;
+  return TABLE_NUMERALS[offset] ?? String(offset + 1);
+}

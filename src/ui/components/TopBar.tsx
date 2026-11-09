@@ -28,6 +28,7 @@ export function TopBar({ logOpen, onToggleLog, onExit }: Props) {
       </div>
       <div className={`turn-info ${mine ? 'turn-mine' : ''}`}>
         <span className="turn-round">第 {game.state.turn} 回合</span>
+        <span className="turn-direction">{game.state.direction === 1 ? '顺时针' : '逆时针'}</span>
         <span className="turn-dot" />
         <span className="turn-label">{spectate ? '观战中' : mine ? '轮到你' : '等待'}</span>
         <span className="turn-player">{current ? `${current.name} · ${current.heroName}` : '—'}</span>

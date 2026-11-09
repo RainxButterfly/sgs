@@ -11,10 +11,12 @@ import { PlayerSeat } from '../components/PlayerSeat';
 import { PromptBar } from '../components/PromptBar';
 import { TableCenter } from '../components/TableCenter';
 import { TopBar } from '../components/TopBar';
+import { tableSeatLabel } from '../labels';
 
 export function GameScreen() {
   const { game } = useGameSnapshot();
   const humanId = useGameStore((s) => s.humanId);
+  const selfCardSide = useGameStore((s) => s.selfCardSide);
   const pending = useGameStore((s) => s.pending);
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
@@ -104,7 +106,7 @@ export function GameScreen() {
   };
 
   return (
-    <div className="game-screen">
+    <div className={`game-screen self-card-${selfCardSide}`}>
       <div className="game-bg" style={{ backgroundImage: `url(${bgImage ?? defaultBg})` }} />
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
       <TopBar logOpen={logOpen} onToggleLog={() => setLogOpen((v) => !v)} onExit={exit} />
@@ -135,6 +137,7 @@ export function GameScreen() {
                 flashes={flashes}
                 speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
                 style={{ left: `${x}%`, top: `${y}%` }}
+                tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, player.id, n)}
                 onDetail={() => setDetailPlayer(player.id)}
                 onClick={() => useGameStore.getState().seatClick(player.id)}
               />
@@ -154,6 +157,7 @@ export function GameScreen() {
             speech={speechBubbles.find((bubble) => bubble.playerId === human.id) ?? null}
             handLimitModifier={game.state.rules?.handLimitModifier ?? 0}
             selfView
+            tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, human.id, n)}
             onReveal={(index) => useGameStore.getState().revealGeneral(index)}
             onDetail={() => setDetailPlayer(human.id)}
           />
