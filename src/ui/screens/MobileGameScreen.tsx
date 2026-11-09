@@ -5,6 +5,7 @@ import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../cor
 import { cardDisplayName, playerHeroNames, rankText, shortCardName, SUIT_CHAR } from '../labels';
 import { compositionText } from '../composition';
 import { CardView } from '../components/CardView';
+import { CountdownRing } from '../components/CountdownRing';
 import { DiscardModal } from '../components/DiscardModal';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { Hand } from '../components/Hand';
@@ -56,11 +57,18 @@ export function MobileGameScreen() {
   const flashes = useGameStore((s) => s.flashes);
   const speechBubbles = useGameStore((s) => s.speechBubbles);
   const cardHistory = useGameStore((s) => s.cardHistory);
+  const wuxieWindow = useGameStore((s) => s.wuxieWindow);
+  const wuxieDeadline = useGameStore((s) => s.wuxieDeadline);
+  const promptDeadline = useGameStore((s) => s.promptDeadline);
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = feedRef.current;
-    if (element) element.scrollLeft = element.scrollWidth;
+    if (!element) return;
+    const frame = window.requestAnimationFrame(() => {
+      element.scrollLeft = element.scrollWidth;
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [cardHistory.length]);
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
@@ -120,7 +128,15 @@ export function MobileGameScreen() {
   const targetable = new Set<number>();
   if (pending) {
     if (pending.kind === 'choosePlayer') (pending.players ?? []).forEach((id) => targetable.add(id));
-    else if (pending.kind === 'play' && selectedOption) selectedOption.validTargets.forEach((id) => targetable.add(id));
+    else if (pending.kind === 'play' && selectedOption) {
+      const pool = selectedOption.targetAfter
+        ? selectedTargets.length === 0
+          ? selectedOption.validTargets
+          : selectedOption.targetAfter[selectedTargets[0]] ?? []
+        : selectedOption.validTargets;
+      pool.forEach((id) => targetable.add(id));
+      if (selectedOption.targetAfter) selectedTargets.forEach((id) => targetable.add(id));
+    }
   }
   const opponents = game.state.players.filter((p) => p.id !== humanId);
   const handLimit = Math.max(0, human.hp + (game.state.rules?.handLimitModifier ?? 0));
@@ -208,6 +224,12 @@ export function MobileGameScreen() {
             .filter(Boolean)
             .slice(0, 3);
           const equips = equipNames(player);
+          const seatTimer =
+            wuxieWindow && wuxieDeadline
+              ? { deadline: wuxieDeadline, totalMs: 4000 }
+              : pending?.playerId === player.id && pending.timeout && promptDeadline
+                ? { deadline: promptDeadline, totalMs: pending.timeout }
+                : null;
           return (
             <div
               key={player.id}
@@ -243,6 +265,14 @@ export function MobileGameScreen() {
                 <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
                 <b>{playerHeroNames(player)}</b>
                 {role && <span className={`m-role role-${player.role}`}>{role}</span>}
+                {seatTimer && player.alive && (
+                  <CountdownRing
+                    deadline={seatTimer.deadline}
+                    totalMs={seatTimer.totalMs}
+                    size={22}
+                    className="m-seat-timer"
+                  />
+                )}
                 <button
                   type="button"
                   className="m-seat-info"
@@ -346,7 +376,8 @@ export function MobileGameScreen() {
         )}
       </div>
 
-      <div className="m-self">
+      <div className={`m-self ${human.alive ? '' : 'is-dead'}`}>
+        {!human.alive && <span className="m-self-dead">阵亡</span>}
         {(() => {
           const bubble = speechBubbles.find((item) => item.playerId === human.id);
           return bubble ? <div className="m-self-speech">{bubble.text}</div> : null;
@@ -383,6 +414,15 @@ export function MobileGameScreen() {
                 </span>
               ))}
             </span>
+          )}
+          {((wuxieWindow && wuxieDeadline) ||
+            (pending?.playerId === human.id && pending.timeout && promptDeadline)) && (
+            <CountdownRing
+              deadline={(wuxieWindow && wuxieDeadline ? wuxieDeadline : promptDeadline) as number}
+              totalMs={wuxieWindow ? 4000 : pending?.timeout ?? 1}
+              size={22}
+              className="m-self-timer"
+            />
           )}
           <span className="m-hp-meter m-self-meter">
             <i style={{ width: `${Math.max(0, Math.min(100, (human.hp / human.maxHp) * 100))}%` }} />

@@ -14,7 +14,10 @@ export function JudgeNotice() {
     >
       <div className="judge-notice-head">
         <span>{player?.name ?? `座位${judge.playerId}`}</span>
-        <b>{judge.reason}</b>
+        <b>
+          {judge.reason}
+          {judge.changedBy ? ` · ${judge.changedBy}改判` : ''}
+        </b>
       </div>
       <div className="judge-notice-body">
         <span className="judge-notice-card">

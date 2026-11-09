@@ -52,8 +52,13 @@ export function HeroPanel({ player, mode = 'identity', current, flash, flashes, 
   ] as const;
 
   return (
-    <div className={`hero-panel faction-${player.faction} ${current ? 'hero-current' : ''}`}>
+    <div
+      className={`hero-panel faction-${player.faction} ${current ? 'hero-current' : ''} ${
+        player.alive ? '' : 'hero-dead'
+      }`}
+    >
       {speech && <div className="seat-speech hero-speech">{speech.text}</div>}
+      {!player.alive && <span className="hero-dead-badge">阵亡</span>}
       {displayFlashes.map((item, index) => (
         <span
           key={item.id}

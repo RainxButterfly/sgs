@@ -603,12 +603,21 @@ export class Game {
       data: { judgeCard: card, reason, gained: false },
     };
     await this.trigger('judgeBefore', ctx);
+    const changedBy = typeof ctx.data.judgeSkill === 'string' ? ctx.data.judgeSkill : undefined;
     if (ctx.data.judgeCard && ctx.data.judgeCard.id !== card.id) {
       const old = card;
       card = ctx.data.judgeCard as Card;
       this.toDiscard(old);
-      this.emit({ type: 'reveal', playerId: player.id, cards: [card], label: '改判' });
-      this.log(`判定牌被改为 ${cardLabel(card)}`, 'judge');
+      this.emit({
+        type: 'reveal',
+        playerId: player.id,
+        cards: [card],
+        label: changedBy ? `${changedBy}·改判` : '改判',
+      });
+      this.log(
+        `${changedBy ? `【${changedBy}】` : ''}判定牌被改为 ${cardLabel(card)}`,
+        'judge',
+      );
     }
     const success = this.judgeResult(card, reason);
     this.emit({
@@ -617,6 +626,7 @@ export class Game {
       card,
       reason,
       success,
+      changedBy,
       text: `${SUIT_CN[card.suit]}${rankLabel(card.rank)}`,
     });
     ctx.card = card;
@@ -989,16 +999,37 @@ ${skill.desc}` : ''}`
     );
   }
 
+  private jiedaoTargets(user: PlayerState): Record<number, number[]> {
+    const map: Record<number, number[]> = {};
+    for (const holder of this.players) {
+      if (!holder.alive || holder.id === user.id || !holder.equips.weapon) continue;
+      const victims = this.liangdaoVictims(holder, user).map((player) => player.id);
+      if (victims.length) map[holder.id] = victims;
+    }
+    return map;
+  }
+
   private cardOptionFor(
     user: PlayerState,
     card: Card,
     as: string,
     skillId?: string,
     isLastHand = false,
+    effectiveElement?: Element,
   ): CardOption | null {
     if (!this.canUseName(user, as)) return null;
     if (as === '闪电' && user.judgeZone.some((c) => c.name === '闪电')) return null;
     const info = this.targetInfo(user, as, isLastHand);
+    const element = as === '杀' ? effectiveElement ?? card.element : undefined;
+    const validTargets =
+      as === '杀'
+        ? info.ids.filter((id) => {
+            const armor = this.players[id]?.equips.armor?.name;
+            if (armor === '仁王盾' && isBlack(card.suit)) return false;
+            if (armor === '藤甲' && !element) return false;
+            return true;
+          })
+        : info.ids;
     const needsTarget = [
       '杀',
       '决斗',
@@ -1010,15 +1041,17 @@ ${skill.desc}` : ''}`
       '铁索连环',
       '兵粮寸断',
     ].includes(as);
-    if (needsTarget && info.ids.length === 0) return null;
+    if (needsTarget && validTargets.length === 0) return null;
+    const jiedao = as === '借刀杀人';
     return {
       cardId: card.id,
       as,
       skillId,
-      element: as === '杀' ? card.element : undefined,
-      validTargets: info.ids,
-      targetMin: needsTarget ? info.min : 0,
-      targetMax: needsTarget ? info.max : 0,
+      element,
+      validTargets,
+      targetMin: needsTarget ? (jiedao ? 2 : info.min) : 0,
+      targetMax: needsTarget ? (jiedao ? 2 : info.max) : 0,
+      targetAfter: jiedao ? this.jiedaoTargets(user) : undefined,
     };
   }
 
@@ -1049,7 +1082,7 @@ ${skill.desc}` : ''}`
         });
       }
       if (card.name === '杀' && !card.element && player.equips.weapon?.name === '朱雀羽扇') {
-        const base = this.cardOptionFor(player, card, '杀', 'zhuque', isLast);
+        const base = this.cardOptionFor(player, card, '杀', 'zhuque', isLast, 'fire');
         if (base) out.push({ ...base, element: 'fire', label: '朱雀羽扇·火杀' });
       }
       for (const rule of this.viewAsRules(player, 'play')) {
@@ -1103,15 +1136,26 @@ ${skill.desc}` : ''}`
     if (!card) return false;
     const as = action.as;
     const opts = this.buildPlayOptions(player);
+    const targetsOk = (option: CardOption): boolean => {
+      if (action.targets.length < option.targetMin || action.targets.length > option.targetMax) {
+        return false;
+      }
+      const [first, ...rest] = action.targets;
+      if (first === undefined) return option.targetMin === 0;
+      if (!option.validTargets.includes(first)) return false;
+      if (option.targetAfter) {
+        const follow = option.targetAfter[first] ?? [];
+        return rest.every((id) => follow.includes(id));
+      }
+      return rest.every((id) => option.validTargets.includes(id));
+    };
     const match = opts.find(
       (o) =>
         o.cardId === card.id &&
         o.as === as &&
         (o.skillId ?? '') === (action.skillId ?? '') &&
         (o.element ?? '') === (action.element ?? '') &&
-        action.targets.length >= o.targetMin &&
-        action.targets.length <= o.targetMax &&
-        action.targets.every((t) => o.validTargets.includes(t)),
+        targetsOk(o),
     );
     if (!match) return false;
     await this.useCard(player, card, as, action.targets, action.skillId, action.extraCardIds, action.element);
@@ -1207,7 +1251,12 @@ ${skill.desc}` : ''}`
     } else if (asName === '五谷丰登') {
       await this.resolveHarvest(user, card);
     } else if (asName === '借刀杀人') {
-      await this.resolveJiedao(user, card, this.players[targets[0]]);
+      await this.resolveJiedao(
+        user,
+        card,
+        this.players[targets[0]],
+        targets[1] !== undefined ? this.players[targets[1]] : undefined,
+      );
     } else if (asName === '乐不思蜀') {
       const target = this.players[targets[0]];
       if (target && target.alive && !(await this.askWuxie('乐不思蜀', target, user, `【${user.name}】对【${target.name}】使用乐不思蜀`))) {
@@ -1635,21 +1684,29 @@ ${skill.desc}` : ''}`
     this.emit({ type: 'harvest', cards: allCards, picks: picks.slice(), done: true });
   }
 
-  private async resolveJiedao(user: PlayerState, card: Card, target?: PlayerState): Promise<void> {
+  private async resolveJiedao(
+    user: PlayerState,
+    card: Card,
+    target?: PlayerState,
+    victim?: PlayerState,
+  ): Promise<void> {
     if (!target?.alive || !target.equips.weapon) return;
     const victims = this.liangdaoVictims(target, user);
     if (!victims.length) return;
     if (await this.askWuxie('借刀杀人', target, user, `【${user.name}】对【${target.name}】使用借刀杀人`)) return;
+    const chosen = victim && victims.some((player) => player.id === victim.id) ? victim : undefined;
     const hasSha = this.buildRespondOptions(target, '杀').some((option) => !option.cardId.startsWith('__'));
     if (hasSha) {
-      const victim = await this.askPlayer(
-        target,
-        victims,
-        '借刀杀人：选择一名角色，对其使用一张杀',
-        '也可以取消，将武器交给使用者',
-      );
-      if (victim) {
-        const used = await this.useShaOn(target, victim, '借刀杀人');
+      const victimTarget =
+        chosen ??
+        (await this.askPlayer(
+          target,
+          victims,
+          '借刀杀人：选择一名角色，对其使用一张杀',
+          '也可以取消，将武器交给使用者',
+        ));
+      if (victimTarget) {
+        const used = await this.useShaOn(target, victimTarget, '借刀杀人');
         if (used) return;
       }
     } else {
@@ -1767,6 +1824,7 @@ ${skill.desc}` : ''}`
         canCancel: opts.canCancel ?? true,
         targetId: opts.targetId,
         timeout: opts.timeout,
+        deadline: opts.timeout ? Date.now() + opts.timeout : undefined,
       });
       if (res.type === 'cancel') return null;
       if (res.type !== 'respondCard') continue;
@@ -1885,7 +1943,7 @@ ${skill.desc}` : ''}`
     if (this.wuxieWindowPending) {
       this.wuxieWindowPending = false;
       const ms = 4000;
-      this.emit({ type: 'wuxieWindow', ms });
+      this.emit({ type: 'wuxieWindow', ms, until: Date.now() + ms });
       await this.io.delay(ms);
     }
     let nullified = false;
@@ -1899,6 +1957,7 @@ ${skill.desc}` : ''}`
           prompt: `${desc}，是否使用无懈可击？`,
           canCancel: true,
           targetId: target.id,
+          timeout: 8000,
         });
         if (resp) {
           nullified = !nullified;

@@ -24,7 +24,13 @@ export function botAction(req: AskRequest): GameAction {
       const option: CardOption | null = pick(usable.length ? usable : cards);
       if (!option) return { type: 'endPlay' };
       let targets: number[] = [];
-      if (option.targetMax > 0 && option.validTargets.length) {
+      if (option.targetAfter && option.validTargets.length) {
+        const first = pick(option.validTargets);
+        const follow = first !== null ? option.targetAfter[first] ?? [] : [];
+        const second = pick(follow);
+        if (first === null || second === null) return { type: 'endPlay' };
+        targets = [first, second];
+      } else if (option.targetMax > 0 && option.validTargets.length) {
         const want = Math.max(option.targetMin, Math.min(option.targetMax, 1));
         const pool = [...option.validTargets];
         for (let i = 0; i < want && pool.length; i += 1) {

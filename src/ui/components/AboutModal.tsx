@@ -1,6 +1,6 @@
 import { useGameStore } from '../store';
 
-const TESTERS = ['心晴未央', '花不琢', '青晨之城', '星野'];
+const TESTERS = ['心晴未央', '花不琢', '青晨之城', '星野', '甘雨门卫'];
 
 export function AboutModal() {
   const open = useGameStore((s) => s.aboutOpen);

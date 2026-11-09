@@ -94,7 +94,7 @@ export function MainMenu() {
               className="btn ghost big"
               onClick={() => useGameStore.setState({ screen: 'gallery' })}
             >
-              武将图鉴
+              图鉴
             </button>
             <button
               type="button"

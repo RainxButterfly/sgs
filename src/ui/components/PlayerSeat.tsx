@@ -19,6 +19,7 @@ interface Props {
   targeted?: boolean;
   selected?: boolean;
   clickable?: boolean;
+  revealRoles?: boolean;
   flash?: Flash | null;
   flashes?: Flash[];
   speech?: { name: string; text: string } | null;
@@ -35,6 +36,7 @@ export function PlayerSeat({
   targeted,
   selected,
   clickable,
+  revealRoles,
   flash,
   flashes,
   speech,
@@ -43,16 +45,17 @@ export function PlayerSeat({
   onClick,
 }: Props) {
   const hero = HERO_MAP.get(player.heroId);
+  const roleVisible = revealRoles || player.roleRevealed || !player.alive;
   const roleLabel =
     mode === 'guozhan' || mode === 'duel'
       ? ''
       : mode === 'landlord'
-        ? player.roleRevealed || !player.alive || player.role === 'lord'
+        ? roleVisible || player.role === 'lord'
           ? player.role === 'lord'
             ? '地主'
             : '农民'
           : ''
-        : player.roleRevealed || !player.alive
+        : roleVisible
           ? ROLE_NAME[player.role]
           : player.role === 'lord'
             ? '主公'

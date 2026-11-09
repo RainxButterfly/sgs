@@ -154,6 +154,7 @@ interface JudgeEvent {
   success: boolean;
   text: string;
   reason: string;
+  changedBy?: string;
 }
 
 interface DiscardEvent {
@@ -256,6 +257,8 @@ interface GameStore {
   revealNotice: RevealNotice | null;
   lastSkill: SkillNotice | null;
   wuxieWindow: boolean;
+  wuxieDeadline: number | null;
+  promptDeadline: number | null;
   speechBubbles: SpeechBubble[];
   error: string | null;
   lanRole: 'host' | 'client' | null;
@@ -422,6 +425,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   revealNotice: null,
   lastSkill: null,
   wuxieWindow: false,
+  wuxieDeadline: null,
+  promptDeadline: null,
   speechBubbles: [],
   error: null,
   lanRole: null,
@@ -915,6 +920,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({
           game: { state },
           pending: request,
+          promptDeadline:
+            request.timeout && request.timeout > 0
+              ? request.deadline ?? Date.now() + request.timeout
+              : null,
           screen: 'game',
           selected: null,
           selectedTargets: [],
@@ -1326,6 +1335,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         success: ev.success,
         text: ev.text,
         reason: ev.reason,
+        changedBy: ev.changedBy,
       };
       const judgeId = eventSeq;
       setTimeout(() => {
@@ -1377,7 +1387,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ].slice(-40);
     } else if (ev.type === 'wuxieWindow') {
       patch.wuxieWindow = true;
-      setTimeout(() => set({ wuxieWindow: false }), ev.ms);
+      patch.wuxieDeadline = ev.until ?? Date.now() + ev.ms;
+      setTimeout(() => set({ wuxieWindow: false, wuxieDeadline: null }), ev.ms);
     } else if (ev.type === 'skill') {
       eventSeq += 1;
       patch.lastSkill = {
@@ -1542,6 +1553,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           clearAskTimer();
           set({
             pending: null,
+            promptDeadline: null,
             selected: null,
             selectedTargets: [],
             asChooser: null,
@@ -1555,6 +1567,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
       set({
         pending: req,
+        promptDeadline:
+          req.timeout && req.timeout > 0 ? req.deadline ?? Date.now() + req.timeout : null,
         selected: autoOption
           ? {
               cardId: autoOption.cardId,
@@ -1579,6 +1593,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanClient?.sendAction(action);
       set({
         pending: null,
+        promptDeadline: null,
         selected: null,
         selectedTargets: [],
         asChooser: null,
@@ -1593,6 +1608,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     resolveAsk = null;
     set({
       pending: null,
+      promptDeadline: null,
       selected: null,
       selectedTargets: [],
       asChooser: null,
@@ -1654,9 +1670,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
           o.as === selected.as &&
           (o.skillId ?? '') === (selected.skillId ?? ''),
       );
-      if (!option || !option.validTargets.includes(playerId)) return;
+      if (!option) return;
+      const follow = option.targetAfter
+        ? selectedTargets.length === 0
+          ? option.validTargets
+          : option.targetAfter[selectedTargets[0]] ?? []
+        : option.validTargets;
+      const allowed = option.targetAfter ? [...new Set([...follow, ...selectedTargets])] : follow;
+      if (!allowed.includes(playerId)) return;
       if (selectedTargets.includes(playerId)) {
-        set({ selectedTargets: selectedTargets.filter((id) => id !== playerId) });
+        set({
+          selectedTargets:
+            selectedTargets[0] === playerId
+              ? []
+              : selectedTargets.filter((id) => id !== playerId),
+        });
       } else if (selectedTargets.length < option.targetMax) {
         set({ selectedTargets: [...selectedTargets, playerId] });
       } else if (option.targetMax === 1) {

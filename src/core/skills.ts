@@ -156,7 +156,10 @@ const SKILLS: SkillDef[] = [
         effect: async (c) => {
           const picked = await c.game.askCards(c.owner, c.owner.hand, 1, 1, '鬼才：选择一张手牌替换判定牌');
           if (!picked.length) return;
-          if (c.game.stageHandCard(c.owner, picked[0])) c.data.judgeCard = picked[0];
+          if (c.game.stageHandCard(c.owner, picked[0])) {
+            c.data.judgeCard = picked[0];
+            c.data.judgeSkill = '鬼才';
+          }
         },
       },
     ],
@@ -1023,7 +1026,10 @@ const SKILLS: SkillDef[] = [
           const pool = c.owner.hand.filter((card) => black(card));
           const picked = await c.game.askCards(c.owner, pool, 1, 1, '鬼道：选择一张黑色手牌替换判定牌');
           if (!picked.length) return;
-          if (c.game.stageHandCard(c.owner, picked[0])) c.data.judgeCard = picked[0];
+          if (c.game.stageHandCard(c.owner, picked[0])) {
+            c.data.judgeCard = picked[0];
+            c.data.judgeSkill = '鬼道';
+          }
         },
       },
     ],

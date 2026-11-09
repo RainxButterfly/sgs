@@ -76,7 +76,15 @@ export function GameScreen() {
   const targetable = new Set<number>();
   if (pending) {
     if (pending.kind === 'choosePlayer') (pending.players ?? []).forEach((id) => targetable.add(id));
-    else if (pending.kind === 'play' && selectedOption) selectedOption.validTargets.forEach((id) => targetable.add(id));
+    else if (pending.kind === 'play' && selectedOption) {
+      const pool = selectedOption.targetAfter
+        ? selectedTargets.length === 0
+          ? selectedOption.validTargets
+          : selectedOption.targetAfter[selectedTargets[0]] ?? []
+        : selectedOption.validTargets;
+      pool.forEach((id) => targetable.add(id));
+      if (selectedOption.targetAfter) selectedTargets.forEach((id) => targetable.add(id));
+    }
   }
 
   const opponents = game.state.players.filter((p) => p.id !== humanId);

@@ -1,6 +1,7 @@
 import { SKILL_MAP } from '../../core/skills';
 import { PHASE_NAME } from '../../core/types';
 import { useGameStore, useGameSnapshot } from '../store';
+import { CountdownRing } from './CountdownRing';
 
 export function PromptBar() {
   const { game } = useGameSnapshot();
@@ -9,6 +10,8 @@ export function PromptBar() {
   const selectedTargets = useGameStore((s) => s.selectedTargets);
   const humanId = useGameStore((s) => s.humanId);
   const wuxieWindow = useGameStore((s) => s.wuxieWindow);
+  const wuxieDeadline = useGameStore((s) => s.wuxieDeadline);
+  const promptDeadline = useGameStore((s) => s.promptDeadline);
 
   if (!game) return null;
   if (pending && pending.playerId !== humanId) {
@@ -31,17 +34,20 @@ export function PromptBar() {
     const current = game?.state.players[game.state.current];
     const mine = current?.id === humanId;
     return (
-      <div className={`prompt-bar idle ${mine ? 'mine' : ''}`}>
+      <div className={`prompt-bar idle ${mine ? 'mine' : ''}${wuxieWindow ? ' wuxie' : ''}`}>
         <span className={`prompt-turn-dot ${mine ? 'mine' : ''}`} />
         <span className="prompt-idle">
           {wuxieWindow
-            ? '无懈可击窗口结算中…'
+            ? '无懈可击 · 等待响应'
             : current
               ? mine
                 ? '轮到你行动'
                 : `等待 ${current.name} 行动`
               : '等待对局开始'}
         </span>
+        {wuxieWindow && wuxieDeadline && (
+          <CountdownRing deadline={wuxieDeadline} totalMs={4000} size={26} className="prompt-wuxie-ring" />
+        )}
         {current && (
           <span className="prompt-idle-sub">
             {current.heroName} · {PHASE_NAME[game.state.phase]}
@@ -99,6 +105,13 @@ export function PromptBar() {
                 )}
                 {selected.as === '铁索连环' && (
                   <span className="prompt-tip">点击高亮角色横置或重置，可选 1–2 人</span>
+                )}
+                {selected.as === '借刀杀人' && (
+                  <span className="prompt-tip">
+                    {selectedTargets.length === 0
+                      ? '先选择一名装备武器的角色'
+                      : '再选择其攻击范围内的另一名角色'}
+                  </span>
                 )}
               </>
             ) : (
@@ -181,6 +194,14 @@ export function PromptBar() {
           <div className="prompt-title">
             <span className="prompt-dot red" />
             {isWuxie ? '无懈可击 · 可以抵消这张锦囊' : pending.prompt}
+            {pending.timeout && promptDeadline && (
+              <CountdownRing
+                deadline={promptDeadline}
+                totalMs={pending.timeout}
+                size={26}
+                className="prompt-timer-ring"
+              />
+            )}
           </div>
           <div className="prompt-status">
             {isWuxie ? (

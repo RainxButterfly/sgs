@@ -148,6 +148,8 @@ export interface CardOption {
   validTargets: number[];
   targetMin: number;
   targetMax: number;
+  /** 两段式目标：键为第一个目标，值为该目标可选中的后续目标 */
+  targetAfter?: Record<number, number[]>;
 }
 
 export interface SkillOption {
@@ -174,6 +176,8 @@ export interface AskRequest {
   respondName?: string;
   targetId?: number;
   timeout?: number;
+  /** 统一截止时间（毫秒时间戳），用于多端同步倒计时 */
+  deadline?: number;
 }
 
 export type GameAction =
@@ -231,12 +235,12 @@ export type GameEvent =
     }
   | { type: 'heal'; sourceId?: number; targetId: number; amount: number; hp: number; reason?: string }
   | { type: 'loseHp'; targetId: number; amount: number; hp: number }
-  | { type: 'judge'; playerId: number; card: Card; text: string; reason: string; success: boolean }
+  | { type: 'judge'; playerId: number; card: Card; text: string; reason: string; success: boolean; changedBy?: string }
   | { type: 'dying'; playerId: number }
   | { type: 'death'; playerId: number; role: Role }
   | { type: 'equip'; playerId: number; slot: EquipSlot; card?: Card }
   | { type: 'skill'; playerId: number; name: string; text?: string }
-  | { type: 'wuxieWindow'; ms: number }
+  | { type: 'wuxieWindow'; ms: number; until?: number }
   | { type: 'reveal'; playerId?: number; cards: Card[]; label?: string }
   | {
       type: 'harvest';

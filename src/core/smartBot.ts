@@ -386,6 +386,35 @@ export function smartBotAction(state: GameState, req: AskRequest): GameAction {
       }
       if (!cards.length) return { type: 'endPlay' };
       const best = cards[0].option;
+      if (best.as === '借刀杀人' && best.targetAfter) {
+        const holders = best.validTargets
+          .map((id) => state.players[id])
+          .filter((player): player is PlayerState => !!player?.alive);
+        const ranked = [
+          ...holders.filter((player) => isEnemy(state, me, player)),
+          ...holders.filter((player) => isUnknown(state, me, player)),
+          ...holders.filter((player) => !isEnemy(state, me, player) && !isUnknown(state, me, player)),
+        ];
+        for (const holder of ranked) {
+          const victims = (best.targetAfter[holder.id] ?? [])
+            .map((id) => state.players[id])
+            .filter((player): player is PlayerState => !!player?.alive);
+          const victim =
+            victims.find((player) => isEnemy(state, me, player)) ??
+            victims.find((player) => isUnknown(state, me, player));
+          if (victim) {
+            return {
+              type: 'useCard',
+              cardId: best.cardId,
+              as: best.as,
+              targets: [holder.id, victim.id],
+              skillId: best.skillId,
+              element: best.element,
+            };
+          }
+        }
+        return { type: 'endPlay' };
+      }
       const targets = pickTargets(state, me, best);
       if (best.targetMax > 0 && targets.length < best.targetMin) return { type: 'endPlay' };
       return {

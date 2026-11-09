@@ -68,6 +68,7 @@ export function SpectatorScreen() {
                 mode={mode}
                 current={player.id === currentId}
                 clickable
+                revealRoles
                 selected={player.id === focus.id}
                 flashes={flashes}
                 speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
@@ -138,7 +139,7 @@ export function SpectatorScreen() {
           heroId={game.state.players[detailPlayer].heroId}
           player={game.state.players[detailPlayer]}
           mode={mode}
-          showRole={game.state.players[detailPlayer].roleRevealed || !game.state.players[detailPlayer].alive}
+          showRole
           onClose={() => setDetailPlayer(null)}
         />
       )}
