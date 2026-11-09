@@ -14,11 +14,24 @@ export function MainMenu() {
   const updateInfo = useGameStore((s) => s.updateInfo);
   const updateState = useGameStore((s) => s.updateState);
   const openUpdateModal = useGameStore((s) => s.openUpdateModal);
+  const netError = useGameStore((s) => s.netError);
   const setScreen = (screen: 'setup') => useGameStore.setState({ screen });
 
   return (
     <div className="menu-screen">
       <div className="ink-bg" />
+      {netError && (
+        <div className="menu-net-error" role="alert">
+          <span>{netError}</span>
+          <button
+            type="button"
+            aria-label="关闭提示"
+            onClick={() => useGameStore.setState({ netError: null })}
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div className="menu-content">
         <div className="menu-title-block">
           <div className="menu-seal">星河</div>

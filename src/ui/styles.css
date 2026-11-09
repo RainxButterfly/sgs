@@ -10865,3 +10865,41 @@ button {
   color: var(--ink);
   font-size: 12px;
 }
+
+/* 主菜单联机错误/版本提示 */
+.menu-net-error {
+  position: fixed;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(720px, 92vw);
+  padding: 10px 14px;
+  border: 1px solid rgba(210, 122, 100, 0.6);
+  border-radius: 6px;
+  background: rgba(58, 34, 28, 0.97);
+  color: #f0c0b2;
+  font-size: 12.5px;
+  line-height: 1.5;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.menu-net-error span {
+  min-width: 0;
+}
+
+.menu-net-error button {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(240, 192, 178, 0.35);
+  border-radius: 4px;
+  background: transparent;
+  color: #f0c0b2;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}

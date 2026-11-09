@@ -20,6 +20,19 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.1',
+    date: '2026-11-09',
+    title: '联机提示可见',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '版本不一致或目标房间已关闭时，回到主菜单后顶部会显示具体原因；版本不一致会同时列房主和本机版本。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.0',
     date: '2026-11-09',
     title: '斗地主叫分与技能细化',
