@@ -12,6 +12,7 @@ export function SettingsModal() {
   const close = useGameStore((s) => s.closeSettings);
   const openChangelog = useGameStore((s) => s.openChangelog);
   const openAbout = useGameStore((s) => s.openAbout);
+  const openTutorial = useGameStore((s) => s.openTutorial);
   const appVersion = useGameStore((s) => s.appVersion);
   const aiSpeed = useGameStore((s) => s.aiSpeed);
   const setAiSpeed = useGameStore((s) => s.setAiSpeed);
@@ -246,6 +247,9 @@ export function SettingsModal() {
             </button>
             <button type="button" className="btn ghost" onClick={openAbout}>
               关于
+            </button>
+            <button type="button" className="btn ghost" onClick={openTutorial}>
+              玩法说明
             </button>
           </div>
         </div>

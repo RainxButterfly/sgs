@@ -88,7 +88,7 @@ fn update_manifest_urls() -> Vec<String> {
 
 async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>, String> {
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(6))
+        .timeout(Duration::from_secs(12))
         .user_agent("sanguosha-xinghe-updater/0.1")
         .build()
         .map_err(|error| error.to_string())?;
@@ -119,7 +119,7 @@ async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>,
             (url, result)
         });
     }
-    let deadline = tokio::time::sleep(Duration::from_secs(8));
+    let deadline = tokio::time::sleep(Duration::from_secs(25));
     tokio::pin!(deadline);
     loop {
         tokio::select! {

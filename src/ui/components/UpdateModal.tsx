@@ -24,13 +24,36 @@ export function UpdateModal() {
 
   const copyUrl = async () => {
     const url = info?.raw.urls?.[0] ?? info?.raw.url ?? MANUAL_UPDATE_URL;
+    const fallback = () => {
+      try {
+        const area = document.createElement('textarea');
+        area.value = url;
+        area.style.position = 'fixed';
+        area.style.left = '-9999px';
+        document.body.appendChild(area);
+        area.focus();
+        area.select();
+        const ok = document.execCommand('copy');
+        area.remove();
+        if (!ok) throw new Error('copy failed');
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    let success = false;
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        success = true;
+      } else {
+        success = fallback();
+      }
     } catch {
-      setCopied(false);
+      success = fallback();
     }
+    setCopied(success);
+    if (success) window.setTimeout(() => setCopied(false), 1500);
   };
   const percent =
     progress.total > 0 ? Math.min(100, Math.round((progress.downloaded / progress.total) * 100)) : 0;
@@ -109,6 +132,7 @@ export function UpdateModal() {
               readOnly
               value={info?.raw.urls?.[0] ?? info?.raw.url ?? MANUAL_UPDATE_URL}
               onFocus={(event) => event.currentTarget.select()}
+              onClick={(event) => event.currentTarget.select()}
             />
           </>
         )}

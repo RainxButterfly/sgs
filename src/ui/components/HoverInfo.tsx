@@ -101,8 +101,11 @@ export function HeroHover({ hero, player }: { hero?: HeroData; player: PlayerSta
         <span className="hover-hero-title">{titles || hero?.title || ''}</span>
       </div>
       <div className="hover-hero-meta">
-        <span>体力 {Math.max(0, player.hp)}/{player.maxHp}</span>
+        <span>体力 {Math.max(0, player.hp)}/{player.maxHp}{player.heroIds && player.heroIds.length > 1 ? '（双将合计）' : ''}</span>
         <span>手牌 {player.hand.length}</span>
+        {player.heroIds && player.heroIds.length > 1 && (
+          <span>性别：{player.gender === 'male' ? '男' : '女'}（按主将）</span>
+        )}
         {player.chained && <span title="横置角色受到属性伤害时会传导给其他横置角色">铁索·横置</span>}
         {player.flipped && <span>翻面</span>}
       </div>

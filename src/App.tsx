@@ -24,6 +24,7 @@ import { PickScreen } from './ui/screens/PickScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { SetupScreen } from './ui/screens/SetupScreen';
 import { SpectatorScreen } from './ui/screens/SpectatorScreen';
+import { TutorialModal } from './ui/components/TutorialModal';
 import { useIsMobile } from './ui/useIsMobile';
 
 export default function App() {
@@ -42,6 +43,19 @@ export default function App() {
         savedLanSession: loadSavedLanSession(),
       });
     });
+  }, []);
+
+  useEffect(() => {
+    let seen = false;
+    try {
+      seen = localStorage.getItem('sgk-tutorial-seen') === '1';
+    } catch {
+      // ignore storage failures
+    }
+    if (!seen) {
+      const timer = window.setTimeout(() => useGameStore.getState().openTutorial(), 700);
+      return () => window.clearTimeout(timer);
+    }
   }, []);
 
   useEffect(() => {
@@ -87,6 +101,7 @@ export default function App() {
       <SettingsModal />
       <ChangelogModal />
       <AboutModal />
+      <TutorialModal />
       <AoePanel />
       <DamageFeedback />
       <RevealNotice />

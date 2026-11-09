@@ -131,6 +131,18 @@ export function LanPickPanel({
                     : '选择一名武将'}
             </span>
           </div>
+          {playerHeroIds(me).length ? (
+            <div className="pick-locked">
+              <div className="pick-locked-title">已锁定出战武将</div>
+              <div className="pick-locked-heroes">
+                {playerHeroIds(me)
+                  .map((id) => HERO_MAP.get(id)?.name)
+                  .filter(Boolean)
+                  .join(' / ')}
+              </div>
+              <p>等待其他玩家选择，本局选将不能更换。</p>
+            </div>
+          ) : (
           <div className="lobby-hero-grid">
             {validChoices.map((choice) => {
               const ids = choiceHeroIds(choice);
@@ -138,12 +150,8 @@ export function LanPickPanel({
               if (!heroes.length) return null;
               const first = heroes[0];
               const taken =
-                (ids.includes(lordHeroId ?? '') && !ids.every((id) => playerHeroIds(me).includes(id))) ||
-                players.some(
-                  (player) =>
-                    player.connId !== me.connId &&
-                    ids.some((id) => playerHeroIds(player).includes(id)),
-                );
+                ids.includes(lordHeroId ?? '') &&
+                !ids.every((id) => playerHeroIds(me).includes(id));
               const picked =
                 me.heroIds?.length === ids.length &&
                 ids.every((id) => me.heroIds?.includes(id));
@@ -195,6 +203,7 @@ export function LanPickPanel({
               <div className="lobby-hero-empty">候选武将同步中，请让房主重新开始选将。</div>
             )}
           </div>
+          )}
         </section>
       </div>
 

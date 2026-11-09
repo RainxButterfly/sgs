@@ -9544,3 +9544,283 @@ button {
   color: #c2bae8;
   background: rgba(110, 95, 160, 0.14);
 }
+
+.spectator-backdrop {
+  z-index: 75;
+}
+
+@media (max-width: 720px) {
+  .spectator-stage {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .spectator-stage > .seat-position {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .spectator-focus {
+    z-index: 5;
+    max-height: 46vh;
+  }
+}
+
+@media (max-width: 720px) {
+  .spectator-focus {
+    max-height: 52vh;
+  }
+
+  .spectator-focus .hero-panel {
+    padding: 6px 8px 5px;
+  }
+
+  .spectator-focus .hero-title,
+  .spectator-focus .hero-equips,
+  .spectator-focus .hero-status-row,
+  .spectator-focus .hero-foot {
+    display: none;
+  }
+
+  .spectator-focus .hero-main {
+    gap: 6px;
+  }
+
+  .spectator-focus .hero-emblem {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+
+  .spectator-focus .hero-name-row {
+    gap: 6px;
+  }
+
+  .spectator-focus .hero-name {
+    font-size: 18px;
+  }
+
+  .spectator-focus .hero-skills {
+    max-height: 34px;
+    overflow-y: auto;
+  }
+
+  .spectator-focus .skill-chip {
+    padding: 1px 4px;
+  }
+
+  .spectator-focus-main {
+    min-height: 92px;
+  }
+
+  .spectator-focus-main .hand-cards {
+    max-height: 76px;
+  }
+
+  .spectator-focus-main .hand-cards .card {
+    width: 56px;
+    height: 80px;
+  }
+}
+
+@media (max-width: 720px) {
+  .spectator-focus-main .hand-cards {
+    max-height: 84px;
+    padding-bottom: 2px;
+  }
+
+  .spectator-focus-main .hand-cards .card {
+    height: 74px;
+  }
+}
+
+.spectator-result-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 62;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 16, 12, 0.58);
+  backdrop-filter: blur(2px);
+}
+
+.spectator-result {
+  width: min(390px, 88vw);
+  padding: 24px 22px 18px;
+  border: 1px solid rgba(219, 181, 108, 0.52);
+  border-radius: 9px;
+  background: linear-gradient(180deg, #3b3023, #241d15);
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+.spectator-result-kicker {
+  color: var(--gold-dim);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+}
+
+.spectator-result h2 {
+  margin: 5px 0 8px;
+  color: var(--gold-bright);
+  font-family: var(--font-calligraphy);
+  font-size: 26px;
+  letter-spacing: 0.16em;
+}
+
+.spectator-result p {
+  margin: 0 0 16px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.spectator-result-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.history-close-btn {
+  flex: 0 0 auto;
+  min-width: 54px;
+}
+
+.pick-locked {
+  margin-top: 12px;
+  padding: 18px 14px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.16);
+  text-align: center;
+}
+
+.pick-locked-title {
+  color: var(--gold-dim);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.pick-locked-heroes {
+  margin-top: 6px;
+  color: var(--gold-bright);
+  font-family: var(--font-calligraphy);
+  font-size: 20px;
+}
+
+.pick-locked p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* 新手教程 */
+.tutorial-backdrop {
+  z-index: 80;
+}
+
+.tutorial-modal {
+  width: min(620px, 92vw);
+  padding: 22px 24px 18px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(219, 181, 108, 0.13), transparent 40%),
+    linear-gradient(180deg, #3b3023, #241d15);
+}
+
+.tutorial-kicker {
+  color: var(--gold-dim);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+.tutorial-title {
+  margin: 7px 0 8px;
+  color: var(--gold-bright);
+  font-family: var(--font-calligraphy);
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.tutorial-text {
+  margin: 0 auto;
+  max-width: 510px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.8;
+  text-align: center;
+}
+
+.tutorial-points {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 15px auto 16px;
+  padding: 12px 16px;
+  max-width: 500px;
+  border: 1px solid rgba(219, 181, 108, 0.2);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.tutorial-points li {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.tutorial-points li::marker {
+  color: var(--gold);
+}
+
+.tutorial-progress {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.tutorial-progress span {
+  width: 17px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(219, 181, 108, 0.2);
+}
+
+.tutorial-progress span.on {
+  background: var(--gold-bright);
+}
+
+.tutorial-actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tutorial-actions .btn {
+  min-width: 92px;
+}
+
+@media (max-width: 720px) {
+  .tutorial-modal {
+    width: 94vw;
+    padding: 18px 16px 14px;
+  }
+
+  .tutorial-title {
+    font-size: 21px;
+  }
+
+  .tutorial-text {
+    font-size: 12px;
+  }
+
+  .tutorial-points {
+    margin: 11px auto 12px;
+    padding: 9px 12px;
+  }
+}

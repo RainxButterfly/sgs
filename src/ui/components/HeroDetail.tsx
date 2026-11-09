@@ -60,7 +60,13 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
             </div>
             <div className="detail-title">{hero.title}</div>
             <div className="detail-meta">
-              <span>体力 {player ? `${Math.max(0, player.hp)}/${player.maxHp}` : hero.hp}</span>
+              <span>
+                体力 {player ? `${Math.max(0, player.hp)}/${player.maxHp}` : hero.hp}
+                {player?.heroIds && player.heroIds.length > 1 ? '（双将合计）' : ''}
+              </span>
+              {player?.heroIds && player.heroIds.length > 1 && (
+                <span>性别：{player.gender === 'male' ? '男' : '女'}（按主将）</span>
+              )}
               {player && <span>手牌 {player.hand.length}</span>}
               {player && !player.alive && <span className="detail-dead">已阵亡</span>}
             </div>

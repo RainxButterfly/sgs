@@ -62,8 +62,8 @@ export function MatchHistoryModal() {
       <div className="modal history-modal" onClick={(event) => event.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">对局记录</div>
-          <button type="button" className="detail-close history-close" onClick={close} aria-label="关闭战绩">
-            ×
+          <button type="button" className="btn ghost small history-close-btn" onClick={close}>
+            关闭
           </button>
         </div>
 

@@ -17,6 +17,7 @@ export function SpectatorScreen() {
   const chatUnread = useGameStore((s) => s.chatUnread);
   const flashes = useGameStore((s) => s.flashes);
   const speechBubbles = useGameStore((s) => s.speechBubbles);
+  const result = useGameStore((s) => s.result);
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
   const [focusId, setFocusId] = useState(0);
@@ -82,7 +83,7 @@ export function SpectatorScreen() {
         </div>
       </div>
       <div className="spectator-focus">
-        <div className="spectator-view-tag">观战视角</div>
+        <div className="spectator-view-tag">观战视角 · 点击座位或名字切换</div>
         <HeroPanel
           player={focus}
           mode={mode}
@@ -117,6 +118,20 @@ export function SpectatorScreen() {
           <Hand player={focus} pending={null} onSelect={() => undefined} />
         </div>
       </div>
+      {result && (
+        <div className="spectator-result-backdrop">
+          <div className="spectator-result">
+            <div className="spectator-result-kicker">观战结束</div>
+            <h2>对局结束</h2>
+            <p>{result.text}</p>
+            <div className="spectator-result-actions">
+              <button type="button" className="btn primary" onClick={exit}>
+                退出观战
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />
       {detailPlayer !== null && game.state.players[detailPlayer] && (
         <HeroDetailModal

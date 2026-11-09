@@ -184,8 +184,18 @@ export class LanHostManager {
     return taken;
   }
 
+  private reservedChoiceIds(): Set<string> {
+    const reserved = new Set<string>();
+    for (const choice of this.hostChoices) for (const id of choiceHeroIds(choice)) reserved.add(id);
+    for (const guest of this.guests) {
+      for (const choice of guest.choices) for (const id of choiceHeroIds(choice)) reserved.add(id);
+    }
+    return reserved;
+  }
+
   private rollChoices(): string[] {
     const taken = this.takenHeroIds();
+    for (const heroId of this.reservedChoiceIds()) taken.add(heroId);
     for (const heroId of this.lastGameHeroes) taken.add(heroId);
     if (this.rules.mode === 'guozhan') {
       const available = new Set(HEROES.map((hero) => hero.id).filter((id) => !taken.has(id)));
@@ -247,6 +257,7 @@ export class LanHostManager {
       undefined;
     const revealed =
       this.picking &&
+      this.rules.mode !== 'guozhan' &&
       this.hostHeroIds.length > 0 &&
       this.guests.every((guest) => guest.heroIds.length > 0);
     const lordSeat = this.lordPlayerId == null && this.lordBotHero ? this.roles?.indexOf('lord') : undefined;
@@ -551,7 +562,7 @@ export class LanHostManager {
   }
 
   pickHostHero(choice: string): void {
-    if (this.started || !this.hostChoices.includes(choice)) return;
+    if (this.started || this.hostHeroIds.length || !this.hostChoices.includes(choice)) return;
     const heroIds = choiceHeroIds(choice);
     const expected = this.rules.mode === 'guozhan' ? 2 : 1;
     if (heroIds.length !== expected) return;
@@ -565,7 +576,7 @@ export class LanHostManager {
   private pickGuestHero(connId: number, choice: string): void {
     if (this.started) return;
     const guest = this.guests.find((item) => item.connId === connId);
-    if (!guest || !guest.choices.includes(choice)) return;
+    if (!guest || guest.heroIds.length || !guest.choices.includes(choice)) return;
     const heroIds = choiceHeroIds(choice);
     const expected = this.rules.mode === 'guozhan' ? 2 : 1;
     if (heroIds.length !== expected) return;
@@ -585,10 +596,14 @@ export class LanHostManager {
     if (guozhan === hasPairs) return;
     this.hostHeroIds = [];
     this.hostHeroId = null;
-    this.hostChoices = this.rollChoices();
+    this.hostChoices = [];
     for (const guest of this.guests) {
       guest.heroIds = [];
       guest.heroId = null;
+      guest.choices = [];
+    }
+    this.hostChoices = this.rollChoices();
+    for (const guest of this.guests) {
       guest.choices = this.rollChoices();
     }
   }
@@ -787,10 +802,14 @@ export class LanHostManager {
     this.lordBotHero = null;
     this.hostHeroId = null;
     this.hostHeroIds = [];
-    this.hostChoices = this.rollChoices();
+    this.hostChoices = [];
     for (const guest of this.guests) {
       guest.heroId = null;
       guest.heroIds = [];
+      guest.choices = [];
+    }
+    this.hostChoices = this.rollChoices();
+    for (const guest of this.guests) {
       guest.choices = this.rollChoices();
     }
     for (const pending of this.pending.values()) {

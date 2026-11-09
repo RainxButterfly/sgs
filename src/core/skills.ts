@@ -2076,17 +2076,37 @@ const SKILLS: SkillDef[] = [
   {
     id: 'huashen',
     name: '化身',
-    desc: '游戏开始时，你随机获得两张其他武将的技能；你可以在回合开始时更换其中一张。',
+    desc: '锁定技，游戏开始时你随机获得两张其他武将的技能；此后每个回合开始时，你可以更换其中一张。',
+    locked: true,
     triggers: [
       {
         event: 'turnStart',
         when: (c) => isCurrent(c) && !c.owner.flags.huashen,
-        optional: true,
-        prompt: '是否发动【化身】获得两个随机技能？',
         effect: async (c) => {
           c.owner.flags.huashen = 1;
+          c.owner.flags.huashenChanged = 1;
           const ids = grantRandomSkills(c.game, c.owner, 2);
           if (ids.length) c.game.log(`【${c.owner.name}】化身获得了 ${ids.map((id) => c.game.skillName(id)).join('、')}`, 'skill');
+        },
+      },
+      {
+        event: 'turnStart',
+        when: (c) =>
+          isCurrent(c) &&
+          !!c.owner.flags.huashen &&
+          !c.owner.flags.huashenChanged &&
+          c.owner.extraSkills.length > 0,
+        optional: true,
+        prompt: '是否更换一张【化身】技能？',
+        effect: async (c) => {
+          const current = [...c.owner.extraSkills];
+          const options = current.map((id) => ({ id, label: `更换【${c.game.skillName(id)}】` }));
+          const choice = await c.game.askOption(c.owner, '化身：选择要更换的技能', options, undefined, true);
+          if (!choice) return;
+          c.owner.extraSkills = c.owner.extraSkills.filter((id) => id !== choice);
+          c.owner.flags.huashenChanged = 1;
+          const ids = grantRandomSkills(c.game, c.owner, 1);
+          if (ids.length) c.game.log(`【${c.owner.name}】化身将【${c.game.skillName(choice)}】更换为【${ids.map((id) => c.game.skillName(id)).join('、')}】`, 'skill');
         },
       },
     ],

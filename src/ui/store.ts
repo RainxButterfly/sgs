@@ -278,6 +278,7 @@ interface GameStore {
   historyOpen: boolean;
   changelogOpen: boolean;
   aboutOpen: boolean;
+  tutorialOpen: boolean;
   aiSpeed: number;
   myRole: Role | null;
   firstPlayerId: number | null;
@@ -319,6 +320,8 @@ interface GameStore {
   closeChangelog: () => void;
   openAbout: () => void;
   closeAbout: () => void;
+  openTutorial: () => void;
+  closeTutorial: () => void;
   setAiSpeed: (value: number) => void;
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
@@ -420,6 +423,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   historyOpen: false,
   changelogOpen: false,
   aboutOpen: false,
+  tutorialOpen: false,
   aiSpeed: loadAiSpeed(),
   myRole: null,
   firstPlayerId: null,
@@ -876,7 +880,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         clearSavedLanSession();
         set({ result: { text, winner }, savedLanSession: null });
         setTimeout(() => {
-          if (get().result) set({ screen: 'result' });
+          if (get().result && !get().spectate) set({ screen: 'result' });
         }, 1400);
       },
       onError: (message) => set({ netError: message }),
@@ -969,7 +973,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       const info = await withTimeout(
         isAndroidApp() ? checkAndroidUpdate() : checkAppUpdate(),
-        12000,
+        30000,
         '检查更新超时，请稍后重试',
       );
       if (info) {
@@ -1038,6 +1042,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   closeChangelog: () => set({ changelogOpen: false }),
   openAbout: () => set({ aboutOpen: true }),
   closeAbout: () => set({ aboutOpen: false }),
+  openTutorial: () => set({ tutorialOpen: true }),
+  closeTutorial: () => set({ tutorialOpen: false }),
   setAiSpeed: (value) => {
     const next = Math.max(0, Math.min(1200, Math.round(value)));
     saveAiSpeed(next);
@@ -1094,15 +1100,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   suspendGame: () => {
-    const { lanRole, game } = get();
+    const { lanRole, game, lanClient } = get();
     if (lanRole !== 'client' || !game || game.state.over) return;
-    set({ screen: 'menu', suspended: true });
+    lanClient?.leave();
+    resolveAsk = null;
+    set({
+      screen: 'menu',
+      suspended: true,
+      lanClient: null,
+      pending: null,
+      selected: null,
+      selectedTargets: [],
+      asChooser: null,
+      cardChoices: [],
+      reorderTop: [],
+    });
   },
 
-  resumeGame: () => {
-    const { suspended, game } = get();
-    if (!suspended || !game) return;
-    set({ screen: game.state.over ? 'result' : 'game', suspended: false });
+  resumeGame: async () => {
+    const { suspended, game, savedLanSession } = get();
+    if (!suspended) return;
+    set({ suspended: false });
+    if (savedLanSession) {
+      await get().joinLanRoom(
+        savedLanSession.address,
+        savedLanSession.code,
+        savedLanSession.name,
+        savedLanSession.spectate === true,
+      );
+      return;
+    }
+    if (game) set({ screen: game.state.over ? 'result' : 'game' });
   },
 
   resumeSavedLanSession: async () => {
@@ -1333,7 +1361,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     } else if (ev.type === 'gameOver') {
       patch.result = { text: ev.text, winner: ev.winner };
       setTimeout(() => {
-        if (get().result) set({ screen: 'result' });
+        if (get().result && !get().spectate) set({ screen: 'result' });
       }, 1400);
       const finished = state.game;
       if (!state.spectate && finished && recordedGame !== finished) {
