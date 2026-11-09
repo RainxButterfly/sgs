@@ -139,3 +139,15 @@ describe('兵粮寸断', () => {
     expect(options.every((option) => !option.validTargets.includes(target.id))).toBe(true);
   });
 });
+
+describe('战报序号', () => {
+  it('超过 300 条后仍保持单调递增，不产生重复 id', () => {
+    const game = makeGame(new SimIO(), 2);
+    for (let i = 0; i < 320; i += 1) game.log(`测试 ${i}`);
+    const log = game.state.log;
+    expect(log).toHaveLength(300);
+    const ids = log.map((entry) => entry.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (let i = 1; i < ids.length; i += 1) expect(ids[i]).toBeGreaterThan(ids[i - 1]);
+  });
+});

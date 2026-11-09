@@ -4,9 +4,10 @@ import { useGameSnapshot } from '../store';
 export function LogPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { game } = useGameSnapshot();
   const ref = useRef<HTMLDivElement>(null);
+  const lastLogId = game?.state.log[game.state.log.length - 1]?.id ?? 0;
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
-  }, [game?.state.log.length, open]);
+  }, [lastLogId, open]);
   if (!game) return null;
   return (
     <aside className={`log-panel ${open ? 'open' : ''}`}>

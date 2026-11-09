@@ -1,6 +1,6 @@
 {
   "version": "0.6.3",
-  "notes": "v0.6.3：南蛮/万箭结算面板、判定结果显示、铁索状态与对局记录修复。",
+  "notes": "v0.6.3：南蛮/万箭结算面板、判定结果显示、铁索状态、战报顺序与对局记录修复。",
   "url": "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.6.3/updates/siguoshan-xinghe-arm64.apk",
   "urls": [
     "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.6.3/updates/siguoshan-xinghe-arm64.apk",
@@ -13,5 +13,5 @@
     "https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@v0.6.3/updates/siguoshan-xinghe-arm64.apk",
     "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.6.3/updates/siguoshan-xinghe-arm64.apk"
   ],
-  "sha256": "16cf4d22c36c5535ff23a81a92a0f1d42f57d3e34bf74413814b0c02e6c9432b"
+  "sha256": "458f8d08c9b7868ea2cd65eaf593a31ffb4f6b41096f6238b877cdb6606b345d"
 }

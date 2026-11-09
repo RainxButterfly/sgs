@@ -96,6 +96,7 @@ export class Game {
   private rngState: number;
   private limbo: Card[] = [];
   private askSeq = 0;
+  private logSeq = 0;
   private stopped = false;
 
   constructor(setup: GameSetup, io: GameIO) {
@@ -272,7 +273,8 @@ export class Game {
   }
 
   log(text: string, kind: 'info' | 'damage' | 'heal' | 'skill' | 'judge' | 'system' | 'death' = 'info'): void {
-    this.state.log.push({ id: this.state.log.length + 1, text, kind });
+    this.logSeq += 1;
+    this.state.log.push({ id: this.logSeq, text, kind });
     if (this.state.log.length > 300) this.state.log.shift();
     this.emit({ type: 'log', text, kind });
   }
