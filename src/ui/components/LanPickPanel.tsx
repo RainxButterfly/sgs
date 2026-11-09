@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
-import { FACTION_NAME } from '../../core/types';
+import { FACTION_NAME, ROLE_NAME, type Role } from '../../core/types';
 import type { LobbyPlayer } from '../../net/protocol';
 import { HeroDetailModal } from './HeroDetail';
 import { HeroDataHover, HoverInfo } from './HoverInfo';
@@ -10,12 +10,14 @@ interface Props {
   players: LobbyPlayer[];
   me: LobbyPlayer;
   host: boolean;
+  guozhan: boolean;
   startCount: number;
   code: string;
   lordPlayerId?: number | null;
   lordSeat?: number;
   lordHeroId?: string;
   revealed?: boolean;
+  role?: Role | null;
   onPick: (heroId: string) => void;
   onStart: () => void;
   onCancel: () => void;
@@ -25,19 +27,25 @@ export function LanPickPanel({
   players,
   me,
   host,
+  guozhan: guozhanMode,
   startCount,
   code,
   lordPlayerId,
   lordSeat,
   lordHeroId,
   revealed,
+  role,
   onPick,
   onStart,
   onCancel,
 }: Props) {
   const [detailHero, setDetailHero] = useState<string | null>(null);
-  const guozhan = (me.choices ?? []).some((choice) => choice.includes('|'));
+  const guozhan =
+    guozhanMode || (me.choices ?? []).some((choice) => choice.includes('|'));
   const choiceHeroIds = (choice: string) => choice.split('|').filter(Boolean);
+  const validChoices = (me.choices ?? []).filter((choice) =>
+    choiceHeroIds(choice).some((id) => HERO_MAP.has(id)),
+  );
   const playerHeroIds = (player: LobbyPlayer) =>
     player.heroIds?.length ? player.heroIds : player.heroId ? [player.heroId] : [];
   const allPicked = players.every((player) => playerHeroIds(player).length >= (guozhan ? 2 : 1));
@@ -53,6 +61,11 @@ export function LanPickPanel({
           <div className="room-card-title">选 将</div>
           <p className="setup-hint">
             房间码 {code} · 所有人选好武将后由房主进入对局
+            {role && (
+              <span className={`pick-my-role role-${role}`}>
+                你的身份：{ROLE_NAME[role]}
+              </span>
+            )}
           </p>
         </div>
         <span className={`lobby-status ${allPicked ? '' : 'waiting'}`}>
@@ -97,7 +110,11 @@ export function LanPickPanel({
             );
           })}
           <div className="pick-seat-note">
-            {revealed ? '全部选择完成，所有武将已亮出。' : '主公武将先行亮出，其余武将等全部选择完成后亮出。'}
+            {guozhan
+              ? '国战为双将模式，主将与副将必须属于同一势力。'
+              : revealed
+                ? '全部选择完成，所有武将已亮出。'
+                : '主公武将先行亮出，其余武将等全部选择完成后亮出。'}
           </div>
         </section>
 
@@ -115,7 +132,7 @@ export function LanPickPanel({
             </span>
           </div>
           <div className="lobby-hero-grid">
-            {(me.choices ?? []).map((choice) => {
+            {validChoices.map((choice) => {
               const ids = choiceHeroIds(choice);
               const heroes = ids.map((id) => HERO_MAP.get(id)).filter((hero): hero is NonNullable<typeof hero> => !!hero);
               if (!heroes.length) return null;
@@ -174,6 +191,9 @@ export function LanPickPanel({
                 </HoverInfo>
               );
             })}
+            {!validChoices.length && (
+              <div className="lobby-hero-empty">候选武将同步中，请让房主重新开始选将。</div>
+            )}
           </div>
         </section>
       </div>

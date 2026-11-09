@@ -22,6 +22,10 @@ interface Props {
 
 export function HeroPanel({ player, mode = 'identity', current, flash, handLimitModifier = 0, onDetail }: Props) {
   const hero = HERO_MAP.get(player.heroId);
+  const titles = (player.heroIds?.length ? player.heroIds : [player.heroId])
+    .map((id) => HERO_MAP.get(id)?.title)
+    .filter(Boolean)
+    .join(' · ');
   const roleLabel =
     mode === 'duel'
       ? ''
@@ -63,7 +67,7 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
               </button>
             )}
           </div>
-          <div className="hero-title">{hero?.title ?? '无名之辈'}</div>
+          <div className="hero-title">{titles || '无名之辈'}</div>
           <div className="hp-row big">
             {pips.map((filled, i) => (
               <span key={i} className={`hp-pip ${filled ? 'hp-on' : 'hp-off'}`} />

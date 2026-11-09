@@ -49,6 +49,27 @@ interface SavedLanSession {
 }
 
 const LAN_SESSION_KEY = 'sgk-lan-session';
+const AI_SPEED_KEY = 'sgs-ai-speed';
+
+function loadAiSpeed(): number {
+  try {
+    const raw = localStorage.getItem(AI_SPEED_KEY);
+    if (raw === null) return 420;
+    const value = Number(raw);
+    return Number.isFinite(value) ? Math.max(0, Math.min(1200, value)) : 420;
+  } catch {
+    return 420;
+  }
+}
+
+function saveAiSpeed(value: number): void {
+  try {
+    localStorage.setItem(AI_SPEED_KEY, String(value));
+    scheduleDataSnapshot();
+  } catch {
+    // ignore storage failures
+  }
+}
 
 export function loadSavedLanSession(): SavedLanSession | null {
   try {
@@ -133,6 +154,13 @@ interface JudgeEvent {
   reason: string;
 }
 
+interface DiscardEvent {
+  id: number;
+  playerId: number;
+  cards: Card[];
+  reason?: string;
+}
+
 interface FlashEvent {
   id: number;
   playerId: number;
@@ -179,6 +207,7 @@ interface GameStore {
   result: { text: string; winner: string } | null;
   lastPlay: PlayEvent | null;
   lastJudge: JudgeEvent | null;
+  lastDiscard: DiscardEvent | null;
   cardHistory: CardHistoryEntry[];
   harvest: HarvestState | null;
   aoe: AoeState | null;
@@ -208,6 +237,8 @@ interface GameStore {
   settingsOpen: boolean;
   historyOpen: boolean;
   changelogOpen: boolean;
+  aiSpeed: number;
+  myRole: Role | null;
   firstPlayerId: number | null;
 
   selected: { cardId: string; as: string; skillId?: string; element?: 'fire' | 'thunder' } | null;
@@ -245,6 +276,7 @@ interface GameStore {
   closeHistory: () => void;
   openChangelog: () => void;
   closeChangelog: () => void;
+  setAiSpeed: (value: number) => void;
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
   event: (ev: GameEvent) => void;
@@ -286,7 +318,8 @@ const io: GameIO = {
     const state = useGameStore.getState();
     if (req.playerId === state.humanId) return state.ask(req);
     return new Promise((resolve) => {
-      const wait = 260 + Math.random() * 420;
+      const speed = useGameStore.getState().aiSpeed;
+      const wait = speed <= 0 ? 0 : speed + Math.random() * speed * 0.6;
       const gameState = useGameStore.getState().game?.state;
       setTimeout(() => resolve(gameState ? smartBotAction(gameState, req) : botAction(req)), wait);
     });
@@ -308,6 +341,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   result: null,
   lastPlay: null,
   lastJudge: null,
+  lastDiscard: null,
   cardHistory: [],
   harvest: null,
   aoe: null,
@@ -337,6 +371,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   settingsOpen: false,
   historyOpen: false,
   changelogOpen: false,
+  aiSpeed: loadAiSpeed(),
+  myRole: null,
   firstPlayerId: null,
   selected: null,
   selectedTargets: [],
@@ -373,6 +409,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanRole: null,
       lanHost: null,
       lanClient: null,
+      myRole: null,
       room: null,
       lobby: null,
       netError: null,
@@ -382,6 +419,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       result: null,
       lastPlay: null,
       lastJudge: null,
+      lastDiscard: null,
       cardHistory: [],
       flash: null,
       error: null,
@@ -450,6 +488,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanRole: null,
       lanHost: null,
       lanClient: null,
+      myRole: null,
       room: null,
       lobby: null,
       netError: null,
@@ -459,6 +498,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       result: null,
       lastPlay: null,
       lastJudge: null,
+      lastDiscard: null,
       cardHistory: [],
       flash: null,
       error: null,
@@ -506,6 +546,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       result: null,
       lastPlay: null,
       lastJudge: null,
+      lastDiscard: null,
       cardHistory: [],
       flash: null,
       error: null,
@@ -543,6 +584,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanRole: null,
       lanHost: null,
       lanClient: null,
+      myRole: null,
       room: null,
       lobby: null,
       netError: null,
@@ -552,6 +594,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       spectators: [],
       lastPlay: null,
       lastJudge: null,
+      lastDiscard: null,
       cardHistory: [],
       harvest: null,
       aoe: null,
@@ -571,6 +614,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pending: null,
         lastPlay: null,
         lastJudge: null,
+        lastDiscard: null,
         cardHistory: [],
         flash: null,
         selected: null,
@@ -590,6 +634,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pending: null,
         lastPlay: null,
         lastJudge: null,
+        lastDiscard: null,
         cardHistory: [],
         flash: null,
         version: get().version + 1,
@@ -631,6 +676,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             result: null,
             lastPlay: null,
             lastJudge: null,
+            lastDiscard: null,
             cardHistory: [],
             flash: null,
             selected: null,
@@ -642,7 +688,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }),
         onError: (message) => set({ netError: message }),
         onClosed: () => set({ netError: '房间连接已断开，请返回重试', lanHost: null }),
-      });
+      }, get().aiSpeed);
       clearSavedLanSession();
       set({
         savedLanSession: null,
@@ -688,6 +734,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           game: null,
           lastPlay: null,
           lastJudge: null,
+          lastDiscard: null,
           cardHistory: [],
           flash: null,
           version: get().version + 1,
@@ -703,10 +750,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
           game: null,
           lastPlay: null,
           lastJudge: null,
+          lastDiscard: null,
           cardHistory: [],
           flash: null,
           version: get().version + 1,
         }),
+      onRole: (role) => set({ myRole: role }),
       onSpectate: () =>
         set({
           humanId: -1,
@@ -717,6 +766,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           result: null,
           lastPlay: null,
           lastJudge: null,
+          lastDiscard: null,
           cardHistory: [],
           flash: null,
           selected: null,
@@ -807,7 +857,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   startLanPick: (count) => {
-    get().lanHost?.beginPicking(count);
+    const host = get().lanHost;
+    if (!host) return;
+    host.beginPicking(count);
+    set({ myRole: host.roles?.[0] ?? null });
   },
 
   cancelLanPick: () => {
@@ -914,6 +967,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   closeHistory: () => set({ historyOpen: false }),
   openChangelog: () => set({ changelogOpen: true }),
   closeChangelog: () => set({ changelogOpen: false }),
+  setAiSpeed: (value) => {
+    const next = Math.max(0, Math.min(1200, Math.round(value)));
+    saveAiSpeed(next);
+    get().lanHost?.setAiSpeed(next);
+    set({ aiSpeed: next });
+  },
   setBgImage: (image) => {
     set({ bgImage: image });
     saveBackgroundSettings({ image, dim: get().bgDim });
@@ -942,6 +1001,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanRole: null,
       lanHost: null,
       lanClient: null,
+      myRole: null,
       room: null,
       lobby: null,
       netError: null,
@@ -951,6 +1011,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       spectators: [],
       lastPlay: null,
       lastJudge: null,
+      lastDiscard: null,
       cardHistory: [],
       harvest: null,
       aoe: null,
@@ -1007,6 +1068,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanConnId: -1,
       lastPlay: null,
       lastJudge: null,
+      lastDiscard: null,
       cardHistory: [],
       flash: null,
     });
@@ -1090,6 +1152,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ].slice(-40);
     } else if (ev.type === 'discard' && ev.cards.length > 0) {
       eventSeq += 1;
+      patch.lastDiscard = {
+        id: eventSeq,
+        playerId: ev.playerId,
+        cards: ev.cards,
+        reason: ev.reason,
+      };
       patch.cardHistory = [
         ...state.cardHistory,
         {

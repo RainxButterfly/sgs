@@ -12,6 +12,8 @@ export function SettingsModal() {
   const close = useGameStore((s) => s.closeSettings);
   const openChangelog = useGameStore((s) => s.openChangelog);
   const appVersion = useGameStore((s) => s.appVersion);
+  const aiSpeed = useGameStore((s) => s.aiSpeed);
+  const setAiSpeed = useGameStore((s) => s.setAiSpeed);
   const setBgImage = useGameStore((s) => s.setBgImage);
   const setBgDim = useGameStore((s) => s.setBgDim);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -200,6 +202,36 @@ export function SettingsModal() {
           ) : (
             <div className="bg-setting-hint">网页版由浏览器保存；桌面版和安卓版可以修改目录。</div>
           )}
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">AI 出牌速度</div>
+          <p className="settings-section-desc">
+            对局中也可以打开设置调整。数值越小，电脑响应越快；调到 0 时电脑立即行动。
+          </p>
+          <div className="bg-setting-row">
+            <span>等待间隔</span>
+            <input
+              type="range"
+              min={0}
+              max={1200}
+              step={30}
+              value={aiSpeed}
+              onChange={(e) => setAiSpeed(Number(e.target.value))}
+            />
+            <b>{aiSpeed === 0 ? '即时' : `${aiSpeed}ms`}</b>
+          </div>
+          <div className="settings-actions">
+            <button type="button" className="btn ghost small" onClick={() => setAiSpeed(180)}>
+              快
+            </button>
+            <button type="button" className="btn ghost small" onClick={() => setAiSpeed(420)}>
+              标准
+            </button>
+            <button type="button" className="btn ghost small" onClick={() => setAiSpeed(800)}>
+              慢
+            </button>
+          </div>
         </div>
 
         <div className="settings-section">

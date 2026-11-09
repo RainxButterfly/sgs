@@ -66,6 +66,7 @@ export interface ChatMessage {
 export type HostPayload =
   | { t: 'lobby'; lobby: LobbyState }
   | { t: 'start'; playerId: number }
+  | { t: 'role'; role: Role }
   | { t: 'spectate' }
   | { t: 'spectators'; spectators: SpectatorInfo[] }
   | { t: 'state'; state: GameState }

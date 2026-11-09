@@ -156,11 +156,13 @@ export class LanHostManager {
   private pending = new Map<number, { request: AskRequest; resolve: (action: GameAction) => void; timer: ReturnType<typeof setTimeout> }>();
   private stateTimer: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
+  aiSpeed = 420;
 
-  constructor(info: RoomInfo, hostName: string, hooks: HostHooks) {
+  constructor(info: RoomInfo, hostName: string, hooks: HostHooks, aiSpeed = 420) {
     this.info = info;
     this.hostName = hostName;
     this.hooks = hooks;
+    this.aiSpeed = Math.max(0, Math.min(1200, aiSpeed));
     this.hostChoices = this.rollChoices();
     this.lobby = this.buildLobby();
     const url = `ws://127.0.0.1:${info.port}/ws?room=${encodeURIComponent(info.code)}&secret=${encodeURIComponent(info.secret)}&name=${encodeURIComponent(hostName)}`;
@@ -300,6 +302,13 @@ export class LanHostManager {
     }
     this.picking = true;
     this.targetCount = total;
+    if (this.roles) {
+      for (const guest of this.guests) {
+        if (!guest.connected) continue;
+        const role = this.roles[guest.playerId];
+        if (role) this.sendTo(guest.connId, { t: 'role', role });
+      }
+    }
     this.refreshLobby();
   }
 
@@ -400,6 +409,10 @@ export class LanHostManager {
               });
             }
           } else {
+            if (this.picking && this.roles) {
+              const role = this.roles[rejoin.playerId];
+              if (role) this.sendTo(event.id, { t: 'role', role });
+            }
             this.refreshLobby();
           }
           return;
@@ -480,6 +493,10 @@ export class LanHostManager {
         this.refreshLobby();
       }
     }
+  }
+
+  setAiSpeed(value: number): void {
+    this.aiSpeed = Math.max(0, Math.min(1200, Math.round(value)));
   }
 
   sendChat(text: string): void {
@@ -626,13 +643,15 @@ export class LanHostManager {
         if (request.playerId === 0) return this.hooks.askHost(request);
         const player = game.state.players[request.playerId];
         if (!player || player.isBot) {
-          await new Promise((resolve) => setTimeout(resolve, 220 + Math.random() * 320));
+          const botDelay = this.aiSpeed <= 0 ? 0 : this.aiSpeed + Math.random() * this.aiSpeed * 0.6;
+          await new Promise((resolve) => setTimeout(resolve, botDelay));
           return smartBotAction(game.state, request);
         }
         const guest = this.guests.find((g) => g.playerId === request.playerId && g.connected);
         if (!guest) {
           game.log(`【${player.name}】已断线，由电脑代打`, 'system');
-          await new Promise((resolve) => setTimeout(resolve, 220 + Math.random() * 320));
+          const botDelay = this.aiSpeed <= 0 ? 0 : this.aiSpeed + Math.random() * this.aiSpeed * 0.6;
+          await new Promise((resolve) => setTimeout(resolve, botDelay));
           return smartBotAction(game.state, request);
         }
         this.sendTo(guest.connId, {
@@ -797,6 +816,7 @@ interface ClientHooks {
   onWelcome?: (connId: number) => void;
   onLobby: (lobby: LobbyState) => void;
   onStart: (playerId: number) => void;
+  onRole: (role: Role) => void;
   onSpectate: () => void;
   onSpectators: (spectators: SpectatorInfo[]) => void;
   onState: (state: Game['state']) => void;
@@ -850,6 +870,9 @@ export class LanClientManager {
         break;
       case 'start':
         this.hooks.onStart(message.playerId);
+        break;
+      case 'role':
+        this.hooks.onRole(message.role);
         break;
       case 'spectate':
         this.hooks.onSpectate();

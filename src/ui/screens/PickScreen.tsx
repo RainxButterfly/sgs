@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
-import { FACTION_NAME } from '../../core/types';
+import { FACTION_NAME, ROLE_NAME } from '../../core/types';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroDataHover, HoverInfo } from '../components/HoverInfo';
 import { useGameStore } from '../store';
@@ -23,6 +23,15 @@ export function PickScreen() {
     : [];
   const pairHp = pairHeroes.reduce((sum, hero) => sum + hero.hp, 0);
   const pairSkills = [...new Set(pairHeroes.flatMap((hero) => hero.skillIds))];
+  const gameMode = preGame.rules?.mode ?? 'identity';
+  const myRole =
+    gameMode === 'guozhan' || gameMode === 'duel'
+      ? null
+      : gameMode === 'landlord'
+        ? preGame.roles[0] === 'lord'
+          ? '地主'
+          : '农民'
+        : ROLE_NAME[preGame.roles[0]];
 
   return (
     <div className="pick-screen">
@@ -37,6 +46,11 @@ export function PickScreen() {
                 ? '国战需要两张同势力武将。从下面的候选双将中选择一组，选择完成后进入牌桌。'
                 : '其他角色的武将已经就位。从下面的候选武将中选择你的出战武将，选择完成后进入牌桌。'}
             </p>
+            {myRole && (
+              <span className={`pick-my-role role-${preGame.roles[0]}`}>
+                你的身份：{myRole}
+              </span>
+            )}
           </div>
           <button
             type="button"

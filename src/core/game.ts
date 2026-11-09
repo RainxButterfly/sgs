@@ -450,7 +450,9 @@ export class Game {
     }
     if (real.length === 0) return;
     this.emit({ type: 'discard', playerId: player.id, cards: real, reason });
-    this.log(`【${player.name}】弃置了 ${real.map((c) => cardLabel(c)).join('、')}`);
+    this.log(
+      `【${player.name}】弃置了 ${real.map((c) => cardLabel(c)).join('、')}${reason && reason !== '弃置' ? `（${reason}）` : ''}`,
+    );
     for (const c of lostEquips) {
       if (player.alive) await this.trigger('equipLost', { player, card: c, data: {} });
     }
@@ -1430,7 +1432,10 @@ export class Game {
     if (!target?.alive || !this.hasCards(target)) return;
     if (await this.askWuxie('过河拆桥', target, user, `【${user.name}】对【${target.name}】使用过河拆桥`)) return;
     const picked = await this.pickCardFrom(target, user, '过河拆桥：选择要弃置的牌');
-    if (picked) await this.discardCards(target, [picked], '过河拆桥');
+    if (picked) {
+      this.log(`【${user.name}】拆掉了【${target.name}】的 ${cardLabel(picked)}`, 'system');
+      await this.discardCards(target, [picked], '过河拆桥');
+    }
   }
 
   private async resolveShunshou(user: PlayerState, card: Card, target?: PlayerState): Promise<void> {
@@ -1446,7 +1451,10 @@ export class Game {
         if (target.alive) await this.trigger('equipLost', { player: target, card: picked, data: {} });
       }
       if (!slot) await this.afterHandChange(target);
-      this.log(`【${user.name}】获得了【${target.name}】的一张牌`);
+      this.log(
+        `【${user.name}】获得了【${target.name}】的 ${isPublic ? cardLabel(picked) : '一张手牌'}`,
+        'system',
+      );
     }
   }
 

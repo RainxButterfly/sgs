@@ -4,6 +4,8 @@ import type { HeroData, PlayerState } from '../../core/types';
 import { FACTION_NAME } from '../../core/types';
 import { SKILL_MAP } from '../../core/skills';
 import { EQUIP_SKILL_ID } from '../../core/equipment';
+import { HERO_MAP } from '../../core/deck';
+import { playerHeroNames } from '../labels';
 
 interface Props {
   content: ReactNode;
@@ -89,12 +91,14 @@ export function HeroDataHover({ hero }: { hero: HeroData }) {
 
 export function HeroHover({ hero, player }: { hero?: HeroData; player: PlayerState }) {
   const ids = [...new Set([...player.skills, ...(player.extraSkills ?? [])])];
+  const heroIds = player.heroIds?.length ? player.heroIds : [player.heroId];
+  const titles = heroIds.map((id) => HERO_MAP.get(id)?.title).filter(Boolean).join(' · ');
   return (
     <div className="hover-hero">
       <div className="hover-hero-head">
         <span className={`faction-badge faction-${player.faction}`}>{FACTION_NAME[player.faction]}</span>
-        <b>{hero?.name ?? player.heroName}</b>
-        <span className="hover-hero-title">{hero?.title ?? ''}</span>
+        <b>{playerHeroNames(player)}</b>
+        <span className="hover-hero-title">{titles || hero?.title || ''}</span>
       </div>
       <div className="hover-hero-meta">
         <span>体力 {Math.max(0, player.hp)}/{player.maxHp}</span>

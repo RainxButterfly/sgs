@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toDataURL } from 'qrcode';
 import { HERO_MAP } from '../../core/deck';
-import { DEFAULT_RULES } from '../../core/types';
+import { DEFAULT_RULES, ROLE_NAME, type Role } from '../../core/types';
 import { LanPickPanel } from '../components/LanPickPanel';
 import { RulesEditor } from '../components/RulesEditor';
 import { useGameStore } from '../store';
@@ -19,6 +19,8 @@ export function LobbyScreen() {
   const lanConnId = useGameStore((s) => s.lanConnId);
   const spectate = useGameStore((s) => s.spectate);
   const joinedRoom = useGameStore((s) => s.room);
+  const lanHost = useGameStore((s) => s.lanHost);
+  const myRole = useGameStore((s) => s.myRole);
   const [count, setCount] = useState(8);
   const [copied, setCopied] = useState<string | null>(null);
   const host = lanRole === 'host';
@@ -179,6 +181,7 @@ export function LobbyScreen() {
               players={players}
               me={me}
               host={host}
+              guozhan={gameMode === 'guozhan'}
               startCount={pickCount}
               code={lobby.room.code}
               lordPlayerId={lobby.lordPlayerId}
@@ -188,6 +191,7 @@ export function LobbyScreen() {
               onPick={pickLanHero}
               onStart={() => startLanGame(pickCount)}
               onCancel={cancelLanPick}
+              role={gameMode === 'guozhan' ? undefined : (host ? (lanHost?.roles?.[0] ?? null) : myRole)}
             />
           ) : (
             <div className="lobby-spectator-wait">

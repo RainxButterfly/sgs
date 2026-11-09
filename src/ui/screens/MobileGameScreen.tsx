@@ -45,6 +45,7 @@ export function MobileGameScreen() {
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
   const lastJudge = useGameStore((s) => s.lastJudge);
+  const lastDiscard = useGameStore((s) => s.lastDiscard);
   const cardHistory = useGameStore((s) => s.cardHistory);
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -271,6 +272,15 @@ export function MobileGameScreen() {
             </span>
           )}
         </div>
+        {lastDiscard && (
+          <div className="m-discard-strip">
+            <b>{targetName(lastDiscard.playerId)}</b>
+            <span>{lastDiscard.reason ?? '弃置'}</span>
+            {lastDiscard.cards.map((card) => (
+              <CardView key={card.id} card={card} size="sm" />
+            ))}
+          </div>
+        )}
         {feed.length === 0 ? (
           <div className="m-feed-empty">牌桌暂无声响</div>
         ) : (

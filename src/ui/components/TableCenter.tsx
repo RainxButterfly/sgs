@@ -9,6 +9,7 @@ export function TableCenter() {
   const [discardOpen, setDiscardOpen] = useState(false);
   const lastPlay = useGameStore((s) => s.lastPlay);
   const lastJudge = useGameStore((s) => s.lastJudge);
+  const lastDiscard = useGameStore((s) => s.lastDiscard);
   const cardHistory = useGameStore((s) => s.cardHistory);
   if (!game) return null;
   const player = (id?: number) => (id === undefined ? undefined : game.state.players[id]);
@@ -97,6 +98,17 @@ export function TableCenter() {
         )}
       </div>
 
+      {lastDiscard && (
+        <div key={`discard-${lastDiscard.id}`} className="discard-strip">
+          <span className="discard-owner">{playerName(lastDiscard.playerId)}</span>
+          <span className="discard-verb">{lastDiscard.reason ?? '弃置'}</span>
+          <span className="discard-cards">
+            {lastDiscard.cards.map((card) => (
+              <CardView key={card.id} card={card} size="sm" />
+            ))}
+          </span>
+        </div>
+      )}
       {lastJudge && (
         <div key={lastJudge.id} className={`judge-strip ${lastJudge.success ? 'ok' : 'bad'}`}>
           <span className="judge-owner">{playerName(lastJudge.playerId)}</span>
