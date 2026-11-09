@@ -261,6 +261,7 @@ export function MobileGameScreen() {
                 </span>
                 <span>手牌 {player.hand.length}</span>
                 {player.chained && <span className="m-tag m-chain" title="铁索连环：横置">铁索·横置</span>}
+                {(player.pojun?.length ?? 0) > 0 && <span className="m-tag">破军 {(player.pojun ?? []).length}</span>}
                 {player.flipped && <span className="m-tag">翻面</span>}
               </div>
               <div className="m-hp-meter">
@@ -371,6 +372,7 @@ export function MobileGameScreen() {
           </span>
           <span className="m-self-limit">手牌上限 {handLimit}</span>
           {human.chained && <span className="m-tag m-chain" title="铁索连环：横置">铁索·横置</span>}
+          {(human.pojun?.length ?? 0) > 0 && <span className="m-tag">破军 {(human.pojun ?? []).length}</span>}
           {human.flipped && <span className="m-tag">翻面</span>}
           <span className="m-self-equips">装备 {humanEquips.join(' · ') || '无'}</span>
           {human.judgeZone.length > 0 && (

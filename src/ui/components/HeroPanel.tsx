@@ -139,10 +139,17 @@ export function HeroPanel({ player, mode = 'identity', current, flash, flashes, 
           ))}
         </div>
       )}
-      {(player.flipped || player.unyu.length > 0 || player.chained || fields.length > 0) && (
+      {(player.flipped ||
+        player.unyu.length > 0 ||
+        player.chained ||
+        fields.length > 0 ||
+        (player.pojun?.length ?? 0) > 0) && (
         <div className="hero-status-row">
           {player.flipped && <span className="mini-status flipped">翻面</span>}
           {player.chained && <span className="mini-status chained" title="铁索连环：横置，受到属性伤害时会传导">铁索·横置</span>}
+          {(player.pojun?.length ?? 0) > 0 && (
+            <span className="mini-status pojun">破军 {(player.pojun ?? []).length}</span>
+          )}
           {fields.map((c) => (
             <span key={c.id} className="mini-unyu" title={`田：${c.name}`}>
               田 {c.name}

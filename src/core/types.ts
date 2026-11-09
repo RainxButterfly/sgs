@@ -82,6 +82,7 @@ export interface PlayerState {
   fields: Card[];
   flipped: boolean;
   unyu: Card[];
+  pojun?: Card[];
   chained: boolean;
   isBot: boolean;
 }

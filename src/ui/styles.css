@@ -9538,3 +9538,9 @@ button {
 .history-log .log-line:last-child {
   padding-bottom: 8px;
 }
+
+.mini-status.pojun {
+  border-color: rgba(150, 142, 200, 0.5);
+  color: #c2bae8;
+  background: rgba(110, 95, 160, 0.14);
+}

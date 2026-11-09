@@ -97,3 +97,25 @@ describe('无懈可击', () => {
     expect(game.state.log.some((entry) => entry.text.includes('无中生有被无懈可击抵消'))).toBe(true);
   });
 });
+
+describe('义从距离', () => {
+  it('公孙瓒计算别人距离-1，别人计算公孙瓒距离+1', () => {
+    const game = new Game(
+      {
+        players: [
+          { name: '公孙瓒', heroId: 'gongsunzan', isBot: false },
+          { name: '甲', heroId: 'liubei', isBot: false },
+          { name: '乙', heroId: 'caocao', isBot: false },
+          { name: '丙', heroId: 'sunquan', isBot: false },
+        ],
+        seed: 20261118,
+        rules: { skillsEnabled: true },
+      },
+      new SkillIO(),
+    );
+    const [gongsun, first, second, third] = game.state.players;
+    expect(game.distance(gongsun, first)).toBe(1);
+    expect(game.distance(gongsun, second)).toBeLessThanOrEqual(game.distance(third, second) + 1);
+    expect(game.distance(first, gongsun)).toBe(2);
+  });
+});

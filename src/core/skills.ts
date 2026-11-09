@@ -64,6 +64,8 @@ export interface SkillDef {
   viewAs?: ViewAsRule[];
   unlimitedSha?: boolean;
   attackRange?: (game: Game, owner: PlayerState) => number;
+  distanceFrom?: (game: Game, owner: PlayerState, target: PlayerState) => number;
+  distanceTo?: (game: Game, owner: PlayerState, target: PlayerState) => number;
   handLimit?: (game: Game, owner: PlayerState) => number;
   immortalTarget?: (game: Game, owner: PlayerState, source: PlayerState, cardName: string) => boolean;
 }
@@ -2109,19 +2111,56 @@ const SKILLS: SkillDef[] = [
   {
     id: 'guhuo',
     name: '蛊惑',
-    desc: '出牌阶段限一次，你可以声明一张手牌为【杀】。其他角色可以质疑：若为红色，质疑者失去 1 点体力；若为黑色，此牌无效且你失去 1 点体力。',
+    desc: '出牌阶段限一次，你可以将一张手牌声明为一种基本牌或非延时锦囊牌。其他角色可以质疑：若为红色，质疑者各失去 1 点体力，此牌按声明生效；若为黑色，此牌无效且你失去 1 点体力。',
     active: {
       oncePerTurn: true,
-      usable: (game, owner) => owner.hand.length > 0 && game.shaTargets(owner).length > 0,
+      usable: (_game, owner) => owner.hand.length > 0,
       run: async (game, owner) => {
-        const picked = await game.askCards(owner, owner.hand, 1, 1, '蛊惑：选择一张手牌声明为杀', undefined, false);
+        const names = [
+          '杀',
+          '桃',
+          '酒',
+          '无中生有',
+          '决斗',
+          '过河拆桥',
+          '顺手牵羊',
+          '万箭齐发',
+          '南蛮入侵',
+          '桃园结义',
+          '五谷丰登',
+          '火攻',
+        ];
+        const picked = await game.askCards(owner, owner.hand, 1, 1, '蛊惑：选择一张手牌', undefined, false);
         if (picked.length !== 1) return;
-        const target = await game.askPlayer(owner, game.shaTargets(owner), '蛊惑：选择杀的目标');
-        if (!target) return;
+        const declared = await game.askOption(
+          owner,
+          '蛊惑：声明为什么牌？',
+          names.map((name) => ({ id: name, label: `声明为【${name}】` })),
+          undefined,
+          true,
+        );
+        if (!declared) return;
+        const otherAlive = () => others(game, owner).filter((p) => p.alive);
+        let target: PlayerState | null = null;
+        if (declared === '杀') {
+          target = await game.askPlayer(owner, game.shaTargets(owner), '蛊惑：选择杀的目标');
+        } else if (declared === '决斗') {
+          target = await game.askPlayer(owner, otherAlive(), '蛊惑：选择决斗目标');
+        } else if (declared === '过河拆桥') {
+          target = await game.askPlayer(owner, otherAlive().filter((p) => game.hasAnyCard(p)), '蛊惑：选择过河拆桥目标');
+        } else if (declared === '顺手牵羊') {
+          target = await game.askPlayer(
+            owner,
+            otherAlive().filter((p) => game.hasAnyCard(p) && game.distance(owner, p) <= 1),
+            '蛊惑：选择顺手牵羊目标',
+          );
+        } else if (declared === '火攻') {
+          target = await game.askPlayer(owner, otherAlive().filter((p) => p.hand.length > 0), '蛊惑：选择火攻目标');
+        }
+        if (['杀', '决斗', '过河拆桥', '顺手牵羊', '火攻'].includes(declared) && !target) return;
         const card = picked[0];
         const questioners: PlayerState[] = [];
-        for (const p of others(game, owner)) {
-          if (!p.alive) continue;
+        for (const p of otherAlive()) {
           const yes = await game.confirm(p, `是否质疑【${owner.name}】的蛊惑？`, '质疑后若为红色，你将失去 1 点体力');
           if (yes) questioners.push(p);
         }
@@ -2142,7 +2181,7 @@ const SKILLS: SkillDef[] = [
           }
           game.log('蛊惑为红色，质疑者各失去 1 点体力', 'skill');
         }
-        await game.useCard(owner, card, '杀', [target.id], 'guhuo');
+        await game.useCard(owner, card, declared, target ? [target.id] : [], 'guhuo');
       },
     },
   },
@@ -2265,17 +2304,29 @@ const SKILLS: SkillDef[] = [
   {
     id: 'pojun',
     name: '破军',
-    desc: '当你使用【杀】造成伤害后，你可以弃置目标一张牌。',
+    desc: '当你使用【杀】造成伤害后，你可以将目标至多 X 张牌置于其武将牌上（X 为目标已损失的体力值）；你的回合结束时，其收回这些牌。',
     triggers: [
       {
         event: 'damageDone',
-        when: (c) => c.source?.id === c.owner.id && !!c.target && c.game.hasAnyCard(c.target),
+        when: (c) =>
+          c.source?.id === c.owner.id &&
+          !!c.target &&
+          c.target.alive &&
+          c.target.maxHp > c.target.hp &&
+          c.game.hasAnyCard(c.target),
         optional: true,
-        prompt: '是否发动【破军】弃置目标一张牌？',
+        prompt: '是否发动【破军】将目标的牌置于其武将牌上？',
         effect: async (c) => {
-          if (!c.target) return;
-          const card = await c.game.pickCardFrom(c.target, c.owner, '破军：选择一张牌弃置');
-          if (card) await c.game.discardCards(c.target, [card], '破军');
+          const target = c.target!;
+          const limit = Math.min(5, Math.max(1, target.maxHp - target.hp));
+          for (let i = 0; i < limit; i += 1) {
+            if (!c.game.hasAnyCard(target)) break;
+            const card = await c.game.pickCardFrom(target, c.owner, `破军：选择第 ${i + 1} 张牌`);
+            if (!card) break;
+            if (c.game.stagePojun(target, card)) {
+              c.game.log(`【${c.owner.name}】将【${target.name}】的【${card.name}】置于其武将牌上`, 'skill');
+            }
+          }
         },
       },
     ],
@@ -2283,25 +2334,46 @@ const SKILLS: SkillDef[] = [
   {
     id: 'mingce',
     name: '明策',
-    desc: '出牌阶段限一次，你可以交给一名其他角色一张手牌，然后摸一张牌。',
+    desc: '出牌阶段限一次，你可以交给一名其他角色一张【杀】或装备牌，然后该角色选择：视为对其攻击范围内一名由你指定的角色使用一张【杀】，或摸一张牌。',
     active: {
       oncePerTurn: true,
-      usable: (game, owner) => owner.hand.length > 0 && others(game, owner).length > 0,
+      usable: (game, owner) =>
+        owner.hand.some((card) => card.name === '杀' || !!card.equipSlot) &&
+        others(game, owner).length > 0,
       run: async (game, owner) => {
-        const picked = await game.askCards(owner, owner.hand, 1, 1, '明策：选择交给其他角色的手牌');
+        const pool = owner.hand.filter((card) => card.name === '杀' || !!card.equipSlot);
+        const picked = await game.askCards(owner, pool, 1, 1, '明策：选择交给其他角色的【杀】或装备牌');
         if (!picked.length) return;
         const target = await game.askPlayer(owner, others(game, owner), '明策：选择一名角色');
         if (!target) return;
         game.gainCard(target, picked[0], owner, false);
         await game.afterHandChange(owner);
-        game.drawCards(owner, 1, '明策');
+        const victimPool = game.shaTargets(target);
+        const victim = victimPool.length
+          ? await game.askPlayer(owner, victimPool, '明策：指定目标攻击范围内的一名角色')
+          : null;
+        const choice = await game.askOption(
+          target,
+          '明策：请选择一项',
+          [
+            { id: 'sha', label: '视为使用一张【杀】', desc: victim ? `目标：${victim.name}` : '没有合法目标' },
+            { id: 'draw', label: '摸一张牌' },
+          ],
+          undefined,
+          false,
+        );
+        if (choice === 'sha' && victim) {
+          await game.useVirtualSha(target, [victim.id], 'mingce', '明策');
+        } else {
+          game.drawCards(target, 1, '明策');
+        }
       },
     },
   },
   {
     id: 'xianzhen',
     name: '陷阵',
-    desc: '出牌阶段限一次，你可以与一名其他角色拼点；若你赢，对其造成 1 点伤害。',
+    desc: '出牌阶段限一次，你可以与一名其他角色拼点。若你赢，本回合你无视与其的距离和其防具，对其使用【杀】无次数限制；若你没赢，本回合不能使用【杀】。',
     active: {
       oncePerTurn: true,
       usable: (game, owner) => owner.hand.length > 0 && others(game, owner).some((p) => p.hand.length > 0),
@@ -2313,7 +2385,11 @@ const SKILLS: SkillDef[] = [
         );
         if (!target) return;
         if (await game.pindian(owner, target, '陷阵')) {
-          await game.damage(owner, target, 1, undefined, '陷阵');
+          owner.flags.xianzhenWin = target.id;
+          game.log(`【${owner.name}】陷阵成功，本回合对【${target.name}】使用杀无距离和防具限制`, 'skill');
+        } else {
+          owner.flags.xianzhenFail = 1;
+          game.log(`【${owner.name}】陷阵失败，本回合不能使用杀`, 'skill');
         }
       },
     },
@@ -2321,9 +2397,10 @@ const SKILLS: SkillDef[] = [
   {
     id: 'yicong',
     name: '义从',
-    desc: '锁定技，你的攻击范围 +1。',
+    desc: '锁定技，你计算与其他角色的距离 -1；其他角色计算与你的距离 +1。',
     locked: true,
-    attackRange: () => 1,
+    distanceFrom: () => -1,
+    distanceTo: () => 1,
   },
   {
     id: 'sijian',

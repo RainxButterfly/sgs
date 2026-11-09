@@ -198,6 +198,7 @@ export class Game {
         fields: [],
         flipped: false,
         unyu: [],
+        pojun: [],
         chained: false,
         isBot: p.isBot ?? false,
       };
@@ -363,6 +364,10 @@ export class Game {
     if (from.equips.horseMinus) d -= 1;
     for (const skill of this.skillsOf(from)) {
       if (skill.id === 'mashu') d -= 1;
+      if (skill.distanceFrom) d += skill.distanceFrom(this, from, to);
+    }
+    for (const skill of this.skillsOf(to)) {
+      if (skill.distanceTo) d += skill.distanceTo(this, to, from);
     }
     return Math.max(1, d);
   }
@@ -819,8 +824,9 @@ ${skill.desc}` : ''}`
     if (name === '桃') return player.hp < player.maxHp;
     if (name === '酒') return (player.usedThisTurn.jiu ?? 0) < 1;
     if (name === '杀') {
-      if (player.flags.tianyiFail) return false;
-      const unlimited = this.skillsOf(player).some((s) => s.unlimitedSha);
+      if (player.flags.tianyiFail || player.flags.xianzhenFail) return false;
+      const unlimited =
+        this.skillsOf(player).some((s) => s.unlimitedSha) || player.flags.xianzhenWin !== undefined;
       const limit = 1 + (player.flags.tianyi ? 1 : 0);
       return unlimited || (player.usedThisTurn.sha ?? 0) < limit;
     }
@@ -843,12 +849,15 @@ ${skill.desc}` : ''}`
   ): { ids: number[]; min: number; max: number } {
     if (name === '杀') {
       const ignoreDistance = !!user.flags.tianyi;
+      const xianzhenTarget = Number(user.flags.xianzhenWin ?? -1);
       const ids = this.players
         .filter(
           (p) =>
             p.alive &&
             p.id !== user.id &&
-            (ignoreDistance || this.distance(user, p) <= this.attackRange(user)),
+            (ignoreDistance ||
+              p.id === xianzhenTarget ||
+              this.distance(user, p) <= this.attackRange(user)),
         )
         .filter((p) => this.canBeTargeted(p, user, '杀'))
         .map((p) => p.id);
@@ -1381,7 +1390,9 @@ ${skill.desc}` : ''}`
     element?: Element,
   ): Promise<void> {
     if (!target.alive || this.state.over) return;
-    const ignoreArmor = user.equips.weapon?.name === '青釭剑';
+    const ignoreArmor =
+      user.equips.weapon?.name === '青釭剑' ||
+      Number(user.flags.xianzhenWin ?? -1) === target.id;
     const renwang = !ignoreArmor && target.equips.armor?.name === '仁王盾' && isBlack(card.suit);
     if (renwang) {
       this.log(`【${target.name}】的仁王盾生效，黑色杀无效`, 'skill');
@@ -1870,6 +1881,18 @@ ${skill.desc}` : ''}`
 
   // ---------- 选择目标卡牌 ----------
 
+  stagePojun(target: PlayerState, card: Card): boolean {
+    const fromHand = this.removeFromHand(target, card);
+    const fromEquip = !fromHand && this.removeFromEquip(target, card);
+    const fromJudge = !fromHand && !fromEquip && this.removeFromJudge(target, card);
+    if (!fromHand && !fromEquip && !fromJudge) return false;
+    target.pojun = [...(target.pojun ?? []), card];
+    if (fromEquip) {
+      this.emit({ type: 'equip', playerId: target.id, slot: card.equipSlot!, card: undefined });
+    }
+    return true;
+  }
+
   async pickCardFrom(target: PlayerState, chooser: PlayerState, prompt: string): Promise<Card | null> {
     if (!this.hasCards(target)) return null;
     const visible: { id: string; label: string; card?: Card }[] = [];
@@ -2089,12 +2112,14 @@ ${skill.desc}` : ''}`
       ...player.judgeZone,
       ...player.unyu,
       ...player.fields,
+      ...(player.pojun ?? []),
     ];
     player.hand = [];
     player.equips = {};
     player.judgeZone = [];
     player.unyu = [];
     player.fields = [];
+    player.pojun = [];
     for (const c of cards) this.toDiscard(c);
     this.emit({ type: 'death', playerId: player.id, role: player.role });
     this.log(`【${player.name}】阵亡，身份是【${ROLE_NAME[player.role]}】`, 'death');
@@ -2295,6 +2320,13 @@ ${skill.desc}` : ''}`
       if (this.state.over) return;
     }
     await this.trigger('turnEnd', { player, data: {} });
+    for (const owner of this.players) {
+      if (!owner.pojun?.length) continue;
+      const cards = owner.pojun.splice(0);
+      owner.hand.push(...cards);
+      this.emit({ type: 'gain', playerId: owner.id, cards, public: false });
+      this.log(`【${owner.name}】收回了破军牌`, 'system');
+    }
   }
 
   private advance(): void {
