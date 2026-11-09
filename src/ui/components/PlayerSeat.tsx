@@ -19,6 +19,7 @@ interface Props {
   selected?: boolean;
   clickable?: boolean;
   flash?: Flash | null;
+  flashes?: Flash[];
   style?: React.CSSProperties;
   onDetail?: () => void;
   onClick?: () => void;
@@ -32,6 +33,7 @@ export function PlayerSeat({
   selected,
   clickable,
   flash,
+  flashes,
   style,
   onDetail,
   onClick,
@@ -58,6 +60,8 @@ export function PlayerSeat({
   const fields = player.fields ?? [];
   const skills = [...new Set([...player.skills, ...(player.extraSkills ?? [])])];
   const showFlash = flash && flash.playerId === player.id ? flash : null;
+  const activeFlashes = (flashes ?? []).filter((item) => item.playerId === player.id);
+  const displayFlashes = activeFlashes.length ? activeFlashes : showFlash ? [showFlash] : [];
 
   return (
     <div
@@ -75,12 +79,16 @@ export function PlayerSeat({
       onClick={clickable ? onClick : undefined}
       role={clickable ? 'button' : undefined}
     >
-      {showFlash && (
-        <span key={showFlash.id} className={`float-number ${showFlash.kind}`}>
-          {showFlash.kind === 'damage' ? '−' : '+'}
-          {showFlash.amount}
+      {displayFlashes.map((item, index) => (
+        <span
+          key={item.id}
+          className={`float-number ${item.kind}`}
+          style={{ top: `${-8 - index * 22}px` }}
+        >
+          {item.kind === 'damage' ? '−' : '+'}
+          {item.amount}
         </span>
-      )}
+      ))}
       <div className="seat-head">
         <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
         <span className="seat-hero">{playerHeroNames(player)}</span>
@@ -114,6 +122,9 @@ export function PlayerSeat({
         <span className="hp-text">
           {Math.max(0, player.hp)}/{player.maxHp}
         </span>
+      </div>
+      <div className="hp-meter">
+        <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
       </div>
       <div className="seat-equips">
         {equips.length === 0 ? (

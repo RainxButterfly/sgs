@@ -16,11 +16,12 @@ interface Props {
   mode?: GameMode;
   current: boolean;
   flash?: Flash | null;
+  flashes?: Flash[];
   handLimitModifier?: number;
   onDetail?: () => void;
 }
 
-export function HeroPanel({ player, mode = 'identity', current, flash, handLimitModifier = 0, onDetail }: Props) {
+export function HeroPanel({ player, mode = 'identity', current, flash, flashes, handLimitModifier = 0, onDetail }: Props) {
   const hero = HERO_MAP.get(player.heroId);
   const titles = (player.heroIds?.length ? player.heroIds : [player.heroId])
     .map((id) => HERO_MAP.get(id)?.title)
@@ -38,6 +39,8 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
           : ROLE_NAME[player.role];
   const pips = Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp);
   const showFlash = flash && flash.playerId === player.id ? flash : null;
+  const activeFlashes = (flashes ?? []).filter((item) => item.playerId === player.id);
+  const displayFlashes = activeFlashes.length ? activeFlashes : showFlash ? [showFlash] : [];
   const fields = player.fields ?? [];
   const skills = [...new Set([...player.skills, ...(player.extraSkills ?? [])])];
   const slots = [
@@ -49,12 +52,16 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
 
   return (
     <div className={`hero-panel faction-${player.faction} ${current ? 'hero-current' : ''}`}>
-      {showFlash && (
-        <span key={showFlash.id} className={`float-number big ${showFlash.kind}`}>
-          {showFlash.kind === 'damage' ? '−' : '+'}
-          {showFlash.amount}
+      {displayFlashes.map((item, index) => (
+        <span
+          key={item.id}
+          className={`float-number big ${item.kind}`}
+          style={{ top: `${-6 - index * 24}px` }}
+        >
+          {item.kind === 'damage' ? '−' : '+'}
+          {item.amount}
         </span>
-      )}
+      ))}
       <div className="hero-main">
         <div className="hero-emblem">{FACTION_NAME[player.faction]}</div>
         <div className="hero-identity">
@@ -75,6 +82,9 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
             <span className="hp-text">
               {Math.max(0, player.hp)}/{player.maxHp}
             </span>
+          </div>
+          <div className="hp-meter">
+            <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
           </div>
           <div className="hero-skills">
             {skills.map((id) => {

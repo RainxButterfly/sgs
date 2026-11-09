@@ -11,6 +11,7 @@ export function SettingsModal() {
   const bgDim = useGameStore((s) => s.bgDim);
   const close = useGameStore((s) => s.closeSettings);
   const openChangelog = useGameStore((s) => s.openChangelog);
+  const openAbout = useGameStore((s) => s.openAbout);
   const appVersion = useGameStore((s) => s.appVersion);
   const aiSpeed = useGameStore((s) => s.aiSpeed);
   const setAiSpeed = useGameStore((s) => s.setAiSpeed);
@@ -242,6 +243,9 @@ export function SettingsModal() {
           <div className="settings-actions">
             <button type="button" className="btn ghost" onClick={openChangelog}>
               查看更新日志
+            </button>
+            <button type="button" className="btn ghost" onClick={openAbout}>
+              关于
             </button>
           </div>
         </div>

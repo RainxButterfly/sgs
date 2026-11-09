@@ -13,6 +13,7 @@ export function SpectatorScreen() {
   const bgDim = useGameStore((s) => s.bgDim);
   const openChat = useGameStore((s) => s.openChat);
   const chatUnread = useGameStore((s) => s.chatUnread);
+  const flashes = useGameStore((s) => s.flashes);
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
 
@@ -60,7 +61,7 @@ export function SpectatorScreen() {
                 player={player}
                 mode={mode}
                 current={player.id === currentId}
-                flash={null}
+                flashes={flashes}
                 style={{ left: `${x}%`, top: `${y}%` }}
                 onDetail={() => setDetailPlayer(player.id)}
               />

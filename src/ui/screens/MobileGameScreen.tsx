@@ -46,6 +46,7 @@ export function MobileGameScreen() {
   const selectedTargets = useGameStore((s) => s.selectedTargets);
   const lastJudge = useGameStore((s) => s.lastJudge);
   const lastDiscard = useGameStore((s) => s.lastDiscard);
+  const flashes = useGameStore((s) => s.flashes);
   const cardHistory = useGameStore((s) => s.cardHistory);
   const feedRef = useRef<HTMLDivElement>(null);
 
@@ -213,6 +214,18 @@ export function MobileGameScreen() {
               data-player-id={player.id}
               onClick={() => useGameStore.getState().seatClick(player.id)}
             >
+              {flashes
+                .filter((item) => item.playerId === player.id)
+                .map((item, index) => (
+                  <span
+                    key={item.id}
+                    className={`float-number m-seat-float ${item.kind}`}
+                    style={{ top: `${-6 - index * 18}px` }}
+                  >
+                    {item.kind === 'damage' ? '−' : '+'}
+                    {item.amount}
+                  </span>
+                ))}
               <div className="m-seat-head">
                 <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
                 <b>{playerHeroNames(player)}</b>
@@ -236,6 +249,9 @@ export function MobileGameScreen() {
                 <span>手牌 {player.hand.length}</span>
                 {player.chained && <span className="m-tag">横置</span>}
                 {player.flipped && <span className="m-tag">翻面</span>}
+              </div>
+              <div className="m-hp-meter">
+                <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
               </div>
               <div className="m-seat-equips">装备 {equips.join(' · ') || '无'}</div>
               {player.judgeZone.length > 0 && (
@@ -316,6 +332,18 @@ export function MobileGameScreen() {
       </div>
 
       <div className="m-self">
+        {flashes
+          .filter((item) => item.playerId === human.id)
+          .map((item, index) => (
+            <span
+              key={item.id}
+              className={`float-number m-self-float ${item.kind}`}
+              style={{ top: `${-6 - index * 18}px` }}
+            >
+              {item.kind === 'damage' ? '−' : '+'}
+              {item.amount}
+            </span>
+          ))}
         <button type="button" className="m-self-main" onClick={() => setDetailPlayer(human.id)}>
           <span className={`faction-badge faction-${human.faction}`}>{FACTION_NAME[human.faction]}</span>
           <b>{playerHeroNames(human)}</b>
@@ -336,6 +364,9 @@ export function MobileGameScreen() {
               ))}
             </span>
           )}
+          <span className="m-hp-meter m-self-meter">
+            <i style={{ width: `${Math.max(0, Math.min(100, (human.hp / human.maxHp) * 100))}%` }} />
+          </span>
           <span className="m-self-skills">{humanSkills.join(' · ') || '无技能'}</span>
         </button>
         <button type="button" className="m-detail-btn" onClick={() => setDetailPlayer(human.id)}>

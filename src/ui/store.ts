@@ -166,6 +166,20 @@ interface FlashEvent {
   playerId: number;
   kind: 'damage' | 'heal';
   amount: number;
+  sourceId?: number;
+  reason?: string;
+  card?: Card;
+}
+
+interface DamageNotice {
+  id: number;
+  kind: 'damage' | 'heal';
+  sourceId?: number;
+  targetId: number;
+  amount: number;
+  hp: number;
+  reason?: string;
+  card?: Card;
 }
 
 interface CardHistoryEntry {
@@ -212,6 +226,8 @@ interface GameStore {
   harvest: HarvestState | null;
   aoe: AoeState | null;
   flash: FlashEvent | null;
+  flashes: FlashEvent[];
+  damageNotice: DamageNotice | null;
   error: string | null;
   lanRole: 'host' | 'client' | null;
   lanHost: LanHostManager | null;
@@ -237,6 +253,7 @@ interface GameStore {
   settingsOpen: boolean;
   historyOpen: boolean;
   changelogOpen: boolean;
+  aboutOpen: boolean;
   aiSpeed: number;
   myRole: Role | null;
   firstPlayerId: number | null;
@@ -276,6 +293,8 @@ interface GameStore {
   closeHistory: () => void;
   openChangelog: () => void;
   closeChangelog: () => void;
+  openAbout: () => void;
+  closeAbout: () => void;
   setAiSpeed: (value: number) => void;
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
@@ -346,6 +365,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   harvest: null,
   aoe: null,
   flash: null,
+  flashes: [],
+  damageNotice: null,
   error: null,
   lanRole: null,
   lanHost: null,
@@ -371,6 +392,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   settingsOpen: false,
   historyOpen: false,
   changelogOpen: false,
+  aboutOpen: false,
   aiSpeed: loadAiSpeed(),
   myRole: null,
   firstPlayerId: null,
@@ -422,6 +444,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastDiscard: null,
       cardHistory: [],
       flash: null,
+      flashes: [],
+      damageNotice: null,
       error: null,
       selected: null,
       selectedTargets: [],
@@ -501,6 +525,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastDiscard: null,
       cardHistory: [],
       flash: null,
+      flashes: [],
+      damageNotice: null,
       error: null,
       selected: null,
       selectedTargets: [],
@@ -549,6 +575,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastDiscard: null,
       cardHistory: [],
       flash: null,
+      flashes: [],
+      damageNotice: null,
       error: null,
       selected: null,
       selectedTargets: [],
@@ -599,6 +627,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       harvest: null,
       aoe: null,
       flash: null,
+      flashes: [],
+      damageNotice: null,
     });
     set({ suspended: false });
   },
@@ -617,6 +647,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastDiscard: null,
         cardHistory: [],
         flash: null,
+        flashes: [],
+        damageNotice: null,
         selected: null,
         selectedTargets: [],
         asChooser: null,
@@ -637,6 +669,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastDiscard: null,
         cardHistory: [],
         flash: null,
+        flashes: [],
+        damageNotice: null,
         version: get().version + 1,
       });
       return;
@@ -679,6 +713,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
             lastDiscard: null,
             cardHistory: [],
             flash: null,
+            flashes: [],
+            damageNotice: null,
             selected: null,
             selectedTargets: [],
             asChooser: null,
@@ -737,6 +773,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           lastDiscard: null,
           cardHistory: [],
           flash: null,
+          flashes: [],
+          damageNotice: null,
           version: get().version + 1,
         }),
       onStart: (playerId) =>
@@ -753,6 +791,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           lastDiscard: null,
           cardHistory: [],
           flash: null,
+          flashes: [],
+          damageNotice: null,
           version: get().version + 1,
         }),
       onRole: (role) => set({ myRole: role }),
@@ -769,6 +809,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           lastDiscard: null,
           cardHistory: [],
           flash: null,
+          flashes: [],
+          damageNotice: null,
           selected: null,
           selectedTargets: [],
           asChooser: null,
@@ -967,6 +1009,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   closeHistory: () => set({ historyOpen: false }),
   openChangelog: () => set({ changelogOpen: true }),
   closeChangelog: () => set({ changelogOpen: false }),
+  openAbout: () => set({ aboutOpen: true }),
+  closeAbout: () => set({ aboutOpen: false }),
   setAiSpeed: (value) => {
     const next = Math.max(0, Math.min(1200, Math.round(value)));
     saveAiSpeed(next);
@@ -1016,6 +1060,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       harvest: null,
       aoe: null,
       flash: null,
+      flashes: [],
+      damageNotice: null,
       suspended: false,
     });
   },
@@ -1071,6 +1117,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastDiscard: null,
       cardHistory: [],
       flash: null,
+      flashes: [],
+      damageNotice: null,
     });
   },
 
@@ -1197,16 +1245,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
       ].slice(-40);
     } else if (ev.type === 'damage' || ev.type === 'heal') {
       eventSeq += 1;
-      patch.flash = {
+      const nextFlash: FlashEvent = {
         id: eventSeq,
         playerId: ev.targetId,
         kind: ev.type,
-        amount: ev.type === 'damage' ? ev.amount : ev.amount,
+        amount: ev.amount,
+        sourceId: ev.sourceId,
+        reason: ev.reason,
+        card: ev.type === 'damage' ? ev.card : undefined,
+      };
+      patch.flash = nextFlash;
+      patch.flashes = [...state.flashes, nextFlash].slice(-12);
+      patch.damageNotice = {
+        id: eventSeq,
+        kind: ev.type,
+        sourceId: ev.sourceId,
+        targetId: ev.targetId,
+        amount: ev.amount,
+        hp: ev.hp,
+        reason: ev.reason,
+        card: ev.type === 'damage' ? ev.card : undefined,
       };
       const id = eventSeq;
       setTimeout(() => {
-        if (get().flash?.id === id) set({ flash: null });
-      }, 900);
+        const current = get();
+        set({
+          flashes: current.flashes.filter((flash) => flash.id !== id),
+          flash: current.flash?.id === id ? null : current.flash,
+          damageNotice: current.damageNotice?.id === id ? null : current.damageNotice,
+        });
+      }, 1600);
     } else if (ev.type === 'gameOver') {
       patch.result = { text: ev.text, winner: ev.winner };
       setTimeout(() => {

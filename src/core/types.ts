@@ -218,8 +218,17 @@ export type GameEvent =
   | { type: 'draw'; playerId: number; count: number; cardIds: string[] }
   | { type: 'gain'; playerId: number; cards: Card[]; from?: number; public: boolean }
   | { type: 'discard'; playerId: number; cards: Card[]; reason?: string }
-  | { type: 'damage'; sourceId?: number; targetId: number; amount: number; hp: number; card?: Card; element?: Element }
-  | { type: 'heal'; sourceId?: number; targetId: number; amount: number; hp: number }
+  | {
+      type: 'damage';
+      sourceId?: number;
+      targetId: number;
+      amount: number;
+      hp: number;
+      card?: Card;
+      element?: Element;
+      reason?: string;
+    }
+  | { type: 'heal'; sourceId?: number; targetId: number; amount: number; hp: number; reason?: string }
   | { type: 'loseHp'; targetId: number; amount: number; hp: number }
   | { type: 'judge'; playerId: number; card: Card; text: string; reason: string; success: boolean }
   | { type: 'dying'; playerId: number }

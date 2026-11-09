@@ -19,6 +19,7 @@ export function GameScreen() {
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
   const flash = useGameStore((s) => s.flash);
+  const flashes = useGameStore((s) => s.flashes);
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
   const selectedCardId = selected?.cardId;
@@ -112,6 +113,7 @@ export function GameScreen() {
                 selected={selectedTargets.includes(player.id)}
                 clickable={targetable.has(player.id)}
                 flash={flash}
+                flashes={flashes}
                 style={{ left: `${x}%`, top: `${y}%` }}
                 onDetail={() => setDetailPlayer(player.id)}
                 onClick={() => useGameStore.getState().seatClick(player.id)}
@@ -128,6 +130,7 @@ export function GameScreen() {
             mode={displayMode}
             current={human.id === currentId}
             flash={flash}
+            flashes={flashes}
             handLimitModifier={game.state.rules?.handLimitModifier ?? 0}
             onDetail={() => setDetailPlayer(human.id)}
           />

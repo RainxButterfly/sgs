@@ -1914,6 +1914,7 @@ export class Game {
       hp: target.hp,
       card,
       element: dmgElement,
+      reason,
     });
     this.log(
       `${source ? `【${source.name}】对` : ''}【${target.name}】造成 ${amount} 点${dmgElement === 'fire' ? '火焰' : dmgElement === 'thunder' ? '雷电' : ''}伤害${reason ? `（${reason}）` : ''}，体力 ${Math.max(0, target.hp)}/${target.maxHp}`,
@@ -1947,7 +1948,14 @@ export class Game {
     const before = target.hp;
     target.hp = Math.min(target.maxHp, target.hp + amount);
     if (target.hp === before) return;
-    this.emit({ type: 'heal', sourceId: source?.id, targetId: target.id, amount: target.hp - before, hp: target.hp });
+    this.emit({
+      type: 'heal',
+      sourceId: source?.id,
+      targetId: target.id,
+      amount: target.hp - before,
+      hp: target.hp,
+      reason: opts?.reason,
+    });
     this.log(
       `${source && source.id !== target.id ? `【${source.name}】令` : ''}【${target.name}】回复 ${target.hp - before} 点体力（${opts?.reason ?? '回复'}），体力 ${target.hp}/${target.maxHp}`,
       'heal',
