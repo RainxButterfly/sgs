@@ -1185,13 +1185,17 @@ ${skill.desc}` : ''}`
     } else if (asName === '乐不思蜀') {
       const target = this.players[targets[0]];
       if (target && target.alive && !(await this.askWuxie('乐不思蜀', target, user, `【${user.name}】对【${target.name}】使用乐不思蜀`))) {
-        const delayed = card.name === asName ? card : { ...card, name: asName, type: 'delayed' as const };
+        const delayed = card.name === asName
+          ? card
+          : { ...card, name: asName, type: 'delayed' as const, element: undefined, equipSlot: undefined, range: undefined };
         target.judgeZone.push(delayed);
         this.removeFromLimbo(card);
         this.log(`【${target.name}】的判定区被放置了 ${cardLabel(delayed)}`);
       }
     } else if (asName === '闪电') {
-      const delayed = card.name === asName ? card : { ...card, name: asName, type: 'delayed' as const };
+      const delayed = card.name === asName
+          ? card
+          : { ...card, name: asName, type: 'delayed' as const, element: undefined, equipSlot: undefined, range: undefined };
       user.judgeZone.push(delayed);
       this.removeFromLimbo(card);
       this.log(`【${user.name}】的判定区被放置了 ${cardLabel(delayed)}`);
@@ -1220,7 +1224,9 @@ ${skill.desc}` : ''}`
         target?.alive &&
         !(await this.askWuxie('兵粮寸断', target, user, `【${user.name}】对【${target.name}】使用兵粮寸断`))
       ) {
-        const delayed = card.name === asName ? card : { ...card, name: asName, type: 'delayed' as const };
+        const delayed = card.name === asName
+          ? card
+          : { ...card, name: asName, type: 'delayed' as const, element: undefined, equipSlot: undefined, range: undefined };
         target.judgeZone.push(delayed);
         this.removeFromLimbo(card);
         this.log(`【${target.name}】的判定区被放置了 ${cardLabel(delayed)}`);
@@ -2341,7 +2347,11 @@ ${skill.desc}` : ''}`
 export function cardLabel(card: Card): string {
   const rank =
     card.rank === 1 ? 'A' : card.rank === 11 ? 'J' : card.rank === 12 ? 'Q' : card.rank === 13 ? 'K' : String(card.rank);
-  const name = card.element === 'fire' ? '火杀' : card.element === 'thunder' ? '雷杀' : card.name;
+  const name = card.name === '杀' && card.element === 'fire'
+    ? '火杀'
+    : card.name === '杀' && card.element === 'thunder'
+      ? '雷杀'
+      : card.name;
   return `【${name}】${SUIT_SYMBOL[card.suit]}${rank}`;
 }
 

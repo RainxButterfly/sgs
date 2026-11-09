@@ -33,8 +33,8 @@ export function equipSlotText(slot?: EquipSlot): string {
 }
 
 export function cardDisplayName(card: Card): string {
-  if (card.element === 'fire') return '火杀';
-  if (card.element === 'thunder') return '雷杀';
+  if (card.name === '杀' && card.element === 'fire') return '火杀';
+  if (card.name === '杀' && card.element === 'thunder') return '雷杀';
   return card.name;
 }
 

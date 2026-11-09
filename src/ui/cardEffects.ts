@@ -1,6 +1,7 @@
 import type { Card } from '../core/types';
 import { EQUIP_DESC, equipSkillId } from '../core/equipment';
 import { SKILL_MAP } from '../core/skills';
+import { cardDisplayName } from './labels';
 
 const EFFECTS: Record<string, string> = {
   杀: '出牌阶段对攻击范围内一名角色使用，造成 1 点伤害。',
@@ -36,5 +37,5 @@ export function cardEffectText(card: Card): string {
         ? '进攻马（-1 马）：你计算与其他角色的距离时 -1。'
         : '装备牌。';
   }
-  return EFFECTS[card.name] ?? '';
+  return EFFECTS[cardDisplayName(card)] ?? EFFECTS[card.name] ?? '';
 }

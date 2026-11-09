@@ -8441,12 +8441,6 @@ button {
   overflow-x: auto;
 }
 
-.discard-strip .card {
-  width: 40px;
-  height: 58px;
-  pointer-events: none;
-}
-
 .m-discard-strip {
   display: flex;
   align-items: center;
@@ -8468,13 +8462,6 @@ button {
 .m-discard-strip span {
   color: var(--muted);
   white-space: nowrap;
-}
-
-.m-discard-strip .card {
-  width: 30px;
-  height: 44px;
-  flex: 0 0 auto;
-  pointer-events: none;
 }
 
 .lobby-hero-empty {
@@ -9533,4 +9520,21 @@ button {
     justify-content: flex-start;
     max-height: 84px;
   }
+}
+
+.history-detail {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-log {
+  flex: 1;
+  min-height: 180px;
+  max-height: none;
+  padding-bottom: 14px;
+  scroll-behavior: smooth;
+}
+
+.history-log .log-line:last-child {
+  padding-bottom: 8px;
 }

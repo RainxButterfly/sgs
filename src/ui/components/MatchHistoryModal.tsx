@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FACTION_NAME, ROLE_NAME } from '../../core/types';
 import {
   formatHistoryTime,
@@ -23,6 +23,12 @@ export function MatchHistoryModal() {
   const [groupKey, setGroupKey] = useState<string | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState('');
+  const logRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = logRef.current;
+    if (element) element.scrollTop = element.scrollHeight;
+  }, [matchId, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -144,7 +150,7 @@ export function MatchHistoryModal() {
                     ))}
                   </div>
                   <div className="history-log-title">战报</div>
-                  <div className="history-log">
+                  <div className="history-log" ref={logRef}>
                     {[...match.log].sort((a, b) => a.id - b.id).map((entry) => (
                       <div key={entry.id} className={`log-line log-${entry.kind}`}>
                         {entry.text}

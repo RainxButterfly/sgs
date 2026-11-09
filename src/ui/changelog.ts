@@ -20,6 +20,27 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.6.9',
+    date: '2026-11-09',
+    title: '转化牌显示与牌效修正',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '修正火杀、雷杀等牌转化后显示原始牌名的问题：火杀当乐不思蜀、装备当兵粮寸断时，判定区、战报、悬浮和牌面统一显示实际生效的牌。',
+          '转化出的延时锦囊会清除原来的属性与装备字段，避免火属性或装备说明残留。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '弃牌提示继续使用紧凑牌名标签，避免长装备名挤压或竖排。',
+          '火杀/雷杀的牌效说明改为独立描述。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.6.8',
     date: '2026-11-09',
     title: '观战视角与手牌查看',

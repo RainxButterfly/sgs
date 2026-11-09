@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../game';
 import { SimIO } from '../bot';
 import { HERO_MAP } from '../deck';
+import { cardLabel } from '../game';
 import type { AoeEntry, Card, GameEvent } from '../types';
 
 function fakeCard(name: string, suit: Card['suit'] = 'spade', rank = 1): Card {
@@ -115,6 +116,33 @@ describe('兵粮寸断', () => {
     expect(target.judgeZone).toHaveLength(1);
     expect(target.judgeZone[0].name).toBe('兵粮寸断');
     expect(target.judgeZone[0].type).toBe('delayed');
+    expect(cardLabel(target.judgeZone[0])).toContain('兵粮寸断');
+  });
+
+  it('火杀转化为乐不思蜀后，判定区和战报显示乐不思蜀而不是火杀', async () => {
+    const game = new Game(
+      {
+        players: [
+          { name: '大乔', heroId: 'daqiao', isBot: false },
+          { name: 'P2', heroId: '', isBot: false },
+        ],
+        seed: 20261117,
+        rules: { mode: 'duel' },
+      },
+      new SimIO(),
+    );
+    const [user, target] = game.state.players;
+    user.hand = [];
+    target.hand = [];
+    const fireSha = fakeCard('杀', 'diamond', 5);
+    fireSha.type = 'basic';
+    fireSha.element = 'fire';
+    user.hand.push(fireSha);
+    await game.useCard(user, fireSha, '乐不思蜀', [target.id]);
+    expect(target.judgeZone).toHaveLength(1);
+    expect(target.judgeZone[0].name).toBe('乐不思蜀');
+    expect(target.judgeZone[0].element).toBeUndefined();
+    expect(cardLabel(target.judgeZone[0])).toContain('乐不思蜀');
   });
 
   it('同一角色不能被两张兵粮寸断指定', async () => {
