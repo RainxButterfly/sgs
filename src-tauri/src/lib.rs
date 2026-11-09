@@ -333,6 +333,54 @@ async fn android_battery(app: tauri::AppHandle) -> Result<i32, String> {
 
 #[cfg(target_os = "android")]
 #[tauri::command]
+async fn append_android_web_update(
+    app: tauri::AppHandle,
+    data: String,
+    reset: bool,
+) -> Result<u64, String> {
+    let cache = app.path().app_cache_dir().map_err(|error| error.to_string())?;
+    std::fs::create_dir_all(&cache).map_err(|error| error.to_string())?;
+    let path = cache.join("siguoshan-update.apk");
+    let mut options = std::fs::OpenOptions::new();
+    options.create(true).write(true);
+    if reset {
+        options.truncate(true);
+    } else {
+        options.append(true);
+    }
+    let mut file = options.open(&path).map_err(|error| error.to_string())?;
+    let bytes = BASE64.decode(data.as_bytes()).map_err(|error| error.to_string())?;
+    std::io::Write::write_all(&mut file, &bytes).map_err(|error| error.to_string())?;
+    Ok(file.metadata().map(|meta| meta.len()).unwrap_or(0))
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
+async fn finish_android_web_update(app: tauri::AppHandle, sha256: String) -> Result<(), String> {
+    let cache = app.path().app_cache_dir().map_err(|error| error.to_string())?;
+    let path = cache.join("siguoshan-update.apk");
+    let data = std::fs::read(&path).map_err(|error| format!("读取更新包失败：{error}"))?;
+    let mut hasher = Sha256::new();
+    hasher.update(&data);
+    let actual: String = hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect();
+    if !actual.eq_ignore_ascii_case(&sha256) {
+        return Err("更新包校验失败".to_string());
+    }
+    let state = app
+        .try_state::<InstallerState>()
+        .ok_or_else(|| "手机安装器未初始化，请重新安装本版本后再试".to_string())?;
+    state
+        .0
+        .run_mobile_plugin::<serde_json::Value>(
+            "install",
+            serde_json::json!({ "path": path.to_string_lossy() }),
+        )
+        .map(|_| ())
+        .map_err(|error| error.to_string())
+}
+
+#[cfg(target_os = "android")]
+#[tauri::command]
 async fn open_update_url(app: tauri::AppHandle, url: String) -> Result<(), String> {
     let state = app
         .try_state::<InstallerState>()
@@ -342,6 +390,18 @@ async fn open_update_url(app: tauri::AppHandle, url: String) -> Result<(), Strin
         .run_mobile_plugin::<serde_json::Value>("openUrl", serde_json::json!({ "url": url }))
         .map(|_| ())
         .map_err(|error| error.to_string())
+}
+
+#[cfg(not(target_os = "android"))]
+#[tauri::command]
+fn append_android_web_update(_data: String, _reset: bool) -> Result<u64, String> {
+    Err("仅安卓版支持网页通道下载".to_string())
+}
+
+#[cfg(not(target_os = "android"))]
+#[tauri::command]
+fn finish_android_web_update(_sha256: String) -> Result<(), String> {
+    Err("仅安卓版支持网页通道下载".to_string())
 }
 
 #[cfg(not(target_os = "android"))]
@@ -991,6 +1051,8 @@ pub fn run() {
             check_android_update,
             prepare_portable_update,
             install_android_update,
+            append_android_web_update,
+            finish_android_web_update,
             open_update_url,
             android_battery,
             data_dir_info,

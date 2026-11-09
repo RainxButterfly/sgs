@@ -163,6 +163,55 @@ export async function openUpdateUrl(url: string): Promise<void> {
   await invoke('open_update_url', { url });
 }
 
+const CHUNK_SIZE = 256 * 1024;
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+
+export async function installAndroidUpdateFromWeb(
+  info: AppUpdateInfo,
+  onProgress: (downloaded: number, total: number) => void,
+  onMirror?: (mirror: UpdateMirrorInfo) => void,
+): Promise<void> {
+  const urls = info.raw.urls?.length ? info.raw.urls : [info.raw.url];
+  for (let index = 0; index < urls.length; index += 1) {
+    onMirror?.({ index: index + 1, total: urls.length });
+    try {
+      const response = await fetch(urls[index], { cache: 'no-store' });
+      if (!response.ok || !response.body) continue;
+      const total = Number(response.headers.get('content-length') ?? 0);
+      const reader = response.body.getReader();
+      let downloaded = 0;
+      let reset = true;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (!value || value.length === 0) continue;
+        for (let offset = 0; offset < value.length; offset += CHUNK_SIZE) {
+          const slice = value.subarray(offset, offset + CHUNK_SIZE);
+          await invoke('append_android_web_update', {
+            data: bytesToBase64(slice),
+            reset,
+          });
+          reset = false;
+        }
+        downloaded += value.length;
+        onProgress(downloaded, total);
+      }
+      await invoke('finish_android_web_update', { sha256: info.raw.sha256 });
+      return;
+    } catch {
+      // 换下一个镜像，下一次写入会 truncate
+    }
+  }
+  throw new Error('网页通道下载失败，请改用浏览器下载');
+}
+
 export interface UpdateMirrorInfo {
   index: number;
   total: number;

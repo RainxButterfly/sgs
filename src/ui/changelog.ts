@@ -20,6 +20,21 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.10',
+    date: '2026-11-10',
+    title: '手机更新网页通道',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '手机下载 APK 改为优先走 WebView 网页通道：直接读取安装包流，按 256KB 分块写入缓存，Rust 校验 SHA-256 后调用系统安装器。',
+          '网页通道会依次尝试清单里的所有镜像，绕过原生请求卡在 0MB 的问题；网页通道全部失败才回退原生下载和浏览器下载。',
+          '保留镜像并行竞速和 15 秒首包超时。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.9',
     date: '2026-11-10',
     title: '手机更新下载加速',

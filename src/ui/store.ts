@@ -8,6 +8,7 @@ import type { ChatMessage, LobbyState, RoomInfo, SpectatorInfo } from '../net/pr
 import {
   checkAndroidUpdate,
   checkAndroidUpdateFromWeb,
+  installAndroidUpdateFromWeb,
   checkAppUpdate,
   checkAppUpdateFromWeb,
   installAndroidUpdate,
@@ -1215,6 +1216,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
     try {
       if (info.android) {
+        try {
+          await installAndroidUpdateFromWeb(
+            info,
+            (downloaded, total) => set({ updateProgress: { downloaded, total } }),
+            (mirror) => set({ updateMirror: mirror }),
+          );
+          set({ updateState: 'latest', updateInfo: null, updateModalOpen: false, updateMirror: null });
+          return;
+        } catch (error) {
+          recordDiagnostic(
+            'error',
+            `网页通道更新失败：${(error as Error).message}`,
+            (error as Error).stack,
+          );
+        }
         await installAndroidUpdate(
           info,
           (downloaded, total) => set({ updateProgress: { downloaded, total } }),
