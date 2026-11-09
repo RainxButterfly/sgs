@@ -1,9 +1,8 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
-import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
-import { cardDisplayName } from '../labels';
+import { cardDisplayName, playerHeroNames } from '../labels';
 import { compositionText } from '../composition';
 import { CardView } from '../components/CardView';
 import { DiscardModal } from '../components/DiscardModal';
@@ -190,7 +189,7 @@ export function MobileGameScreen() {
 
       <div className="m-seats">
         {opponents.map((player) => {
-          const hero = HERO_MAP.get(player.heroId);
+          
           const canTarget = targetable.has(player.id);
           const selectedTarget = selectedTargets.includes(player.id);
           const role = roleText(player, mode);
@@ -215,7 +214,7 @@ export function MobileGameScreen() {
             >
               <div className="m-seat-head">
                 <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
-                <b>{hero?.name ?? player.heroName}</b>
+                <b>{playerHeroNames(player)}</b>
                 {role && <span className={`m-role role-${player.role}`}>{role}</span>}
                 <button
                   type="button"
@@ -309,7 +308,7 @@ export function MobileGameScreen() {
       <div className="m-self">
         <button type="button" className="m-self-main" onClick={() => setDetailPlayer(human.id)}>
           <span className={`faction-badge faction-${human.faction}`}>{FACTION_NAME[human.faction]}</span>
-          <b>{HERO_MAP.get(human.heroId)?.name ?? human.heroName}</b>
+          <b>{playerHeroNames(human)}</b>
           {roleText(human, mode, true) && <span className="m-self-role">{roleText(human, mode, true)}</span>}
           <span className="m-self-hp">
             {Math.max(0, human.hp)}/{human.maxHp}

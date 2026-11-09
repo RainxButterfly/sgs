@@ -36,7 +36,11 @@ export function LanPickPanel({
   onCancel,
 }: Props) {
   const [detailHero, setDetailHero] = useState<string | null>(null);
-  const allPicked = players.every((player) => player.heroId);
+  const guozhan = (me.choices ?? []).some((choice) => choice.includes('|'));
+  const choiceHeroIds = (choice: string) => choice.split('|').filter(Boolean);
+  const playerHeroIds = (player: LobbyPlayer) =>
+    player.heroIds?.length ? player.heroIds : player.heroId ? [player.heroId] : [];
+  const allPicked = players.every((player) => playerHeroIds(player).length >= (guozhan ? 2 : 1));
   const emptySlots = Math.max(0, startCount - players.length);
   const lordReady = !lordPlayerId || !!lordHeroId;
   const canPick = lordReady || me.playerId === lordPlayerId;
@@ -62,6 +66,7 @@ export function LanPickPanel({
           {players.map((player) => {
             const isLord = lordPlayerId != null && player.playerId === lordPlayerId;
             const showHero = isLord || revealed || player.connId === me.connId;
+            const selectedIds = playerHeroIds(player);
             const hero = player.heroId && showHero ? HERO_MAP.get(player.heroId) : undefined;
             return (
               <div
@@ -70,7 +75,11 @@ export function LanPickPanel({
               >
                 <span className="pick-seat-label">{isLord ? '主公' : player.isHost ? '房主' : '玩家'}</span>
                 <span className="pick-seat-hero">
-                  {player.heroId ? (showHero ? (hero?.name ?? '已选择') : '未亮将') : '选择中'}
+                  {selectedIds.length
+                    ? showHero
+                      ? selectedIds.map((id) => HERO_MAP.get(id)?.name).filter(Boolean).join(' / ')
+                      : '未亮将'
+                    : '选择中'}
                 </span>
                 <span className="pick-seat-tag">{player.name}</span>
               </div>
@@ -94,39 +103,52 @@ export function LanPickPanel({
 
         <section className="pick-choice">
           <div className="setup-row">
-            <span className="setup-label">你的候选武将</span>
+            <span className="setup-label">{guozhan ? '你的候选双将' : '你的候选武将'}</span>
             <span className="setup-hint">
               {!lordReady && me.playerId !== lordPlayerId
                 ? '等待主公选择武将'
                 : me.heroId
                   ? '可以重新选择'
-                  : '选择一名武将'}
+                  : guozhan
+                    ? '选择一组同势力双将'
+                    : '选择一名武将'}
             </span>
           </div>
           <div className="lobby-hero-grid">
-            {(me.choices ?? []).map((heroId) => {
-              const hero = HERO_MAP.get(heroId);
-              if (!hero) return null;
+            {(me.choices ?? []).map((choice) => {
+              const ids = choiceHeroIds(choice);
+              const heroes = ids.map((id) => HERO_MAP.get(id)).filter((hero): hero is NonNullable<typeof hero> => !!hero);
+              if (!heroes.length) return null;
+              const first = heroes[0];
               const taken =
-                (heroId === lordHeroId && me.heroId !== heroId) ||
-                players.some((player) => player.connId !== me.connId && player.heroId === heroId);
-              const picked = me.heroId === heroId;
+                (ids.includes(lordHeroId ?? '') && !ids.every((id) => playerHeroIds(me).includes(id))) ||
+                players.some(
+                  (player) =>
+                    player.connId !== me.connId &&
+                    ids.some((id) => playerHeroIds(player).includes(id)),
+                );
+              const picked =
+                me.heroIds?.length === ids.length &&
+                ids.every((id) => me.heroIds?.includes(id));
               return (
-                <HoverInfo key={heroId} as="div" className="lobby-hero-wrap" content={<HeroDataHover hero={hero} />}>
+                <HoverInfo key={choice} as="div" className="lobby-hero-wrap" content={<HeroDataHover hero={first} />}>
                 <button
                   type="button"
-                  className={`lobby-hero-card faction-${hero.faction} ${picked ? 'picked' : ''} ${taken ? 'taken' : ''}`}
+                  className={`lobby-hero-card ${guozhan ? 'pair-lobby-hero' : ''} faction-${first.faction} ${picked ? 'picked' : ''} ${taken ? 'taken' : ''}`}
                   disabled={taken || !canPick}
-                  onClick={() => onPick(heroId)}
+                  onClick={() => onPick(choice)}
                 >
                   <div className="lobby-hero-top">
-                    <span className="faction-badge">{FACTION_NAME[hero.faction]}</span>
-                    <span className="lobby-hero-name">{hero.name}</span>
-                    <span className="lobby-hero-hp">♥ {hero.hp}</span>
+                    <span className="faction-badge">{FACTION_NAME[first.faction]}</span>
+                    <span className="lobby-hero-name">{heroes.map((hero) => hero.name).join(' / ')}</span>
+                    <span className="lobby-hero-hp">♥ {heroes.reduce((sum, hero) => sum + hero.hp, 0)}</span>
                   </div>
-                  <div className="lobby-hero-title">{hero.title}</div>
+                  <div className="lobby-hero-title">{heroes.map((hero) => hero.title).join(' · ')}</div>
                   <div className="lobby-hero-skills">
-                    {hero.skillIds.map((skillId) => SKILL_MAP.get(skillId)?.name).filter(Boolean).join(' · ')}
+                    {[...new Set(heroes.flatMap((hero) => hero.skillIds))]
+                      .map((skillId) => SKILL_MAP.get(skillId)?.name)
+                      .filter(Boolean)
+                      .join(' · ')}
                   </div>
                   {taken && <span className="lobby-hero-flag">已被选择</span>}
                   {picked && <span className="lobby-hero-flag picked">已选择</span>}
@@ -138,12 +160,12 @@ export function LanPickPanel({
                   aria-label="查看武将信息"
                   onClick={(event) => {
                     event.stopPropagation();
-                    setDetailHero(heroId);
+                    setDetailHero(first.id);
                   }}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.stopPropagation();
-                      setDetailHero(heroId);
+                      setDetailHero(first.id);
                     }
                   }}
                 >

@@ -10,9 +10,19 @@ export function PickScreen() {
   const preGame = useGameStore((s) => s.preGame);
   const confirm = useGameStore((s) => s.confirmLocalPick);
   const [picked, setPicked] = useState(() => preGame?.candidates[0] ?? '');
+  const [pairIndex, setPairIndex] = useState(0);
   const [detailHero, setDetailHero] = useState<string | null>(null);
   if (!preGame) return null;
-  const selected = HERO_MAP.get(picked);
+  const pairs = preGame.candidatePairs ?? [];
+  const selectedPair = pairs[pairIndex];
+  const selected = HERO_MAP.get(selectedPair?.primary ?? picked);
+  const pairHeroes = selectedPair
+    ? [HERO_MAP.get(selectedPair.primary), HERO_MAP.get(selectedPair.secondary)].filter(
+        (hero): hero is NonNullable<typeof hero> => !!hero,
+      )
+    : [];
+  const pairHp = pairHeroes.reduce((sum, hero) => sum + hero.hp, 0);
+  const pairSkills = [...new Set(pairHeroes.flatMap((hero) => hero.skillIds))];
 
   return (
     <div className="pick-screen">
@@ -23,7 +33,9 @@ export function PickScreen() {
             <div className="setup-kicker">进入对局 · 选择武将</div>
             <h2 className="setup-title">点 将 出 征</h2>
             <p className="setup-desc">
-              其他角色的武将已经就位。从下面的候选武将中选择你的出战武将，选择完成后进入牌桌。
+              {pairs.length
+                ? '国战需要两张同势力武将。从下面的候选双将中选择一组，选择完成后进入牌桌。'
+                : '其他角色的武将已经就位。从下面的候选武将中选择你的出战武将，选择完成后进入牌桌。'}
             </p>
           </div>
           <button
@@ -40,9 +52,19 @@ export function PickScreen() {
             <div className="room-card-title">座次与武将</div>
             <div className="pick-seat is-human">
               <span className="pick-seat-label">你</span>
-              <span className="pick-seat-hero">{selected?.name ?? '待选择'}</span>
+              <span className="pick-seat-hero">
+                {selectedPair
+                  ? `${HERO_MAP.get(selectedPair.primary)?.name ?? ''} / ${HERO_MAP.get(selectedPair.secondary)?.name ?? ''}`
+                  : selected?.name ?? '待选择'}
+              </span>
               <span className="pick-seat-tag">
-                {preGame.lordIndex === 0 ? '主公 · 已亮将' : selected ? '已选择' : '选择中'}
+                {preGame.lordIndex === 0
+                  ? '主公 · 已亮将'
+                  : selectedPair
+                    ? '双将 · 已选择'
+                    : selected
+                      ? '已选择'
+                      : '选择中'}
               </span>
             </div>
             {preGame.bots.map((bot, index) => {
@@ -65,73 +87,126 @@ export function PickScreen() {
 
           <section className="pick-choice">
             <div className="setup-row">
-              <span className="setup-label">你的候选武将</span>
-              <span className="setup-hint">点击一张武将牌选择</span>
+              <span className="setup-label">{pairs.length ? '你的候选双将' : '你的候选武将'}</span>
+              <span className="setup-hint">{pairs.length ? '点击一组同势力双将' : '点击一张武将牌选择'}</span>
             </div>
-            <div className="pick-hero-grid">
-              {preGame.candidates.map((id) => {
-                const hero = HERO_MAP.get(id);
-                if (!hero) return null;
-                return (
-                  <HoverInfo key={id} as="div" className="pick-card-wrap" content={<HeroDataHover hero={hero} />}>
-                  <button
-                    type="button"
-                    className={`hero-card faction-${hero.faction} ${picked === id ? 'picked' : ''}`}
-                    onClick={() => setPicked(id)}
-                  >
-                    <div className="hero-card-top">
-                      <span className="faction-badge">{FACTION_NAME[hero.faction]}</span>
-                      <span className="hero-card-name">{hero.name}</span>
-                      <span className={`gender-badge ${hero.gender}`}>{hero.gender === 'male' ? '♂' : '♀'}</span>
-                    </div>
-                    <div className="hero-card-title">{hero.title}</div>
-                    <div className="hero-card-hp">
-                      <span className="hp-icon">♥</span>
-                      <span>{hero.hp}</span>
-                    </div>
-                    <div className="hero-card-skills">
-                      {hero.skillIds.map((sid) => {
-                        const skill = SKILL_MAP.get(sid);
-                        return skill ? (
-                          <div key={sid} className="hero-skill-line">
-                            <b>{skill.name}</b>
-                            <span>{skill.desc}</span>
-                          </div>
-                        ) : null;
-                      })}
-                    </div>
-                    <div className="hero-card-quote">「{hero.quote}」</div>
-                  </button>
-                  <span
-                    className="hero-card-info"
-                    role="button"
-                    tabIndex={0}
-                    aria-label="查看武将信息"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setDetailHero(id);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
+            {pairs.length ? (
+              <div className="pick-hero-grid">
+                {pairs.map((pair, index) => {
+                  const heroes = [HERO_MAP.get(pair.primary), HERO_MAP.get(pair.secondary)].filter(
+                    (hero): hero is NonNullable<typeof hero> => !!hero,
+                  );
+                  const first = heroes[0];
+                  if (!first) return null;
+                  const hp = heroes.reduce((sum, hero) => sum + hero.hp, 0);
+                  const skills = [...new Set(heroes.flatMap((hero) => hero.skillIds))];
+                  return (
+                    <button
+                      key={`${pair.primary}-${pair.secondary}`}
+                      type="button"
+                      className={`hero-card pair-hero-card faction-${first.faction} ${pairIndex === index ? 'picked' : ''}`}
+                      onClick={() => setPairIndex(index)}
+                    >
+                      <div className="pair-hero-names">
+                        {heroes.map((hero, heroIndex) => (
+                          <span key={hero.id}>
+                            <em>{heroIndex === 0 ? '主将' : '副将'}</em>
+                            <b>{hero.name}</b>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="hero-card-hp">
+                        <span className="hp-icon">♥</span>
+                        <span>{hp}</span>
+                      </div>
+                      <div className="hero-card-skills">
+                        {skills.map((sid) => {
+                          const skill = SKILL_MAP.get(sid);
+                          return skill ? (
+                            <div key={sid} className="hero-skill-line">
+                              <b>{skill.name}</b>
+                              <span>{skill.desc}</span>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="pick-hero-grid">
+                {preGame.candidates.map((id) => {
+                  const hero = HERO_MAP.get(id);
+                  if (!hero) return null;
+                  return (
+                    <HoverInfo key={id} as="div" className="pick-card-wrap" content={<HeroDataHover hero={hero} />}>
+                    <button
+                      type="button"
+                      className={`hero-card faction-${hero.faction} ${picked === id ? 'picked' : ''}`}
+                      onClick={() => setPicked(id)}
+                    >
+                      <div className="hero-card-top">
+                        <span className="faction-badge">{FACTION_NAME[hero.faction]}</span>
+                        <span className="hero-card-name">{hero.name}</span>
+                        <span className={`gender-badge ${hero.gender}`}>{hero.gender === 'male' ? '♂' : '♀'}</span>
+                      </div>
+                      <div className="hero-card-title">{hero.title}</div>
+                      <div className="hero-card-hp">
+                        <span className="hp-icon">♥</span>
+                        <span>{hero.hp}</span>
+                      </div>
+                      <div className="hero-card-skills">
+                        {hero.skillIds.map((sid) => {
+                          const skill = SKILL_MAP.get(sid);
+                          return skill ? (
+                            <div key={sid} className="hero-skill-line">
+                              <b>{skill.name}</b>
+                              <span>{skill.desc}</span>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                      <div className="hero-card-quote">「{hero.quote}」</div>
+                    </button>
+                    <span
+                      className="hero-card-info"
+                      role="button"
+                      tabIndex={0}
+                      aria-label="查看武将信息"
+                      onClick={(event) => {
                         event.stopPropagation();
                         setDetailHero(id);
-                      }
-                    }}
-                  >
-                    i
-                  </span>
-                  </HoverInfo>
-                );
-              })}
-            </div>
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.stopPropagation();
+                          setDetailHero(id);
+                        }
+                      }}
+                    >
+                      i
+                    </span>
+                    </HoverInfo>
+                  );
+                })}
+              </div>
+            )}
           </section>
         </div>
 
         <div className="setup-actions">
           <span className="setup-picked">
-            已选：<b>{selected?.name ?? '—'}</b>
+            已选：<b>{selectedPair ? pairHeroes.map((hero) => hero.name).join(' / ') : selected?.name ?? '—'}</b>
           </span>
-          <button type="button" className="btn primary big" disabled={!picked} onClick={() => confirm(picked)}>
+          <button
+            type="button"
+            className="btn primary big"
+            disabled={selectedPair ? !pairHeroes.length : !picked}
+            onClick={() =>
+              selectedPair ? confirm(selectedPair.primary, selectedPair.secondary) : confirm(picked)
+            }
+          >
             进入对局
           </button>
         </div>

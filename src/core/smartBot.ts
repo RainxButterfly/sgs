@@ -193,6 +193,10 @@ function scoreSkill(state: GameState, me: PlayerState, id: string): number {
       return 42;
     case 'dimeng':
       return 40;
+    case 'mingce':
+      return me.hand.length > 0 && friends.length > 0 ? 32 : 0;
+    case 'xianzhen':
+      return me.hand.length > 0 && enemies.some((p) => p.hand.length > 0) ? 36 : 0;
     default:
       return 0;
   }

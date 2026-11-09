@@ -34,7 +34,8 @@ interface PreGame {
   count: number;
   rules?: Partial<CustomRules>;
   candidates: string[];
-  bots: { name: string; heroId: string }[];
+  candidatePairs?: { primary: string; secondary: string }[];
+  bots: { name: string; heroId: string; heroIds?: string[] }[];
   roles: Role[];
   lordIndex: number;
   lordHeroId: string | null;
@@ -218,7 +219,7 @@ interface GameStore {
 
   initLocal: (count: number, heroId: string, rules?: Partial<CustomRules>) => void;
   prepareLocal: (count: number, rules?: Partial<CustomRules>, excludeHeroIds?: string[]) => void;
-  confirmLocalPick: (heroId: string) => void;
+  confirmLocalPick: (heroId: string, secondaryId?: string) => void;
   backToMenu: () => void;
   restart: () => void;
   createLanRoom: (name: string) => Promise<void>;
@@ -410,13 +411,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
-    const bots = Array.from({ length: Math.max(0, count - 1) }, (_, i) => ({
-      name: botNames[i % botNames.length],
-      heroId: pool.pop()!,
-    }));
     const mode = rules?.mode ?? 'identity';
     const roles = buildRoles(count, mode);
     roles.sort(() => Math.random() - 0.5);
+    let bots: { name: string; heroId: string; heroIds?: string[] }[];
+    let candidates: string[];
+    let candidatePairs: { primary: string; secondary: string }[] | undefined;
+    if (mode === 'guozhan') {
+      const available = new Set(pool);
+      bots = Array.from({ length: Math.max(0, count - 1) }, (_, i) => {
+        const pair = takeHeroPair(available);
+        return {
+          name: botNames[i % botNames.length],
+          heroId: pair?.primary ?? [...available][0] ?? HEROES[0].id,
+          heroIds: pair ? [pair.primary, pair.secondary] : undefined,
+        };
+      });
+      candidatePairs = randomHeroPairs(5, available);
+      candidates = candidatePairs.map((pair) => pair.primary);
+    } else {
+      bots = Array.from({ length: Math.max(0, count - 1) }, (_, i) => ({
+        name: botNames[i % botNames.length],
+        heroId: pool.pop()!,
+      }));
+      candidates = pool.slice(0, 5);
+    }
     const visibleLordIndex =
       count > 2 && (mode === 'identity' || mode === 'landlord') ? roles.indexOf('lord') : -1;
     const lordIndex = visibleLordIndex;
@@ -425,7 +444,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       screen: 'pick',
       game: null,
       suspended: false,
-      preGame: { count, rules, candidates: pool.slice(0, 5), bots, roles, lordIndex, lordHeroId },
+      preGame: { count, rules, candidates, candidatePairs, bots, roles, lordIndex, lordHeroId },
       humanId: 0,
       firstPlayerId: null,
       lanRole: null,
@@ -452,11 +471,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
-  confirmLocalPick: (heroId) => {
+  confirmLocalPick: (heroId, secondaryId) => {
     const preGame = get().preGame;
     if (!preGame || !preGame.candidates.includes(heroId)) return;
+    const pair = preGame.candidatePairs?.find(
+      (item) => item.primary === heroId && item.secondary === secondaryId,
+    );
     const players = [
-      { name: '你', heroId, isBot: false },
+      {
+        name: '你',
+        heroId,
+        heroIds: pair ? [pair.primary, pair.secondary] : undefined,
+        isBot: false,
+      },
       ...preGame.bots.map((bot) => ({ ...bot, isBot: true })),
     ];
     const game = new Game(
@@ -1403,6 +1430,30 @@ export function randomHeroChoices(n: number): string[] {
   for (let i = 0; i < n && pool.length; i += 1) {
     const idx = Math.floor(Math.random() * pool.length);
     out.push(pool.splice(idx, 1)[0].id);
+  }
+  return out;
+}
+
+export function takeHeroPair(available: Set<string>): { primary: string; secondary: string } | null {
+  const factions = ['wei', 'shu', 'wu', 'qun'] as const;
+  const groups = factions
+    .map((faction) => HEROES.filter((hero) => available.has(hero.id) && hero.faction === faction))
+    .filter((group) => group.length >= 2);
+  if (!groups.length) return null;
+  const group = [...groups[Math.floor(Math.random() * groups.length)]];
+  const primary = group.splice(Math.floor(Math.random() * group.length), 1)[0].id;
+  const secondary = group.splice(Math.floor(Math.random() * group.length), 1)[0].id;
+  available.delete(primary);
+  available.delete(secondary);
+  return { primary, secondary };
+}
+
+export function randomHeroPairs(n: number, available: Set<string>): { primary: string; secondary: string }[] {
+  const out: { primary: string; secondary: string }[] = [];
+  for (let i = 0; i < n; i += 1) {
+    const pair = takeHeroPair(available);
+    if (!pair) break;
+    out.push(pair);
   }
   return out;
 }

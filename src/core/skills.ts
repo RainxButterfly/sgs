@@ -2143,6 +2143,237 @@ const SKILLS: SkillDef[] = [
       },
     },
   },
+  {
+    id: 'xiaoguo',
+    name: '骁果',
+    desc: '当你使用【杀】造成伤害后，若目标手牌数大于你，你摸一张牌。',
+    triggers: [
+      {
+        event: 'damageDone',
+        when: (c) =>
+          c.source?.id === c.owner.id &&
+          c.target?.alive === true &&
+          c.target.hand.length > c.owner.hand.length,
+        effect: async (c) => {
+          c.game.drawCards(c.owner, 1, '骁果');
+        },
+      },
+    ],
+  },
+  {
+    id: 'wangxi',
+    name: '忘隙',
+    desc: '当你受到伤害后，你可以令伤害来源摸一张牌，然后你摸一张牌。',
+    triggers: [
+      {
+        event: 'damageDone',
+        when: (c) => c.target?.id === c.owner.id && !!c.source && c.source.alive,
+        optional: true,
+        prompt: '是否发动【忘隙】令双方各摸一张牌？',
+        effect: async (c) => {
+          if (!c.source?.alive) return;
+          c.game.drawCards(c.source, 1, '忘隙');
+          c.game.drawCards(c.owner, 1, '忘隙');
+        },
+      },
+    ],
+  },
+  {
+    id: 'enyuan',
+    name: '恩怨',
+    desc: '当你受到伤害后，你可以令伤害来源交给你一张手牌，否则其失去 1 点体力。',
+    triggers: [
+      {
+        event: 'damageDone',
+        when: (c) => c.target?.id === c.owner.id && !!c.source && c.source.alive,
+        optional: true,
+        prompt: '是否发动【恩怨】？',
+        effect: async (c) => {
+          const source = c.source!;
+          if (source.hand.length === 0) {
+            await c.game.loseHp(source, 1, c.owner);
+            return;
+          }
+          const choice = await c.game.askOption(
+            source,
+            `恩怨：交给【${c.owner.name}】一张手牌，或失去 1 点体力`,
+            [
+              { id: 'give', label: '交给一张手牌' },
+              { id: 'hp', label: '失去 1 点体力' },
+            ],
+            undefined,
+            false,
+          );
+          if (choice === 'give') {
+            const picked = await c.game.askCards(source, source.hand, 1, 1, '恩怨：选择交给对方的手牌', undefined, false);
+            if (picked.length) {
+              c.game.gainCard(c.owner, picked[0], source, false);
+              return;
+            }
+          }
+          await c.game.loseHp(source, 1, c.owner);
+        },
+      },
+    ],
+  },
+  {
+    id: 'qianxi',
+    name: '潜袭',
+    desc: '当你使用【杀】指定目标后，你可以进行判定；若为红色，此杀不可被闪避。',
+    triggers: [
+      {
+        event: 'shaTargeted',
+        when: (c) => c.source?.id === c.owner.id,
+        optional: true,
+        prompt: '是否发动【潜袭】进行判定？',
+        effect: async (c) => {
+          const judged = await c.game.judge(c.owner, '潜袭');
+          if (red(judged)) {
+            c.data.noShan = true;
+            c.game.log('潜袭判定为红色，此杀不可闪避', 'skill');
+          }
+        },
+      },
+    ],
+  },
+  {
+    id: 'xuanfeng',
+    name: '旋风',
+    desc: '当你失去装备区里的牌时，你可以弃置一名其他角色的一张牌。',
+    triggers: [
+      {
+        event: 'equipLost',
+        when: (c) => c.player.id === c.owner.id && others(c.game, c.owner).some((p) => c.game.hasAnyCard(p)),
+        optional: true,
+        prompt: '是否发动【旋风】弃置一名角色的一张牌？',
+        effect: async (c) => {
+          const target = await c.game.askPlayer(
+            c.owner,
+            others(c.game, c.owner).filter((p) => c.game.hasAnyCard(p)),
+            '旋风：选择一名角色',
+          );
+          if (!target) return;
+          const card = await c.game.pickCardFrom(target, c.owner, '旋风：选择一张牌弃置');
+          if (card) await c.game.discardCards(target, [card], '旋风');
+        },
+      },
+    ],
+  },
+  {
+    id: 'pojun',
+    name: '破军',
+    desc: '当你使用【杀】造成伤害后，你可以弃置目标一张牌。',
+    triggers: [
+      {
+        event: 'damageDone',
+        when: (c) => c.source?.id === c.owner.id && !!c.target && c.game.hasAnyCard(c.target),
+        optional: true,
+        prompt: '是否发动【破军】弃置目标一张牌？',
+        effect: async (c) => {
+          if (!c.target) return;
+          const card = await c.game.pickCardFrom(c.target, c.owner, '破军：选择一张牌弃置');
+          if (card) await c.game.discardCards(c.target, [card], '破军');
+        },
+      },
+    ],
+  },
+  {
+    id: 'mingce',
+    name: '明策',
+    desc: '出牌阶段限一次，你可以交给一名其他角色一张手牌，然后摸一张牌。',
+    active: {
+      oncePerTurn: true,
+      usable: (game, owner) => owner.hand.length > 0 && others(game, owner).length > 0,
+      run: async (game, owner) => {
+        const picked = await game.askCards(owner, owner.hand, 1, 1, '明策：选择交给其他角色的手牌');
+        if (!picked.length) return;
+        const target = await game.askPlayer(owner, others(game, owner), '明策：选择一名角色');
+        if (!target) return;
+        game.gainCard(target, picked[0], owner, false);
+        await game.afterHandChange(owner);
+        game.drawCards(owner, 1, '明策');
+      },
+    },
+  },
+  {
+    id: 'xianzhen',
+    name: '陷阵',
+    desc: '出牌阶段限一次，你可以与一名其他角色拼点；若你赢，对其造成 1 点伤害。',
+    active: {
+      oncePerTurn: true,
+      usable: (game, owner) => owner.hand.length > 0 && others(game, owner).some((p) => p.hand.length > 0),
+      run: async (game, owner) => {
+        const target = await game.askPlayer(
+          owner,
+          others(game, owner).filter((p) => p.hand.length > 0),
+          '陷阵：选择一名角色拼点',
+        );
+        if (!target) return;
+        if (await game.pindian(owner, target, '陷阵')) {
+          await game.damage(owner, target, 1, undefined, '陷阵');
+        }
+      },
+    },
+  },
+  {
+    id: 'yicong',
+    name: '义从',
+    desc: '锁定技，你的攻击范围 +1。',
+    locked: true,
+    attackRange: () => 1,
+  },
+  {
+    id: 'sijian',
+    name: '死谏',
+    desc: '当你失去最后的手牌时，你可以弃置一名其他角色的一张牌。',
+    triggers: [
+      {
+        event: 'handLost',
+        when: (c) => c.owner.hand.length === 0 && others(c.game, c.owner).some((p) => c.game.hasAnyCard(p)),
+        optional: true,
+        prompt: '是否发动【死谏】弃置一名角色的一张牌？',
+        effect: async (c) => {
+          const target = await c.game.askPlayer(
+            c.owner,
+            others(c.game, c.owner).filter((p) => c.game.hasAnyCard(p)),
+            '死谏：选择一名角色',
+          );
+          if (!target) return;
+          const card = await c.game.pickCardFrom(target, c.owner, '死谏：选择一张牌弃置');
+          if (card) await c.game.discardCards(target, [card], '死谏');
+        },
+      },
+    ],
+  },
+  {
+    id: 'gongqi',
+    name: '弓骑',
+    desc: '你可以将一张装备牌当【杀】使用或打出。',
+    viewAs: [
+      {
+        as: '杀',
+        usage: 'both',
+        filter: (_game, _owner, card) => !!card.equipSlot,
+      },
+    ],
+  },
+  {
+    id: 'gongao',
+    name: '功獒',
+    desc: '锁定技，其他角色死亡后，你加 1 点体力上限并回复 1 点体力。',
+    locked: true,
+    triggers: [
+      {
+        event: 'death',
+        when: (c) => c.player.id !== c.owner.id,
+        effect: async (c) => {
+          c.owner.maxHp += 1;
+          c.game.heal(c.owner, c.owner, 1, { reason: '功獒' });
+          c.game.log(`【${c.owner.name}】的功獒生效，体力上限 +1`, 'skill');
+        },
+      },
+    ],
+  },
 ];
 
 function grantRandomSkills(game: Game, owner: PlayerState, count: number): string[] {

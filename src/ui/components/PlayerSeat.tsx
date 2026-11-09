@@ -1,7 +1,7 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
-import { rankText, shortCardName } from '../labels';
+import { playerHeroNames, rankText, shortCardName } from '../labels';
 import { EquipHover, HeroHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
 interface Flash {
@@ -83,7 +83,7 @@ export function PlayerSeat({
       )}
       <div className="seat-head">
         <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
-        <span className="seat-hero">{hero?.name ?? player.heroName}</span>
+        <span className="seat-hero">{playerHeroNames(player)}</span>
         {roleLabel && <span className={`role-badge role-${player.role}`}>{roleLabel}</span>}
         {current && <span className="seat-turn-tag">行动中</span>}
         {player.isBot && <span className="ai-badge">AI</span>}

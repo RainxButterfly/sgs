@@ -24,6 +24,7 @@ export interface LobbyPlayer {
   isHost: boolean;
   connected: boolean;
   heroId?: string;
+  heroIds?: string[];
   choices?: string[];
 }
 

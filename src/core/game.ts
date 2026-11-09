@@ -83,7 +83,7 @@ export interface ResponseUse {
 }
 
 export interface GameSetup {
-  players: { name: string; heroId: string; isBot?: boolean }[];
+  players: { name: string; heroId: string; heroIds?: string[]; isBot?: boolean }[];
   seed?: number;
   lordSeat?: number;
   roles?: Role[];
@@ -119,31 +119,67 @@ export class Game {
 
     const guozhanCounts: Record<string, number> = { wei: 0, shu: 0, wu: 0, qun: 0 };
     const usedHeroes = new Set<string>();
+    const pickUnusedHero = (faction?: Faction, excludeId?: string): string | undefined => {
+      const pool = HEROES.filter(
+        (hero) =>
+          !usedHeroes.has(hero.id) &&
+          hero.id !== excludeId &&
+          (!faction || hero.faction === faction),
+      );
+      return pool[Math.floor(this.random() * pool.length)]?.id;
+    };
     const players: PlayerState[] = setup.players.map((p, i) => {
-      let heroId = p.heroId;
-      if (mode === 'guozhan' && (!heroId || usedHeroes.has(heroId))) {
-        const factions = ['wei', 'shu', 'wu', 'qun'];
-        const min = Math.min(...factions.map((f) => guozhanCounts[f]));
-        const candidates = factions.filter((f) => guozhanCounts[f] === min);
-        const faction = candidates[Math.floor(this.random() * candidates.length)];
-        const pool = HEROES.filter((h) => h.faction === faction && !usedHeroes.has(h.id));
-        if (pool.length) heroId = pool[Math.floor(this.random() * pool.length)].id;
+      const requested = (p.heroIds?.length ? p.heroIds : [p.heroId]).filter(Boolean);
+      let primary = requested.find((id) => HERO_MAP.has(id) && !usedHeroes.has(id));
+      let heroIds: string[] = [];
+      if (mode === 'guozhan') {
+        if (!primary) {
+          const factions = ['wei', 'shu', 'wu', 'qun'] as const;
+          const min = Math.min(...factions.map((f) => guozhanCounts[f]));
+          const candidates = factions.filter((f) => guozhanCounts[f] === min);
+          const faction = candidates[Math.floor(this.random() * candidates.length)];
+          primary = pickUnusedHero(faction) ?? pickUnusedHero();
+        }
+        const primaryHero = primary ? HERO_MAP.get(primary) : undefined;
+        const faction = primaryHero?.faction;
+        let secondary = requested.find(
+          (id) =>
+            id !== primary &&
+            !usedHeroes.has(id) &&
+            HERO_MAP.get(id)?.faction === faction,
+        );
+        if (!secondary) secondary = pickUnusedHero(faction, primary) ?? pickUnusedHero(undefined, primary);
+        heroIds = [primary, secondary].filter((id): id is string => !!id);
+      } else {
+        primary = primary ?? pickUnusedHero();
+        heroIds = primary ? [primary] : [];
       }
-      if (!heroId || usedHeroes.has(heroId)) {
-        const pool = [...HERO_MAP.keys()].filter((h) => !usedHeroes.has(h));
-        heroId = pool[Math.floor(this.random() * pool.length)];
-      }
-      usedHeroes.add(heroId);
-      const hero = HERO_MAP.get(heroId)!;
+      const primaryId = heroIds[0] ?? pickUnusedHero() ?? HEROES[0].id;
+      if (!heroIds.length) heroIds = [primaryId];
+      const heroes = heroIds.map((id) => HERO_MAP.get(id)).filter((hero): hero is NonNullable<typeof hero> => !!hero);
+      const hero = heroes[0] ?? HERO_MAP.get(HEROES[0].id)!;
+      for (const id of heroIds) usedHeroes.add(id);
       if (mode === 'guozhan') guozhanCounts[hero.faction] += 1;
       const isLord = roles[i] === 'lord' && mode !== 'duel' && count > 2;
-      const maxHp = Math.max(1, hero.hp + (isLord ? 1 : 0) + rules.hpModifier);
+      const baseHp = heroes.length > 1 ? heroes.reduce((sum, item) => sum + item.hp, 0) : hero.hp;
+      const maxHp = Math.max(1, baseHp + (isLord ? 1 : 0) + rules.hpModifier);
+      const skills = rules.skillsEnabled
+        ? [
+            ...new Set(
+              heroes.flatMap((item) => [
+                ...item.skillIds,
+                ...(isLord && item.lordSkillId ? [item.lordSkillId] : []),
+              ]),
+            ),
+          ]
+        : [];
       return {
         id: i,
         seat: i,
         name: p.name || `玩家${i + 1}`,
-        heroId,
-        heroName: hero.name,
+        heroId: hero.id,
+        heroIds,
+        heroName: heroes.map((item) => item.name).join('·') || hero.name,
         faction: hero.faction,
         gender: hero.gender,
         role: roles[i],
@@ -157,9 +193,7 @@ export class Game {
         flags: {},
         usedThisTurn: {},
         skipPhases: [],
-        skills: rules.skillsEnabled
-          ? [...hero.skillIds, ...(isLord && hero.lordSkillId ? [hero.lordSkillId] : [])]
-          : [],
+        skills,
         extraSkills: [],
         fields: [],
         flipped: false,

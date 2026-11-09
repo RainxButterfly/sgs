@@ -1,6 +1,6 @@
 {
   "version": "0.6.3",
-  "notes": "v0.6.3：南蛮/万箭结算面板、身份人数实时统计、更新日志与规则修复。",
+  "notes": "v0.6.3：国战双将、69 名武将、南蛮结算、身份人数与更新日志。",
   "url": "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.6.3/updates/siguoshan-xinghe-arm64.apk",
   "urls": [
     "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.6.3/updates/siguoshan-xinghe-arm64.apk",
@@ -13,5 +13,5 @@
     "https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@v0.6.3/updates/siguoshan-xinghe-arm64.apk",
     "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.6.3/updates/siguoshan-xinghe-arm64.apk"
   ],
-  "sha256": "f692b63979901da7e163284802d6289a5f81a179f1872e7587639a666bad95de"
+  "sha256": "a75216762b352901eae6d7b1b3e7977536d5554a4e4da7140018f7db1abd3141"
 }

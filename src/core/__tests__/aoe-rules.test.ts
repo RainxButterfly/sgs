@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../game';
 import { SimIO } from '../bot';
+import { HERO_MAP } from '../deck';
 import type { AoeEntry, Card, GameEvent } from '../types';
 
 function fakeCard(name: string, suit: Card['suit'] = 'spade', rank = 1): Card {
@@ -149,5 +150,56 @@ describe('战报序号', () => {
     const ids = log.map((entry) => entry.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (let i = 1; i < ids.length; i += 1) expect(ids[i]).toBeGreaterThan(ids[i - 1]);
+  });
+});
+
+describe('国战双将', () => {
+  it('同势力双将合并体力与技能', () => {
+    const game = new Game(
+      {
+        players: [
+          { name: 'P1', heroId: 'guanyu', heroIds: ['guanyu', 'zhangfei'], isBot: false },
+          { name: 'P2', heroId: 'caocao', heroIds: ['caocao', 'simayi'], isBot: false },
+          { name: 'P3', heroId: 'sunquan', heroIds: ['sunquan', 'zhouyu'], isBot: false },
+          { name: 'P4', heroId: 'lvbu', heroIds: ['lvbu', 'diaochan'], isBot: false },
+        ],
+        seed: 20261113,
+        rules: { mode: 'guozhan' },
+      },
+      new SimIO(),
+    );
+    const [first, second] = game.state.players;
+    expect(first.heroIds).toEqual(['guanyu', 'zhangfei']);
+    expect(first.maxHp).toBe(8);
+    expect(first.heroName).toContain('关羽');
+    expect(first.heroName).toContain('张飞');
+    expect(first.skills).toContain('wusheng');
+    expect(first.skills).toContain('paoxiao');
+    expect(second.faction).toBe('wei');
+  });
+
+  it('国战只传一个武将时会自动补同势力副将，且全场不重复', () => {
+    const game = new Game(
+      {
+        players: Array.from({ length: 6 }, (_, index) => ({
+          name: `P${index + 1}`,
+          heroId: '',
+          isBot: true,
+        })),
+        seed: 20261114,
+        rules: { mode: 'guozhan' },
+      },
+      new SimIO(),
+    );
+    const ids = game.state.players.flatMap((player) => player.heroIds ?? []);
+    expect(ids).toHaveLength(12);
+    expect(new Set(ids).size).toBe(12);
+    for (const player of game.state.players) {
+      const [first, second] = player.heroIds ?? [];
+      expect(first).toBeTruthy();
+      expect(second).toBeTruthy();
+      expect(HERO_MAP.get(first!)?.faction).toBe(HERO_MAP.get(second!)?.faction);
+      expect(player.maxHp).toBe((HERO_MAP.get(first!)?.hp ?? 0) + (HERO_MAP.get(second!)?.hp ?? 0));
+    }
   });
 });

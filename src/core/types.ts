@@ -63,6 +63,7 @@ export interface PlayerState {
   name: string;
   heroId: string;
   heroName: string;
+  heroIds?: string[];
   faction: Faction;
   gender: Gender;
   role: Role;

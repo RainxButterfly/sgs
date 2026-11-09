@@ -288,7 +288,11 @@ export function LobbyScreen() {
                   <span className="lobby-seat">{player.isHost ? '房主' : '玩家'}</span>
                   <span className="lobby-name">{player.name}</span>
                   <span className="lobby-hero-tag">
-                    {player.heroId ? `已选 · ${HERO_MAP.get(player.heroId)?.name ?? ''}` : '待选将'}
+                    {player.heroIds?.length
+                      ? `已选 · ${player.heroIds.map((id) => HERO_MAP.get(id)?.name ?? '').join(' / ')}`
+                      : player.heroId
+                        ? `已选 · ${HERO_MAP.get(player.heroId)?.name ?? ''}`
+                        : '待选将'}
                   </span>
                   <span className="lobby-status">{player.connected ? '已入座' : '掉线'}</span>
                 </div>

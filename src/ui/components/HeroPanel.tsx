@@ -1,7 +1,7 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
-import { equipSlotText, shortCardName } from '../labels';
+import { equipSlotText, playerHeroNames, shortCardName } from '../labels';
 import { EquipHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
 interface Flash {
@@ -55,7 +55,7 @@ export function HeroPanel({ player, mode = 'identity', current, flash, handLimit
         <div className="hero-emblem">{FACTION_NAME[player.faction]}</div>
         <div className="hero-identity">
           <div className="hero-name-row">
-            <span className="hero-name">{hero?.name ?? player.heroName}</span>
+            <span className="hero-name">{playerHeroNames(player)}</span>
             {roleLabel && <span className={`role-tag role-${player.role}`}>{roleLabel}</span>}
             {onDetail && (
               <button type="button" className="hero-detail-btn" onClick={onDetail}>

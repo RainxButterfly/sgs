@@ -1,6 +1,6 @@
 import { useGameSnapshot, useGameStore } from '../store';
-import { HERO_MAP } from '../../core/deck';
 import { FACTION_NAME, ROLE_NAME } from '../../core/types';
+import { playerHeroNames } from '../labels';
 
 const WINNER_LABEL: Record<string, string> = {
   lord: '主公阵营获胜',
@@ -53,7 +53,7 @@ export function ResultScreen() {
         <p className="result-text">{result.text}</p>
         <div className="result-table">
           {game.state.players.map((p) => {
-            const hero = HERO_MAP.get(p.heroId);
+            
             return (
               <div
                 key={p.id}
@@ -65,7 +65,7 @@ export function ResultScreen() {
                 ].join(' ')}
               >
                 <span className="faction-badge">{FACTION_NAME[p.faction]}</span>
-                <span className="result-hero">{hero?.name ?? p.heroName}</span>
+                <span className="result-hero">{playerHeroNames(p)}</span>
                 <span className="result-player">{p.name}</span>
                 {roleLabel(p.role) && (
                   <span className={`role-tag role-${p.role}`}>{roleLabel(p.role)}</span>

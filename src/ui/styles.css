@@ -8336,3 +8336,36 @@ button {
     max-height: 52vh;
   }
 }
+
+/* 国战候选双将 */
+.pair-hero-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.pair-hero-names {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pair-hero-names span {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.pair-hero-names em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.pair-hero-names b {
+  color: var(--gold-bright);
+  font-family: var(--font-calligraphy);
+  font-size: 16px;
+  font-weight: 600;
+}

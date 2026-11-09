@@ -28,9 +28,10 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
   }, [onClose]);
   const hero = HERO_MAP.get(heroId);
   if (!hero) return null;
+  const partner = player?.heroIds?.[1] ? HERO_MAP.get(player.heroIds[1]) : undefined;
   const skillIds = [
     ...new Set([
-      ...hero.skillIds,
+      ...(player?.skills?.length ? player.skills : hero.skillIds),
       ...(hero.lordSkillId ? [hero.lordSkillId] : []),
       ...(player?.extraSkills ?? []),
     ]),
@@ -53,7 +54,7 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
           <div className="detail-emblem">{FACTION_NAME[hero.faction]}</div>
           <div className="detail-identity">
             <div className="detail-name-row">
-              <span className="detail-name">{hero.name}</span>
+              <span className="detail-name">{partner ? `${hero.name} / ${partner.name}` : hero.name}</span>
               <span className={`gender-badge ${hero.gender}`}>{hero.gender === 'male' ? '♂' : '♀'}</span>
               {player && showRole && <span className={`role-tag role-${player.role}`}>{ROLE_NAME[player.role]}</span>}
             </div>
