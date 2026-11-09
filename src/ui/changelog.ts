@@ -20,6 +20,20 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.16',
+    date: '2026-11-10',
+    title: '乱武与好施细节',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '贾诩【乱武】现在可选武圣、龙胆等转化杀，并校验距离最近目标的合法性；没有合法杀则失去体力。',
+          '鲁肃【好施】在手牌数并列最少时，由鲁肃选择交给谁，不再随机。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.15',
     date: '2026-11-10',
     title: '屯田时机与蛊惑声明',

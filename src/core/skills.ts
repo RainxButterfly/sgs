@@ -1303,7 +1303,11 @@ const SKILLS: SkillDef[] = [
           if (!candidates.length) return;
           const minHand = Math.min(...candidates.map((p) => p.hand.length));
           const pool = candidates.filter((p) => p.hand.length === minHand);
-          const target = pool[Math.floor(Math.random() * pool.length)];
+          const target = await c.game.askPlayer(
+            c.owner,
+            pool,
+            '好施：选择一名手牌最少的角色',
+          );
           if (!target) return;
           const cards = await c.game.askCards(
             c.owner,
@@ -1888,27 +1892,31 @@ const SKILLS: SkillDef[] = [
         owner.flags.luanwu = 1;
         for (const p of others(game, owner)) {
           if (!p.alive || game.state.over) continue;
-          const sha = p.hand.filter((c) => c.name === '杀');
-          if (sha.length > 0) {
-            const picked = await game.askCards(
+          const closest = game.alivePlayers()
+            .filter((x) => x.id !== p.id)
+            .sort((a, b) => game.distance(p, a) - game.distance(p, b))[0];
+          const options = closest
+            ? game.buildPlayOptions(p).filter(
+                (option) =>
+                  option.as === '杀' && option.validTargets.includes(closest.id),
+              )
+            : [];
+          if (options.length) {
+            const picked = await game.askOption(
               p,
-              sha,
-              0,
-              1,
               '乱武：使用一张杀，否则失去 1 点体力',
-              '选择一张杀并自动对最近的角色使用',
+              options.map((option) => ({
+                id: `${option.cardId}|${option.skillId ?? ''}`,
+                label: option.label ?? '使用【杀】',
+              })),
+              '只能对距离最近的角色使用',
               true,
             );
-            if (picked.length) {
-              const closest = game.alivePlayers()
-                .filter((x) => x.id !== p.id)
-                .sort((a, b) => game.distance(p, a) - game.distance(p, b))[0];
-              if (
-                closest &&
-                game.distance(p, closest) <= game.attackRange(p) &&
-                game.canBeTargeted(closest, p, '杀')
-              ) {
-                await game.useCard(p, picked[0], '杀', [closest.id], 'luanwu');
+            if (picked) {
+              const [cardId, skillId] = picked.split('|');
+              const card = p.hand.find((item) => item.id === cardId);
+              if (card) {
+                await game.useCard(p, card, '杀', [closest!.id], skillId || 'luanwu');
                 continue;
               }
             }
