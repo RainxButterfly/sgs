@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { HERO_MAP } from '../../core/deck';
 import { equipSkillId } from '../../core/equipment';
 import { SKILL_MAP } from '../../core/skills';
-import { FACTION_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
+import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
 
 interface Props {
   heroId: string;
+  heroIds?: string[];
   player?: PlayerState;
+  mode?: GameMode;
   showRole?: boolean;
   onClose: () => void;
 }
@@ -18,7 +20,7 @@ const SLOTS = [
   { key: 'horseMinus', label: '-1 马' },
 ] as const;
 
-export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
+export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', showRole, onClose }: Props) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -28,14 +30,29 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
   }, [onClose]);
   const hero = HERO_MAP.get(heroId);
   if (!hero) return null;
-  const partner = player?.heroIds?.[1] ? HERO_MAP.get(player.heroIds[1]) : undefined;
+  const roleLabel =
+    mode === 'duel' || mode === 'guozhan' || !player
+      ? ''
+      : mode === 'landlord'
+        ? player.role === 'lord'
+          ? '地主'
+          : '农民'
+        : ROLE_NAME[player.role];
+  const dualIds = player?.heroIds?.length ? player.heroIds : heroIds?.length ? heroIds : [heroId];
+  const partners = dualIds
+    .filter((id) => id !== heroId)
+    .map((id) => HERO_MAP.get(id))
+    .filter((item): item is NonNullable<typeof item> => !!item);
   const skillIds = [
     ...new Set([
-      ...(player?.skills?.length ? player.skills : hero.skillIds),
+      ...(player?.skills?.length
+        ? player.skills
+        : dualIds.flatMap((id) => HERO_MAP.get(id)?.skillIds ?? [])),
       ...(hero.lordSkillId ? [hero.lordSkillId] : []),
       ...(player?.extraSkills ?? []),
     ]),
   ];
+  const displayName = [hero, ...partners].map((item) => item?.name).filter(Boolean).join(' / ');
   const pips = player ? Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp) : [];
   const fields = player?.fields ?? [];
 
@@ -54,11 +71,15 @@ export function HeroDetailModal({ heroId, player, showRole, onClose }: Props) {
           <div className="detail-emblem">{FACTION_NAME[hero.faction]}</div>
           <div className="detail-identity">
             <div className="detail-name-row">
-              <span className="detail-name">{partner ? `${hero.name} / ${partner.name}` : hero.name}</span>
+              <span className="detail-name">{displayName}</span>
               <span className={`gender-badge ${hero.gender}`}>{hero.gender === 'male' ? '♂' : '♀'}</span>
-              {player && showRole && <span className={`role-tag role-${player.role}`}>{ROLE_NAME[player.role]}</span>}
+              {player && showRole && roleLabel && (
+                <span className={`role-tag role-${player.role}`}>{roleLabel}</span>
+              )}
             </div>
-            <div className="detail-title">{hero.title}</div>
+            <div className="detail-title">
+              {[hero, ...partners].map((item) => item?.title).filter(Boolean).join(' · ')}
+            </div>
             <div className="detail-meta">
               <span>
                 体力 {player ? `${Math.max(0, player.hp)}/${player.maxHp}` : hero.hp}

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Game, buildRoles } from '../core/game';
-import { HEROES } from '../core/deck';
+import { HEROES, PLAYABLE_HEROES } from '../core/deck';
 import { botAction } from '../core/bot';
 import { smartBotAction } from '../core/smartBot';
 import { LanClientManager, LanHostManager, createRoomInfo, isAndroidApp, isTauri, parseAddress } from '../net/lan';
@@ -225,6 +225,8 @@ interface AoeState {
   cardName: string;
   sourceId: number;
   entries: AoeEntry[];
+  activeId?: number;
+  timeoutMs?: number;
   done?: boolean;
 }
 
@@ -251,6 +253,7 @@ interface GameStore {
   damageNotice: DamageNotice | null;
   revealNotice: RevealNotice | null;
   lastSkill: SkillNotice | null;
+  wuxieWindow: boolean;
   speechBubbles: SpeechBubble[];
   error: string | null;
   lanRole: 'host' | 'client' | null;
@@ -299,6 +302,7 @@ interface GameStore {
   joinLanRoom: (address: string, code: string, name: string, spectate?: boolean) => Promise<void>;
   startLanGame: (count: number) => void;
   startLanPick: (count: number) => void;
+  setLanCount: (count: number) => void;
   cancelLanPick: () => void;
   setLanRules: (mode: 'standard' | 'custom', rules: CustomRules) => void;
   pickLanHero: (heroId: string) => void;
@@ -354,6 +358,13 @@ interface GameStore {
 }
 
 let resolveAsk: ((action: GameAction) => void) | null = null;
+let askTimer: number | null = null;
+function clearAskTimer(): void {
+  if (askTimer !== null) {
+    window.clearTimeout(askTimer);
+    askTimer = null;
+  }
+}
 let eventSeq = 0;
 let recordedGame: GameLike | null = null;
 const initialBackground = loadBackgroundSettings();
@@ -396,6 +407,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   damageNotice: null,
   revealNotice: null,
   lastSkill: null,
+  wuxieWindow: false,
   speechBubbles: [],
   error: null,
   lanRole: null,
@@ -499,7 +511,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     resolveAsk = null;
     const botNames = ['电脑·孟德', '电脑·玄德', '电脑·仲谋', '电脑·奉孝', '电脑·子龙', '电脑·公瑾', '电脑·翼德'];
     const excluded = new Set(excludeHeroIds ?? []);
-    const pool = HEROES.map((hero) => hero.id).filter((id) => !excluded.has(id));
+    const pool = PLAYABLE_HEROES.map((hero) => hero.id).filter((id) => !excluded.has(id));
     for (let i = pool.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -516,7 +528,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const pair = takeHeroPair(available);
         return {
           name: botNames[i % botNames.length],
-          heroId: pair?.primary ?? [...available][0] ?? HEROES[0].id,
+          heroId: pair?.primary ?? [...available][0] ?? PLAYABLE_HEROES[0].id,
           heroIds: pair ? [pair.primary, pair.secondary] : undefined,
         };
       });
@@ -720,6 +732,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       const info = await createRoomInfo();
       const hostName = name.trim() || '房主';
+      try {
+        localStorage.setItem('sgk-name', hostName);
+      } catch {
+        // ignore storage failures
+      }
       const host = new LanHostManager(info, hostName, {
         askHost: (request) => get().ask(request),
         emitHost: (event) => get().event(event),
@@ -790,6 +807,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     const playerName = name.trim() || '玩家';
+    try {
+      localStorage.setItem('sgk-name', playerName);
+    } catch {
+      // ignore storage failures
+    }
     const client = new LanClientManager(ip, port, cleanCode, playerName, {      onWelcome: (connId) => set({ lanConnId: connId }),
       onLobby: (lobby) =>
         set({
@@ -861,7 +883,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           screen: get().spectate ? 'game' : get().screen,
           version: get().version + 1,
         }),
-      onAsk: (request, state) =>
+      onAsk: (request, state) => {
+        clearAskTimer();
         set({
           game: { state },
           pending: request,
@@ -872,7 +895,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
           cardChoices: [],
           reorderTop: [],
           version: get().version + 1,
-        }),
+        });
+        if (request.timeout && request.timeout > 0) {
+          askTimer = window.setTimeout(() => {
+            if (get().pending?.id !== request.id) return;
+            get().submit({ type: 'cancel' });
+          }, request.timeout);
+        }
+      },
       onEvent: (event) => get().event(event),
       onChat: (message) => get().receiveChat(message),
       onEnd: (text, winner) => {
@@ -934,6 +964,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!host) return;
     host.beginPicking(count);
     set({ myRole: host.roles?.[0] ?? null });
+  },
+
+  setLanCount: (count) => {
+    get().lanHost?.setPlannedCount(count);
   },
 
   cancelLanPick: () => {
@@ -1194,6 +1228,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         cardName: ev.cardName,
         sourceId: ev.sourceId,
         entries: ev.entries,
+        activeId: ev.activeId,
+        timeoutMs: ev.timeoutMs,
         done: ev.done,
       };
     }
@@ -1210,6 +1246,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (ev.type === 'playCard' || ev.type === 'respond') {
       eventSeq += 1;
       const isResponse = ev.type === 'respond';
+      if (isResponse && ev.as === '无懈可击') patch.skipWuxie = false;
       patch.lastPlay = {
         id: eventSeq,
         playerId: ev.playerId,
@@ -1289,6 +1326,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
           turn,
         },
       ].slice(-40);
+    } else if (ev.type === 'wuxieWindow') {
+      patch.wuxieWindow = true;
+      setTimeout(() => set({ wuxieWindow: false }), ev.ms);
     } else if (ev.type === 'skill') {
       eventSeq += 1;
       patch.lastSkill = {
@@ -1300,7 +1340,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const skillId = eventSeq;
       setTimeout(() => {
         if (get().lastSkill?.id === skillId) set({ lastSkill: null });
-      }, 2400);
+      }, 6000);
     } else if (ev.type === 'reveal' && ev.cards.length > 0) {
       eventSeq += 1;
       if (ev.label) {
@@ -1440,7 +1480,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
         req.kind === 'respond' && req.respondName === '无懈可击'
           ? (req.cardOptions ?? []).find((option) => !option.cardId.startsWith('__'))
           : undefined;
+      clearAskTimer();
       resolveAsk = resolve;
+      if (req.timeout && req.timeout > 0) {
+        const askId = req.id;
+        askTimer = window.setTimeout(() => {
+          if (get().pending?.id !== askId) return;
+          const finish = resolveAsk;
+          resolveAsk = null;
+          clearAskTimer();
+          set({
+            pending: null,
+            selected: null,
+            selectedTargets: [],
+            asChooser: null,
+            cardChoices: [],
+            reorderTop: [],
+            modalMinimized: false,
+            version: get().version + 1,
+          });
+          finish?.({ type: 'cancel' });
+        }, req.timeout);
+      }
       set({
         pending: req,
         selected: autoOption
@@ -1461,6 +1522,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }),
 
   submit: (action) => {
+    clearAskTimer();
     const { lanRole, lanClient } = get();
     if (lanRole === 'client') {
       lanClient?.sendAction(action);
@@ -1661,7 +1723,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 }));
 
 export function randomHeroChoices(n: number): string[] {
-  const pool = [...HEROES];
+  const pool = [...PLAYABLE_HEROES];
   const out: string[] = [];
   for (let i = 0; i < n && pool.length; i += 1) {
     const idx = Math.floor(Math.random() * pool.length);
@@ -1673,7 +1735,7 @@ export function randomHeroChoices(n: number): string[] {
 export function takeHeroPair(available: Set<string>): { primary: string; secondary: string } | null {
   const factions = ['wei', 'shu', 'wu', 'qun'] as const;
   const groups = factions
-    .map((faction) => HEROES.filter((hero) => available.has(hero.id) && hero.faction === faction))
+    .map((faction) => PLAYABLE_HEROES.filter((hero) => available.has(hero.id) && hero.faction === faction))
     .filter((group) => group.length >= 2);
   if (!groups.length) return null;
   const group = [...groups[Math.floor(Math.random() * groups.length)]];

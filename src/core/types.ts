@@ -236,6 +236,7 @@ export type GameEvent =
   | { type: 'death'; playerId: number; role: Role }
   | { type: 'equip'; playerId: number; slot: EquipSlot; card?: Card }
   | { type: 'skill'; playerId: number; name: string; text?: string }
+  | { type: 'wuxieWindow'; ms: number }
   | { type: 'reveal'; playerId?: number; cards: Card[]; label?: string }
   | {
       type: 'harvest';
@@ -249,6 +250,8 @@ export type GameEvent =
       cardName: string;
       sourceId: number;
       entries: AoeEntry[];
+      activeId?: number;
+      timeoutMs?: number;
       done?: boolean;
     }
   | { type: 'gameOver'; text: string; winner: Role | Faction | 'draw' }
@@ -262,6 +265,7 @@ export interface GameIO {
 
 export interface HeroData {
   id: string;
+  disabled?: boolean;
   name: string;
   faction: Faction;
   gender: Gender;

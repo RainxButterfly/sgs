@@ -5260,12 +5260,15 @@ button {
   flex: 0 0 auto;
   width: 22px;
   height: 22px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   font-size: 11px;
   font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  padding: 0;
 }
 
 .history-result.win {
@@ -7103,10 +7106,10 @@ button {
 .m-feed-text {
   width: 100%;
   min-width: 0;
-  font-size: 9px;
-  line-height: 1.25;
+  font-size: 11px;
+  line-height: 1.35;
   text-align: center;
-  color: var(--muted);
+  color: var(--text);
 }
 
 .m-feed-text b {
@@ -7128,7 +7131,7 @@ button {
   white-space: nowrap;
   font-style: normal;
   color: var(--gold);
-  font-size: 8.5px;
+  font-size: 10px;
 }
 
 .m-feed-card-empty {
@@ -7982,8 +7985,8 @@ button {
   left: 14px;
   top: 72px;
   z-index: 42;
-  width: min(300px, 42vw);
-  max-height: min(62vh, 440px);
+  width: min(390px, 50vw);
+  max-height: min(72vh, 560px);
   display: flex;
   flex-direction: column;
   border-radius: 8px;
@@ -8071,14 +8074,15 @@ button {
   padding: 4px 6px;
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.035);
-  font-size: 11.5px;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .aoe-name {
   flex: 0 0 auto;
-  max-width: 78px;
+  max-width: 108px;
   color: var(--text);
+  font-size: 13px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -8113,7 +8117,7 @@ button {
   padding: 5px 10px 7px;
   border-top: 1px solid rgba(219, 181, 108, 0.16);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   text-align: right;
   letter-spacing: 0.08em;
 }
@@ -8126,12 +8130,12 @@ button {
   .aoe-panel {
     left: 8px;
     top: 58px;
-    width: min(238px, 56vw);
-    max-height: 48vh;
+    width: min(300px, 72vw);
+    max-height: 58vh;
   }
 
   .aoe-entry {
-    font-size: 10.5px;
+    font-size: 12px;
   }
 }
 
@@ -9259,8 +9263,8 @@ button {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  max-width: 290px;
-  padding: 7px 10px;
+  max-width: 380px;
+  padding: 9px 12px;
   border-radius: 8px;
   border: 1px solid rgba(219, 181, 108, 0.48);
   background: rgba(42, 34, 24, 0.97);
@@ -9286,15 +9290,15 @@ button {
 .skill-notice b {
   display: block;
   color: var(--gold-bright);
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .skill-notice p {
   margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.5;
+  color: var(--text);
+  font-size: 11.5px;
+  line-height: 1.55;
 }
 
 @keyframes skillNoticeIn {
@@ -9337,9 +9341,9 @@ button {
 
 .recent-action {
   max-width: 100%;
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.5;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -9366,9 +9370,9 @@ button {
   padding: 3px 8px;
   border-radius: 4px;
   background: rgba(26, 21, 16, 0.55);
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.5;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
   text-align: center;
 }
 
@@ -9823,4 +9827,128 @@ button {
     margin: 11px auto 12px;
     padding: 9px 12px;
   }
+}
+
+.pick-confirm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 6px;
+  border: 1px solid rgba(219, 181, 108, 0.22);
+  background: rgba(0, 0, 0, 0.14);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.pick-confirm-row .btn {
+  min-width: 94px;
+}
+
+.wuxie-window-notice {
+  position: fixed;
+  left: 50%;
+  top: 74px;
+  transform: translateX(-50%);
+  z-index: 53;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(177, 155, 230, 0.42);
+  background: rgba(46, 38, 62, 0.94);
+  color: #d8cff3;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+.wuxie-window-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b8a9ec;
+  box-shadow: 0 0 8px rgba(184, 169, 236, 0.7);
+  animation: wuxiePulse 0.9s ease-in-out infinite;
+}
+
+@keyframes wuxiePulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.aoe-entry.is-active {
+  background: rgba(219, 181, 108, 0.12);
+  box-shadow: inset 2px 0 0 rgba(219, 181, 108, 0.65);
+}
+
+.aoe-entry {
+  position: relative;
+}
+
+.aoe-timer {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 1px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.aoe-timer i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #c9ad72, #f0d99e);
+  transform-origin: left;
+  animation: aoeTimer linear forwards;
+}
+
+@keyframes aoeTimer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.response-timer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.response-timer i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #d2b476, #f2dba6);
+  transform-origin: left;
+  animation: responseTimer linear forwards;
+}
+
+@keyframes responseTimer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.prompt-bar {
+  position: relative;
 }

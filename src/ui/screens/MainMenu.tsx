@@ -1,4 +1,4 @@
-import { HEROES } from '../../core/deck';
+import { HEROES, PLAYABLE_HEROES } from '../../core/deck';
 import { FACTION_NAME } from '../../core/types';
 import { useGameStore } from '../store';
 
@@ -105,7 +105,7 @@ export function MainMenu() {
             </button>
           </div>
           <div className="menu-foot">
-            <span>武将 {HEROES.length}</span>
+            <span>武将 {PLAYABLE_HEROES.length}</span>
             <span>牌堆 160</span>
             <span>身份 · 1v1 · 斗地主 · 国战</span>
           </div>
@@ -136,7 +136,7 @@ export function MainMenu() {
         <div className="menu-side">
           <div className="menu-side-title">武 将 名 录</div>
           <div className="hero-roll">
-            {HEROES.map((hero) => (
+            {PLAYABLE_HEROES.map((hero) => (
               <span key={hero.id} className={`hero-roll-item faction-${hero.faction}`}>
                 <i>{FACTION_NAME[hero.faction]}</i>
                 {hero.name}

@@ -148,6 +148,11 @@ export function PromptBar() {
     };
     return (
       <div className={`prompt-bar active-respond ${isWuxie ? 'wuxie-prompt' : ''}`}>
+        {pending.timeout ? (
+          <div key={`timer-${pending.id}`} className="response-timer">
+            <i style={{ animationDuration: `${pending.timeout}ms` }} />
+          </div>
+        ) : null}
         <div className="prompt-main">
           <div className="prompt-title">
             <span className="prompt-dot red" />
@@ -186,6 +191,11 @@ export function PromptBar() {
               {o.label ?? '发动'}
             </button>
           ))}
+          {isWuxie && (
+            <button type="button" className="btn ghost" onClick={() => useGameStore.getState().cancelAllWuxie()}>
+              本轮跳过
+            </button>
+          )}
           <button type="button" className="btn ghost" onClick={() => useGameStore.getState().cancelPrompt()}>
             {isWuxie ? '本轮不用' : '取消'}
           </button>

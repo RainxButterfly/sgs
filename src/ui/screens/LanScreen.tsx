@@ -9,7 +9,13 @@ export function LanScreen() {
   const preset = useGameStore((s) => s.joinPreset);
   const desktop = isTauri();
   const canCreate = desktop || import.meta.env.DEV;
-  const [createName, setCreateName] = useState('房主');
+  const [createName, setCreateName] = useState(() => {
+    try {
+      return localStorage.getItem('sgk-name') || '房主';
+    } catch {
+      return '房主';
+    }
+  });
   const [joinName, setJoinName] = useState(() => {
     try {
       return localStorage.getItem('sgk-name') || '玩家';

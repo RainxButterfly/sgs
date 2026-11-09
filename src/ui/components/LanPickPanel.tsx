@@ -39,7 +39,8 @@ export function LanPickPanel({
   onStart,
   onCancel,
 }: Props) {
-  const [detailHero, setDetailHero] = useState<string | null>(null);
+  const [detailHero, setDetailHero] = useState<{ heroId: string; heroIds: string[] } | null>(null);
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const guozhan =
     guozhanMode || (me.choices ?? []).some((choice) => choice.includes('|'));
   const choiceHeroIds = (choice: string) => choice.split('|').filter(Boolean);
@@ -159,9 +160,9 @@ export function LanPickPanel({
                 <HoverInfo key={choice} as="div" className="lobby-hero-wrap" content={<HeroDataHover hero={first} />}>
                 <button
                   type="button"
-                  className={`lobby-hero-card ${guozhan ? 'pair-lobby-hero' : ''} faction-${first.faction} ${picked ? 'picked' : ''} ${taken ? 'taken' : ''}`}
+                  className={`lobby-hero-card ${guozhan ? 'pair-lobby-hero' : ''} faction-${first.faction} ${picked || selectedChoice === choice ? 'picked' : ''} ${taken ? 'taken' : ''}`}
                   disabled={taken || !canPick}
-                  onClick={() => onPick(choice)}
+                  onClick={() => setSelectedChoice(choice)}
                 >
                   <div className="lobby-hero-top">
                     <span className="faction-badge">{FACTION_NAME[first.faction]}</span>
@@ -185,12 +186,12 @@ export function LanPickPanel({
                   aria-label="查看武将信息"
                   onClick={(event) => {
                     event.stopPropagation();
-                    setDetailHero(first.id);
+                    setDetailHero({ heroId: first.id, heroIds: ids });
                   }}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.stopPropagation();
-                      setDetailHero(first.id);
+                      setDetailHero({ heroId: first.id, heroIds: ids });
                     }
                   }}
                 >
@@ -203,6 +204,26 @@ export function LanPickPanel({
               <div className="lobby-hero-empty">候选武将同步中，请让房主重新开始选将。</div>
             )}
           </div>
+          )}
+          {!playerHeroIds(me).length && (
+            <div className="pick-confirm-row">
+              <span>
+                {selectedChoice
+                  ? `已选：${choiceHeroIds(selectedChoice).map((id) => HERO_MAP.get(id)?.name).filter(Boolean).join(' / ')}`
+                  : '请先选择一组武将'}
+              </span>
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!selectedChoice || !canPick}
+                onClick={() => {
+                  if (selectedChoice) onPick(selectedChoice);
+                  setSelectedChoice(null);
+                }}
+              >
+                确认选择
+              </button>
+            </div>
           )}
         </section>
       </div>
@@ -229,7 +250,8 @@ export function LanPickPanel({
       </div>
       {detailHero && (
         <HeroDetailModal
-          heroId={detailHero}
+          heroId={detailHero.heroId}
+          heroIds={detailHero.heroIds}
           showRole={false}
           onClose={() => setDetailHero(null)}
         />

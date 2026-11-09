@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Game, buildRoles } from '../core/game';
-import { HEROES } from '../core/deck';
+import { HEROES, PLAYABLE_HEROES } from '../core/deck';
 import { botAction } from '../core/bot';
 import { smartBotAction } from '../core/smartBot';
 import type { AskRequest, GameAction, GameEvent, GameIO, Role } from '../core/types';
@@ -141,6 +141,7 @@ export class LanHostManager {
   rules: CustomRules = { ...DEFAULT_RULES };
   picking = false;
   targetCount = 0;
+  plannedCount = 8;
   roles: Role[] | null = null;
   lordPlayerId: number | null = null;
   lordBotHero: string | null = null;
@@ -198,12 +199,12 @@ export class LanHostManager {
     for (const heroId of this.reservedChoiceIds()) taken.add(heroId);
     for (const heroId of this.lastGameHeroes) taken.add(heroId);
     if (this.rules.mode === 'guozhan') {
-      const available = new Set(HEROES.map((hero) => hero.id).filter((id) => !taken.has(id)));
+      const available = new Set(PLAYABLE_HEROES.map((hero) => hero.id).filter((id) => !taken.has(id)));
       const choices: string[] = [];
       for (let guard = 0; guard < 20 && choices.length < 5; guard += 1) {
         const factions = ['wei', 'shu', 'wu', 'qun'] as const;
         const groups = factions
-          .map((faction) => HEROES.filter((hero) => available.has(hero.id) && hero.faction === faction))
+          .map((faction) => PLAYABLE_HEROES.filter((hero) => available.has(hero.id) && hero.faction === faction))
           .filter((group) => group.length >= 2);
         if (!groups.length) break;
         const group = groups[Math.floor(Math.random() * groups.length)];
@@ -216,7 +217,7 @@ export class LanHostManager {
       }
       return choices;
     }
-    const pool = HEROES.map((hero) => hero.id).filter((id) => !taken.has(id));
+    const pool = PLAYABLE_HEROES.map((hero) => hero.id).filter((id) => !taken.has(id));
     for (let i = pool.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -272,6 +273,7 @@ export class LanHostManager {
       hostName: this.hostName,
       players,
       maxPlayers: this.rules.mode === 'duel' ? 2 : this.rules.mode === 'landlord' ? 3 : 8,
+      seatCount: this.plannedCount,
       mode: this.mode,
       rules: { ...this.rules },
       picking: this.picking,
@@ -284,10 +286,17 @@ export class LanHostManager {
     };
   }
 
+  setPlannedCount(count: number): void {
+    if (this.started || this.picking) return;
+    this.plannedCount = Math.max(2, Math.min(8, count));
+    this.refreshLobby();
+  }
+
   beginPicking(count: number): void {
     if (this.started || this.picking) return;
     this.ensureChoicesForMode();
     const total = Math.max(2, Math.min(8, count));
+    this.plannedCount = total;
     const gameMode = this.rules.mode ?? 'identity';
     const roles = buildRoles(total, gameMode);
     for (let i = roles.length - 1; i > 0; i -= 1) {
@@ -308,9 +317,9 @@ export class LanHostManager {
       const taken = new Set<string>();
       if (this.hostHeroId) taken.add(this.hostHeroId);
       for (const guest of this.guests) if (guest.heroId) taken.add(guest.heroId);
-      const pool = HEROES.filter((hero) => !taken.has(hero.id));
+      const pool = PLAYABLE_HEROES.filter((hero) => !taken.has(hero.id));
       this.lordPlayerId = null;
-      this.lordBotHero = pool[Math.floor(Math.random() * pool.length)]?.id ?? HEROES[0].id;
+      this.lordBotHero = pool[Math.floor(Math.random() * pool.length)]?.id ?? PLAYABLE_HEROES[0].id;
     }
     this.picking = true;
     this.targetCount = total;
@@ -725,7 +734,7 @@ export class LanHostManager {
       const factions = ['wei', 'shu', 'wu', 'qun'] as const;
       const groups = factions
         .map((faction) =>
-          HEROES.filter((hero) => hero.faction === faction && !usedByHumans.has(hero.id)),
+          PLAYABLE_HEROES.filter((hero) => hero.faction === faction && !usedByHumans.has(hero.id)),
         )
         .filter((group) => group.length >= 2);
       if (!groups.length) return [];

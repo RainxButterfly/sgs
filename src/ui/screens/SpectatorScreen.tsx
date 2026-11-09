@@ -137,6 +137,7 @@ export function SpectatorScreen() {
         <HeroDetailModal
           heroId={game.state.players[detailPlayer].heroId}
           player={game.state.players[detailPlayer]}
+          mode={mode}
           showRole={game.state.players[detailPlayer].roleRevealed || !game.state.players[detailPlayer].alive}
           onClose={() => setDetailPlayer(null)}
         />

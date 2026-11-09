@@ -157,6 +157,7 @@ export function GameScreen() {
         <HeroDetailModal
           heroId={game.state.players[detailPlayer].heroId}
           player={game.state.players[detailPlayer]}
+          mode={displayMode}
           showRole={
             detailPlayer === humanId ||
             game.state.players[detailPlayer].roleRevealed ||

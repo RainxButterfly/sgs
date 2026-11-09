@@ -731,6 +731,7 @@ export const HEROES: HeroData[] = [
   {
     id: 'zuoci',
     name: '左慈',
+    disabled: true,
     faction: 'qun',
     gender: 'male',
     hp: 3,
@@ -870,4 +871,5 @@ export const HEROES: HeroData[] = [
   },
 ];
 
+export const PLAYABLE_HEROES = HEROES.filter((hero) => !hero.disabled);
 export const HERO_MAP = new Map(HEROES.map((h) => [h.id, h]));

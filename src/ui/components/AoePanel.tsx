@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { SKILL_MAP } from '../../core/skills';
 import { cardDisplayName } from '../labels';
 import { useGameStore } from '../store';
@@ -9,14 +8,7 @@ export function AoePanel() {
   const screen = useGameStore((s) => s.screen);
   const dismiss = useGameStore((s) => s.dismissAoe);
 
-  useEffect(() => {
-    if (!aoe?.done) return;
-    const timer = window.setTimeout(() => {
-      const current = useGameStore.getState().aoe;
-      if (current === aoe) useGameStore.getState().dismissAoe();
-    }, 15000);
-    return () => window.clearTimeout(timer);
-  }, [aoe]);
+
 
   if (!aoe || !game || screen !== 'game') return null;
   const source = game.state.players[aoe.sourceId];
@@ -58,9 +50,21 @@ export function AoePanel() {
             text = '已阵亡';
           }
           return (
-            <li key={entry.playerId} className={`aoe-entry result-${entry.result}`}>
+            <li
+              key={entry.playerId}
+              className={`aoe-entry result-${entry.result} ${entry.playerId === aoe.activeId ? 'is-active' : ''}`}
+            >
               <span className="aoe-name">{playerName(entry.playerId)}</span>
               <span className="aoe-result">{text}</span>
+              {entry.playerId === aoe.activeId && entry.result === 'pending' && (
+                <span
+                  key={`timer-${aoe.activeId}`}
+                  className="aoe-timer"
+                  style={{ animationDuration: `${aoe.timeoutMs ?? 6000}ms` }}
+                >
+                  <i />
+                </span>
+              )}
             </li>
           );
         })}

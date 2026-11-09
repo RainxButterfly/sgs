@@ -14,6 +14,7 @@ export function LobbyScreen() {
   const startLanPick = useGameStore((s) => s.startLanPick);
   const cancelLanPick = useGameStore((s) => s.cancelLanPick);
   const setLanRules = useGameStore((s) => s.setLanRules);
+  const setLanCount = useGameStore((s) => s.setLanCount);
   const leaveLan = useGameStore((s) => s.leaveLan);
   const pickLanHero = useGameStore((s) => s.pickLanHero);
   const lanConnId = useGameStore((s) => s.lanConnId);
@@ -92,7 +93,7 @@ export function LobbyScreen() {
   }
 
   const players = lobby.players;
-  const maxTotal = lobby.maxPlayers;
+  const maxTotal = lobby.seatCount ?? lobby.maxPlayers;
   const me = host ? players.find((player) => player.isHost) : players.find((player) => player.connId === lanConnId);
   const mode = lobby.mode ?? 'standard';
   const rules = lobby.rules ?? DEFAULT_RULES;
@@ -109,7 +110,10 @@ export function LobbyScreen() {
           : mode === 'custom'
             ? [2, 3, 4, 5, 6, 7, 8]
             : [5, 6, 7, 8];
-  const startCount = Math.max(minPlayers, Math.min(8, Math.max(count, players.length)));
+  const startCount = Math.max(
+    minPlayers,
+    Math.min(8, Math.max(lobby.seatCount ?? count, players.length)),
+  );
   const picking = lobby.picking === true;
   const pickCount = Math.max(lobby.targetCount ?? startCount, players.length);
   const gameModeLabel =
@@ -383,7 +387,10 @@ export function LobbyScreen() {
                     type="button"
                     className={`count-btn ${startCount === n ? 'on' : ''}`}
                     disabled={n < players.length}
-                    onClick={() => setCount(n)}
+                    onClick={() => {
+                      setCount(n);
+                      setLanCount(n);
+                    }}
                   >
                     {n} 人
                   </button>

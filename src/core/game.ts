@@ -1,4 +1,4 @@
-import { buildGameDeck, HEROES, HERO_MAP } from './deck';
+import { buildGameDeck, HEROES, HERO_MAP, PLAYABLE_HEROES } from './deck';
 import { EQUIP_SKILL_ID } from './equipment';
 import { SKILL_MAP } from './skills';
 import type { SkillContext, SkillDef, SkillEvent } from './skills';
@@ -98,6 +98,7 @@ export class Game {
   private askSeq = 0;
   private logSeq = 0;
   private stopped = false;
+  private wuxieWindowPending = false;
 
   constructor(setup: GameSetup, io: GameIO) {
     this.io = io;
@@ -120,7 +121,7 @@ export class Game {
     const guozhanCounts: Record<string, number> = { wei: 0, shu: 0, wu: 0, qun: 0 };
     const usedHeroes = new Set<string>();
     const pickUnusedHero = (faction?: Faction, excludeId?: string): string | undefined => {
-      const pool = HEROES.filter(
+      const pool = PLAYABLE_HEROES.filter(
         (hero) =>
           !usedHeroes.has(hero.id) &&
           hero.id !== excludeId &&
@@ -154,10 +155,10 @@ export class Game {
         primary = primary ?? pickUnusedHero();
         heroIds = primary ? [primary] : [];
       }
-      const primaryId = heroIds[0] ?? pickUnusedHero() ?? HEROES[0].id;
+      const primaryId = heroIds[0] ?? pickUnusedHero() ?? PLAYABLE_HEROES[0].id;
       if (!heroIds.length) heroIds = [primaryId];
       const heroes = heroIds.map((id) => HERO_MAP.get(id)).filter((hero): hero is NonNullable<typeof hero> => !!hero);
-      const hero = heroes[0] ?? HERO_MAP.get(HEROES[0].id)!;
+      const hero = heroes[0] ?? HERO_MAP.get(PLAYABLE_HEROES[0].id)!;
       for (const id of heroIds) usedHeroes.add(id);
       if (mode === 'guozhan') guozhanCounts[hero.faction] += 1;
       const isLord = roles[i] === 'lord' && mode !== 'duel' && count > 2;
@@ -1158,6 +1159,9 @@ ${skill.desc}` : ''}`
     }
 
     const cardType = this.cardTypeOf(asName);
+    if ((cardType === 'trick' || cardType === 'delayed') && asName !== '无懈可击' && skillId !== 'recast') {
+      this.wuxieWindowPending = true;
+    }
     if (cardType === 'trick' && skillId !== 'recast') {
       await this.trigger('cardUsed', { player: user, card, data: { as: asName } });
     }
@@ -1229,14 +1233,18 @@ ${skill.desc}` : ''}`
       this.drawCards(user, 1, '重铸');
       this.log(`【${user.name}】重铸铁索连环，摸一张牌`);
     } else if (asName === '铁索连环') {
-      const first = this.players[targets[0]] ?? user;
-      if (!(await this.askWuxie('铁索连环', first, user, `【${user.name}】使用铁索连环`))) {
-        for (const tid of targets) {
-          const target = this.players[tid];
-          if (!target?.alive) continue;
-          target.chained = !target.chained;
-          this.log(`【${target.name}】${target.chained ? '横置' : '重置'}`, 'skill');
-        }
+      for (const tid of targets) {
+        const target = this.players[tid];
+        if (!target?.alive) continue;
+        const nullified = await this.askWuxie(
+          '铁索连环',
+          target,
+          user,
+          `【${user.name}】对【${target.name}】使用铁索连环`,
+        );
+        if (nullified) continue;
+        target.chained = !target.chained;
+        this.log(`【${target.name}】${target.chained ? '横置' : '重置'}`, 'skill');
       }
     } else if (asName === '火攻') {
       await this.resolveFireAttack(user, card, this.players[targets[0]]);
@@ -1505,12 +1513,14 @@ ${skill.desc}` : ''}`
     const targets = this.turnOrder().filter((p) => p.id !== user.id && p.alive);
     const entries: AoeEntry[] = targets.map((p) => ({ playerId: p.id, result: 'pending' }));
     const entryOf = (playerId: number) => entries.find((entry) => entry.playerId === playerId);
-    const emitAoe = (done = false) =>
+    const emitAoe = (done = false, activeId?: number, timeoutMs?: number) =>
       this.emit({
         type: 'aoe',
         cardName: card.name,
         sourceId: user.id,
         entries: entries.map((entry) => ({ ...entry })),
+        activeId,
+        timeoutMs,
         done,
       });
     emitAoe();
@@ -1546,14 +1556,16 @@ ${skill.desc}` : ''}`
         emitAoe();
         continue;
       }
+      emitAoe(false, target.id, 6000);
+      await this.io.delay(500 + Math.random() * 700);
       if (await this.askWuxie(card.name, target, user, `【${target.name}】受到${card.name}影响`)) {
         note(target.id, { result: 'wuxie', hp: target.hp });
         emitAoe();
         continue;
       }
       const resp = responseName === '闪'
-        ? await this.askRespond(target, '闪', { prompt: '万箭齐发：请打出一张闪', canCancel: true })
-        : await this.askRespond(target, '杀', { prompt: '南蛮入侵：请打出一张杀', canCancel: true });
+        ? await this.askRespond(target, '闪', { prompt: '万箭齐发：请打出一张闪', canCancel: true, timeout: 6000 })
+        : await this.askRespond(target, '杀', { prompt: '南蛮入侵：请打出一张杀', canCancel: true, timeout: 6000 });
       if (resp) {
         note(target.id, {
           result: 'answered',
@@ -1734,7 +1746,7 @@ ${skill.desc}` : ''}`
   async askRespond(
     player: PlayerState,
     name: string,
-    opts: { prompt: string; detail?: string; canCancel?: boolean; ignoreArmor?: boolean; forcedTarget?: number; targetId?: number },
+    opts: { prompt: string; detail?: string; canCancel?: boolean; ignoreArmor?: boolean; forcedTarget?: number; targetId?: number; timeout?: number },
   ): Promise<ResponseUse | null> {
     if (!player.alive || this.state.over) return null;
     let ignoreArmor = opts.ignoreArmor ?? false;
@@ -1754,6 +1766,7 @@ ${skill.desc}` : ''}`
         cardOptions: options,
         canCancel: opts.canCancel ?? true,
         targetId: opts.targetId,
+        timeout: opts.timeout,
       });
       if (res.type === 'cancel') return null;
       if (res.type !== 'respondCard') continue;
@@ -1868,6 +1881,12 @@ ${skill.desc}` : ''}`
   }
 
   private async askWuxie(cardName: string, target: PlayerState, user: PlayerState, desc: string): Promise<boolean> {
+    if (this.wuxieWindowPending) {
+      this.wuxieWindowPending = false;
+      const ms = 4000;
+      this.emit({ type: 'wuxieWindow', ms });
+      await this.io.delay(ms);
+    }
     let nullified = false;
     for (let guard = 0; guard < 8; guard += 1) {
       let played = false;
@@ -2356,6 +2375,7 @@ ${skill.desc}` : ''}`
   async begin(): Promise<void> {
     this.emit({ type: 'state' });
     try {
+      await this.trigger('gameStart', { data: {} });
       while (!this.state.over && !this.stopped) {
         const player = this.currentPlayer;
         if (!player?.alive) {

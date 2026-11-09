@@ -39,6 +39,7 @@ export interface LobbyState {
   hostName: string;
   players: LobbyPlayer[];
   maxPlayers: number;
+  seatCount?: number;
   mode: 'standard' | 'custom';
   rules: CustomRules;
   picking?: boolean;

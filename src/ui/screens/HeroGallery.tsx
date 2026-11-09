@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { HEROES } from '../../core/deck';
+import { PLAYABLE_HEROES } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, type Faction } from '../../core/types';
 import { HeroDetailModal } from '../components/HeroDetail';
@@ -17,7 +17,7 @@ const FACTION_LABEL: Record<'all' | Faction, string> = {
 export function HeroGallery() {
   const [faction, setFaction] = useState<'all' | Faction>('all');
   const [detail, setDetail] = useState<string | null>(null);
-  const heroes = HEROES.filter((hero) => faction === 'all' || hero.faction === faction);
+  const heroes = PLAYABLE_HEROES.filter((hero) => faction === 'all' || hero.faction === faction);
 
   return (
     <div className="gallery-screen">

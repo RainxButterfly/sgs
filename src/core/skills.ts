@@ -1,7 +1,9 @@
 import type { Game } from './game';
 import type { Card, PlayerState } from './types';
+import { EQUIP_SKILL_ID } from './equipment';
 
 export type SkillEvent =
+  | 'gameStart'
   | 'turnStart'
   | 'turnEnd'
   | 'phaseStart'
@@ -2080,8 +2082,8 @@ const SKILLS: SkillDef[] = [
     locked: true,
     triggers: [
       {
-        event: 'turnStart',
-        when: (c) => isCurrent(c) && !c.owner.flags.huashen,
+        event: 'gameStart',
+        when: (c) => !c.owner.flags.huashen,
         effect: async (c) => {
           c.owner.flags.huashen = 1;
           c.owner.flags.huashenChanged = 1;
@@ -2478,8 +2480,13 @@ const SKILLS: SkillDef[] = [
 
 function grantRandomSkills(game: Game, owner: PlayerState, count: number): string[] {
   const existing = new Set([...owner.skills, ...owner.extraSkills]);
+  const equipmentSkills = new Set(Object.values(EQUIP_SKILL_ID));
   const pool = SKILLS.filter(
-    (skill) => !skill.lord && !existing.has(skill.id) && !['huashen', 'xinsheng', 'zhiba'].includes(skill.id),
+    (skill) =>
+      !skill.lord &&
+      !existing.has(skill.id) &&
+      !equipmentSkills.has(skill.id) &&
+      !['huashen', 'xinsheng', 'zhiba'].includes(skill.id),
   ).map((skill) => skill.id);
   const gained: string[] = [];
   for (let i = 0; i < count && pool.length > 0; i += 1) {

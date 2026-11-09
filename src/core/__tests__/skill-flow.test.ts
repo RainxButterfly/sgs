@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../game';
+import { EQUIP_SKILL_ID } from '../equipment';
 import type { AskRequest, Card, GameAction, GameEvent, GameIO } from '../types';
 
 class SkillIO implements GameIO {
@@ -117,5 +118,53 @@ describe('义从距离', () => {
     expect(game.distance(gongsun, first)).toBe(1);
     expect(game.distance(gongsun, second)).toBeLessThanOrEqual(game.distance(third, second) + 1);
     expect(game.distance(first, gongsun)).toBe(2);
+  });
+});
+
+describe('铁索连环与无懈', () => {
+  it('无懈只抵消第一个目标，第二个目标仍然横置', async () => {
+    const io = new WuxieIO();
+    const game = new Game(
+      {
+        players: [
+          { name: '使用者', heroId: 'liubei', isBot: false },
+          { name: '目标一', heroId: 'daqiao', isBot: false },
+          { name: '目标二', heroId: 'caocao', isBot: false },
+        ],
+        seed: 20261119,
+        rules: { skillsEnabled: false },
+      },
+      io,
+    );
+    const [user, first, second] = game.state.players;
+    user.hand = [{ id: 'tiesuo', name: '铁索连环', suit: 'club', rank: 6, type: 'trick' }];
+    first.hand = [{ id: 'wuxie', name: '无懈可击', suit: 'spade', rank: 2, type: 'trick' }];
+    second.hand = [];
+    await game.useCard(user, user.hand[0], '铁索连环', [first.id, second.id]);
+    expect(first.chained).toBe(false);
+    expect(second.chained).toBe(true);
+  });
+});
+
+
+describe('左慈化身', () => {
+  it('化身不会获得装备技能', async () => {
+    const game = new Game(
+      {
+        players: [
+          { name: '左慈', heroId: 'zuoci', isBot: false },
+          { name: '甲', heroId: 'liubei', isBot: false },
+          { name: '乙', heroId: 'caocao', isBot: false },
+          { name: '丙', heroId: 'sunquan', isBot: false },
+        ],
+        seed: 20261120,
+        rules: { skillsEnabled: true, mode: 'identity' },
+      },
+      new SkillIO(),
+    );
+    await (game as unknown as { trigger: (event: string, base: { data: object }) => Promise<void> }).trigger('gameStart', { data: {} });
+    const equipment = new Set(Object.values(EQUIP_SKILL_ID));
+    expect(game.state.players[0].extraSkills.length).toBe(2);
+    expect(game.state.players[0].extraSkills.some((id) => equipment.has(id))).toBe(false);
   });
 });
