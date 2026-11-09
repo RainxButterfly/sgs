@@ -10903,3 +10903,93 @@ button {
   line-height: 1;
   cursor: pointer;
 }
+
+/* 身份标记（仅本地可见） */
+.seat-mark,
+.m-seat-mark {
+  flex: 0 0 auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border: 1px solid rgba(219, 181, 108, 0.4);
+  border-radius: 4px;
+  background: rgba(20, 16, 12, 0.45);
+  color: var(--gold);
+  font-family: var(--font-body);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.seat-mark.role-lord,
+.m-seat-mark.role-lord {
+  border-color: rgba(240, 200, 119, 0.7);
+  color: #f0c877;
+}
+
+.seat-mark.role-loyalist,
+.m-seat-mark.role-loyalist {
+  border-color: rgba(127, 190, 142, 0.7);
+  color: #a9e6b9;
+}
+
+.seat-mark.role-rebel,
+.m-seat-mark.role-rebel {
+  border-color: rgba(210, 122, 100, 0.7);
+  color: #f0ada1;
+}
+
+.seat-mark.role-traitor,
+.m-seat-mark.role-traitor {
+  border-color: rgba(184, 169, 236, 0.7);
+  color: #d8cff3;
+}
+
+.identity-mark-modal {
+  width: min(420px, 90vw);
+}
+
+.identity-mark-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+
+.identity-mark-option {
+  padding: 10px 12px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font-family: var(--font-calligraphy);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.identity-mark-option:hover,
+.identity-mark-option.on {
+  border-color: rgba(219, 181, 108, 0.7);
+  background: rgba(219, 181, 108, 0.12);
+  color: var(--gold-bright);
+}
+
+.identity-mark-option.role-lord.on {
+  border-color: rgba(240, 200, 119, 0.8);
+  color: #f0c877;
+}
+
+.identity-mark-option.role-loyalist.on {
+  border-color: rgba(127, 190, 142, 0.8);
+  color: #a9e6b9;
+}
+
+.identity-mark-option.role-rebel.on {
+  border-color: rgba(210, 122, 100, 0.8);
+  color: #f0ada1;
+}
+
+.identity-mark-option.role-traitor.on {
+  border-color: rgba(184, 169, 236, 0.8);
+  color: #d8cff3;
+}

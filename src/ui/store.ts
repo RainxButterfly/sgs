@@ -300,6 +300,11 @@ interface GameStore {
 
   selected: { cardId: string; as: string; skillId?: string; element?: 'fire' | 'thunder' } | null;
   selectedTargets: number[];
+  identityMarks: Partial<Record<number, Role>>;
+  markingPlayerId: number | null;
+  openIdentityMark: (playerId: number) => void;
+  closeIdentityMark: () => void;
+  setIdentityMark: (role: Role | null) => void;
   asChooser: AsChooser | null;
   cardChoices: string[];
   reorderTop: string[];
@@ -468,6 +473,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   firstPlayerId: null,
   selected: null,
   selectedTargets: [],
+  identityMarks: {},
+  markingPlayerId: null,
   asChooser: null,
   cardChoices: [],
   reorderTop: [],
@@ -735,6 +742,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lanConnId: -1,
       spectate: false,
       spectators: [],
+      identityMarks: {},
+      markingPlayerId: null,
       lastPlay: null,
       lastJudge: null,
       lastDiscard: null,
@@ -1402,6 +1411,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (ev.type === 'turn' && ev.turn === 1) {
       patch.aoe = null;
       patch.harvest = null;
+      patch.identityMarks = {};
+      patch.markingPlayerId = null;
     }
     if (ev.type === 'turn' || ev.type === 'playCard') {
       patch.skipWuxie = false;
@@ -1726,6 +1737,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
       version: get().version + 1,
     });
     resolve?.(action);
+  },
+
+  openIdentityMark: (playerId) => set({ markingPlayerId: playerId }),
+
+  closeIdentityMark: () => set({ markingPlayerId: null }),
+
+  setIdentityMark: (role) => {
+    const { markingPlayerId, identityMarks } = get();
+    if (markingPlayerId == null) return;
+    const next = { ...identityMarks };
+    if (role) next[markingPlayerId] = role;
+    else delete next[markingPlayerId];
+    set({
+      identityMarks: next,
+      markingPlayerId: null,
+      version: get().version + 1,
+    });
   },
 
   selectCard: (cardId) => {

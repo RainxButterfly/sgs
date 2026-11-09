@@ -1,6 +1,6 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
-import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
+import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState, type Role } from '../../core/types';
 import { playerHeroNames, rankText, shortCardName } from '../labels';
 import { EquipHover, HeroHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
@@ -20,6 +20,8 @@ interface Props {
   selected?: boolean;
   clickable?: boolean;
   revealRoles?: boolean;
+  mark?: Role | null;
+  onMark?: () => void;
   flash?: Flash | null;
   flashes?: Flash[];
   speech?: { name: string; text: string } | null;
@@ -37,6 +39,8 @@ export function PlayerSeat({
   selected,
   clickable,
   revealRoles,
+  mark,
+  onMark,
   flash,
   flashes,
   speech,
@@ -102,6 +106,19 @@ export function PlayerSeat({
         <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
         <span className="seat-hero">{playerHeroNames(player)}</span>
         {roleLabel && <span className={`role-badge role-${player.role}`}>{roleLabel}</span>}
+        {onMark && (
+          <button
+            type="button"
+            className={`seat-mark ${mark ? `role-${mark}` : ''}`}
+            title="标记你判断的身份（仅自己可见）"
+            onClick={(event) => {
+              event.stopPropagation();
+              onMark();
+            }}
+          >
+            {mark ? ROLE_NAME[mark].slice(0, 1) : '标'}
+          </button>
+        )}
         {current && <span className="seat-turn-tag">行动中</span>}
         {player.isBot && <span className="ai-badge">AI</span>}
         {onDetail && (

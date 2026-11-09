@@ -18,6 +18,8 @@ export function GameScreen() {
   const pending = useGameStore((s) => s.pending);
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
+  const identityMarks = useGameStore((s) => s.identityMarks);
+  const openIdentityMark = useGameStore((s) => s.openIdentityMark);
   const flash = useGameStore((s) => s.flash);
   const flashes = useGameStore((s) => s.flashes);
   const speechBubbles = useGameStore((s) => s.speechBubbles);
@@ -122,6 +124,12 @@ export function GameScreen() {
                 targetable={targetable.has(player.id)}
                 targeted={!!lastPlay?.targets.includes(player.id)}
                 selected={selectedTargets.includes(player.id)}
+                mark={displayMode === 'identity' ? identityMarks[player.id] : undefined}
+                onMark={
+                  displayMode === 'identity'
+                    ? () => openIdentityMark(player.id)
+                    : undefined
+                }
                 clickable={targetable.has(player.id)}
                 flash={flash}
                 flashes={flashes}

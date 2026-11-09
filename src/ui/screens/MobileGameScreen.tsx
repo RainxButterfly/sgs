@@ -60,6 +60,8 @@ export function MobileGameScreen() {
   const wuxieWindow = useGameStore((s) => s.wuxieWindow);
   const wuxieDeadline = useGameStore((s) => s.wuxieDeadline);
   const promptDeadline = useGameStore((s) => s.promptDeadline);
+  const identityMarks = useGameStore((s) => s.identityMarks);
+  const openIdentityMark = useGameStore((s) => s.openIdentityMark);
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -272,6 +274,21 @@ export function MobileGameScreen() {
                     size={22}
                     className="m-seat-timer"
                   />
+                )}
+                {mode === 'identity' && (
+                  <button
+                    type="button"
+                    className={`m-seat-mark ${identityMarks[player.id] ? `role-${identityMarks[player.id]}` : ''}`}
+                    title="标记你判断的身份（仅自己可见）"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openIdentityMark(player.id);
+                    }}
+                  >
+                    {identityMarks[player.id]
+                      ? ROLE_NAME[identityMarks[player.id]!].slice(0, 1)
+                      : '标'}
+                  </button>
                 )}
                 <button
                   type="button"

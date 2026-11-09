@@ -20,6 +20,20 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.2',
+    date: '2026-11-09',
+    title: '身份标记',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '身份场座位增加「标」按钮，可以给自己判断的身份做标记：主公、忠臣、反贼、内奸或清除。',
+          '标记只在本地显示，不会公开给其他玩家，也不影响对局和 AI；新对局开始时会自动清空。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.1',
     date: '2026-11-09',
     title: '联机提示可见',

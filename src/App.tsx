@@ -16,6 +16,7 @@ import { UpdateModal } from './ui/components/UpdateModal';
 import { loadSavedLanSession, useGameStore } from './ui/store';
 import { GameScreen } from './ui/screens/GameScreen';
 import { HeroGallery } from './ui/screens/HeroGallery';
+import { IdentityMarkModal } from './ui/components/IdentityMarkModal';
 import { LanScreen } from './ui/screens/LanScreen';
 import { LobbyScreen } from './ui/screens/LobbyScreen';
 import { MainMenu } from './ui/screens/MainMenu';
@@ -112,6 +113,7 @@ export default function App() {
       <HarvestLayer />
       <ChatPanel />
       <MatchHistoryModal />
+      <IdentityMarkModal />
       <UpdateModal />
     </div>
   );
