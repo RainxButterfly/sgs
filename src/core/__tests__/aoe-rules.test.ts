@@ -198,7 +198,7 @@ describe('国战双将', () => {
     );
     const [first, second] = game.state.players;
     expect(first.heroIds).toEqual(['guanyu', 'zhangfei']);
-    expect(first.maxHp).toBe(8);
+    expect(first.maxHp).toBe(4);
     expect(first.heroName).toContain('关羽');
     expect(first.heroName).toContain('张飞');
     expect(first.skills).toContain('wusheng');
@@ -227,7 +227,8 @@ describe('国战双将', () => {
       expect(first).toBeTruthy();
       expect(second).toBeTruthy();
       expect(HERO_MAP.get(first!)?.faction).toBe(HERO_MAP.get(second!)?.faction);
-      expect(player.maxHp).toBe((HERO_MAP.get(first!)?.hp ?? 0) + (HERO_MAP.get(second!)?.hp ?? 0));
+      const totalHp = (HERO_MAP.get(first!)?.hp ?? 0) + (HERO_MAP.get(second!)?.hp ?? 0);
+      expect(player.maxHp).toBe(Math.floor(totalHp / 2));
     }
   });
 });

@@ -161,8 +161,12 @@ export class Game {
       for (const id of heroIds) usedHeroes.add(id);
       if (mode === 'guozhan') guozhanCounts[hero.faction] += 1;
       const isLord = roles[i] === 'lord' && mode !== 'duel' && count > 2;
-      const baseHp = heroes.length > 1 ? heroes.reduce((sum, item) => sum + item.hp, 0) : hero.hp;
-      const maxHp = Math.max(1, Math.ceil(baseHp + (isLord ? 1 : 0) + rules.hpModifier));
+      const halfReward =
+        heroes.length > 1 && heroes.reduce((sum, item) => sum + item.hp, 0) % 2 === 1;
+      const baseHp = heroes.length > 1
+        ? Math.floor(heroes.reduce((sum, item) => sum + item.hp, 0) / 2)
+        : hero.hp;
+      const maxHp = Math.max(1, baseHp + (isLord ? 1 : 0) + rules.hpModifier);
       const skills = rules.skillsEnabled
         ? [
             ...new Set(
@@ -244,6 +248,15 @@ export class Game {
     };
 
     for (const p of players) this.drawRaw(p, rules.initialHand);
+    for (const p of players) {
+      if (p.heroIds && p.heroIds.length > 1) {
+        const totalHp = p.heroIds.reduce((sum, id) => sum + (HERO_MAP.get(id)?.hp ?? 0), 0);
+        if (totalHp % 2 === 1) {
+          this.drawRaw(p, 1);
+          this.log(`【${p.name}】国战半血奖励，摸一张牌`, 'system');
+        }
+      }
+    }
     for (const p of players) {
       if (mode === 'duel' || count === 2) {
         this.log(`【${p.name}】选择了武将【${p.heroName}】`, 'system');
