@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../store';
+import { recordDiagnostic } from '../diagnostics';
 
 interface Props {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
     console.error('界面异常', error, info);
+    recordDiagnostic('error', `界面异常：${error.message}`, `${error.stack ?? ''}\n${info.componentStack ?? ''}`);
   }
 
   render(): React.ReactNode {

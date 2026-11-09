@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { Game, buildRoles } from '../core/game';
 import { HEROES, PLAYABLE_HEROES } from '../core/deck';
-import { botAction } from '../core/bot';
-import { smartBotAction } from '../core/smartBot';
+import { safeBotAction } from '../core/smartBot';
+import { endGameSession, markGameSession, recordDiagnostic } from './diagnostics';
 import { LanClientManager, LanHostManager, createRoomInfo, isAndroidApp, isTauri, parseAddress } from '../net/lan';
 import type { ChatMessage, LobbyState, RoomInfo, SpectatorInfo } from '../net/protocol';
 import {
@@ -369,6 +369,7 @@ function clearAskTimer(): void {
 }
 let eventSeq = 0;
 let recordedGame: GameLike | null = null;
+let sessionMarked = false;
 const initialBackground = loadBackgroundSettings();
 
 const io: GameIO = {
@@ -379,8 +380,18 @@ const io: GameIO = {
     return new Promise((resolve) => {
       const speed = useGameStore.getState().aiSpeed;
       const wait = speed <= 0 ? 0 : speed + Math.random() * speed * 0.6;
-      const gameState = useGameStore.getState().game?.state;
-      setTimeout(() => resolve(gameState ? smartBotAction(gameState, req) : botAction(req)), wait);
+      setTimeout(() => {
+        const gameState = useGameStore.getState().game?.state;
+        resolve(
+          safeBotAction(gameState, req, (error) => {
+            recordDiagnostic(
+              'error',
+              `电脑决策失败：${(error as Error)?.message ?? error}`,
+              (error as Error)?.stack,
+            );
+          }),
+        );
+      }, wait);
     });
   },
   delay: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
@@ -501,6 +512,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
     setTimeout(() => {
       game.begin().catch((err) => {
+        recordDiagnostic('error', `对局异常：${(err as Error).message}`, (err as Error).stack);
         set({ error: `对局异常：${(err as Error).message}` });
       });
     }, 0);
@@ -632,12 +644,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
     setTimeout(() => {
       game.begin().catch((err) => {
+        recordDiagnostic('error', `对局异常：${(err as Error).message}`, (err as Error).stack);
         set({ error: `对局异常：${(err as Error).message}` });
       });
     }, 0);
   },
 
   backToMenu: () => {
+    sessionMarked = false;
+    endGameSession();
     get().game?.stop?.();
     get().lanHost?.close();
     get().lanClient?.leave();
@@ -731,6 +746,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   createLanRoom: async (name) => {
+    get().lanClient?.close();
+    get().lanHost?.close();
+    sessionMarked = false;
+    endGameSession();
     try {
       const info = await createRoomInfo();
       const hostName = name.trim() || '房主';
@@ -802,6 +821,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   joinLanRoom: async (address, code, name, spectate = false) => {
+    get().lanClient?.close();
+    get().lanHost?.close();
+    sessionMarked = false;
+    endGameSession();
     const { ip, port } = parseAddress(address);
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) {
@@ -1244,6 +1267,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         done: ev.done,
       };
     }
+    if (!sessionMarked && (ev.type === 'turn' || ev.type === 'playCard' || ev.type === 'respond')) {
+      sessionMarked = true;
+      const current = state.game?.state;
+      markGameSession(
+        `模式：${current?.rules.mode ?? 'identity'}，人数：${current?.players.length ?? '?'}，回合：${current?.turn ?? 0}`,
+      );
+    }
     if (ev.type === 'turn' && ev.turn === 1) {
       patch.aoe = null;
       patch.harvest = null;
@@ -1410,6 +1440,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         });
       }, 1600);
     } else if (ev.type === 'gameOver') {
+      sessionMarked = false;
+      endGameSession();
       patch.result = { text: ev.text, winner: ev.winner };
       setTimeout(() => {
         if (get().result && !get().spectate) set({ screen: 'result' });

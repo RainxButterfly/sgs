@@ -59,6 +59,12 @@ if (!manifest.includes('REQUEST_INSTALL_PACKAGES')) {
     '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />',
   );
 }
+if (!manifest.includes('android:largeHeap=')) {
+  manifest = manifest.replace(
+    '<application',
+    '<application\n        android:largeHeap="true"',
+  );
+}
 if (manifest.includes('android:screenOrientation=')) {
   manifest = manifest.replace(
     /android:screenOrientation="[^"]*"/,

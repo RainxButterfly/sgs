@@ -414,3 +414,23 @@ export function smartBotAction(state: GameState, req: AskRequest): GameAction {
       return botAction(req);
   }
 }
+
+export function safeBotAction(
+  state: GameState | undefined,
+  req: AskRequest,
+  onError?: (error: unknown) => void,
+): GameAction {
+  if (state) {
+    try {
+      return smartBotAction(state, req);
+    } catch (error) {
+      onError?.(error);
+    }
+  }
+  try {
+    return botAction(req);
+  } catch (error) {
+    onError?.(error);
+    return { type: 'cancel' };
+  }
+}

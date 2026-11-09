@@ -326,18 +326,18 @@ export function MobileGameScreen() {
                     <span className="m-round-chip">第{entry.turn ?? 0}回合</span>
                   )}
                   <div className={`m-feed-item faction-${owner?.faction ?? 'qun'}`}>
-                    {card ? (
-                      <CardView card={card} size="sm" />
-                    ) : (
-                      <span className="m-feed-card-empty">牌</span>
-                    )}
-                    <div className="m-feed-text">
+                    <div className="m-feed-who">
                       <b>{entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'}</b>
                       <span>{actionText(entry)}</span>
                       {entry.targets && entry.targets.length > 0 && (
                         <i>→ {entry.targets.map(targetName).join('、')}</i>
                       )}
                     </div>
+                    {card ? (
+                      <CardView card={card} size="sm" />
+                    ) : (
+                      <span className="m-feed-card-empty">牌</span>
+                    )}
                   </div>
                 </Fragment>
               );

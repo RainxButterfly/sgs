@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Game, buildRoles } from '../core/game';
 import { HEROES, PLAYABLE_HEROES } from '../core/deck';
-import { botAction } from '../core/bot';
-import { smartBotAction } from '../core/smartBot';
-import type { AskRequest, GameAction, GameEvent, GameIO, Role } from '../core/types';
+import { safeBotAction } from '../core/smartBot';
+import type { AskRequest, GameAction, GameEvent, GameIO, GameState, Role } from '../core/types';
+import { recordDiagnostic } from '../ui/diagnostics';
 import { DEFAULT_RULES, type CustomRules } from '../core/types';import {
   redactState,
   spectateState,
@@ -16,6 +16,13 @@ import { DEFAULT_RULES, type CustomRules } from '../core/types';import {
   type ServerEvent,
   type SpectatorInfo,
 } from './protocol';
+
+function decideBot(state: GameState | undefined, request: AskRequest): GameAction {
+  return safeBotAction(state, request, (error) => {
+    const detail = error as Error | undefined;
+    recordDiagnostic('error', `电脑决策失败：${detail?.message ?? String(error)}`, detail?.stack);
+  });
+}
 
 export function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -501,8 +508,8 @@ export class LanHostManager {
           clearTimeout(pending.timer);
           this.pending.delete(guest.playerId);
           const fallback = this.game
-            ? smartBotAction(this.game.state, pending.request)
-            : botAction(pending.request);
+            ? decideBot(this.game.state, pending.request)
+            : decideBot(undefined, pending.request);
           pending.resolve(fallback);
         }
         this.game?.log(`【${guest.name}】已离开，由电脑接管`, 'system');
@@ -666,20 +673,20 @@ export class LanHostManager {
       },
       ask: async (request) => {
         const game = getGame();
-        if (!game || this.game !== game || !this.started) return botAction(request);
+        if (!game || this.game !== game || !this.started) return decideBot(undefined, request);
         if (request.playerId === 0) return this.hooks.askHost(request);
         const player = game.state.players[request.playerId];
         if (!player || player.isBot) {
           const botDelay = this.aiSpeed <= 0 ? 0 : this.aiSpeed + Math.random() * this.aiSpeed * 0.6;
           await new Promise((resolve) => setTimeout(resolve, botDelay));
-          return smartBotAction(game.state, request);
+          return decideBot(game.state, request);
         }
         const guest = this.guests.find((g) => g.playerId === request.playerId && g.connected);
         if (!guest) {
           game.log(`【${player.name}】已断线，由电脑代打`, 'system');
           const botDelay = this.aiSpeed <= 0 ? 0 : this.aiSpeed + Math.random() * this.aiSpeed * 0.6;
           await new Promise((resolve) => setTimeout(resolve, botDelay));
-          return smartBotAction(game.state, request);
+          return decideBot(game.state, request);
         }
         this.sendTo(guest.connId, {
           t: 'ask',
@@ -690,7 +697,7 @@ export class LanHostManager {
           const timer = setTimeout(() => {
             this.pending.delete(player.id);
             game.log(`【${player.name}】响应超时，由电脑代打`, 'system');
-            resolve(smartBotAction(game.state, request));
+            resolve(decideBot(game.state, request));
           }, 180000);
           this.pending.set(player.id, { request, resolve, timer });
         });
@@ -823,7 +830,7 @@ export class LanHostManager {
     }
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timer);
-      pending.resolve(botAction(pending.request));
+      pending.resolve(decideBot(undefined, pending.request));
     }
     this.pending.clear();
     this.guests = this.guests.filter((guest) => guest.connected);

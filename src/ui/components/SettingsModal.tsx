@@ -3,6 +3,7 @@ import defaultBg from '../../assets/bg-default.jpg';
 import { isAndroidApp, isTauri } from '../../net/lan';
 import { prepareBackgroundImage } from '../background';
 import { applyDataDir, pickDataDir, readDataDirInfo, writeDataSnapshot } from '../dataStorage';
+import { formatDiagnostics } from '../diagnostics';
 import { useGameStore } from '../store';
 
 export function SettingsModal() {
@@ -26,6 +27,7 @@ export function SettingsModal() {
   const [dirBusy, setDirBusy] = useState(false);
   const [dirMessage, setDirMessage] = useState<string | null>(null);
   const [dirError, setDirError] = useState<string | null>(null);
+  const [logMessage, setLogMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !isTauri()) return;
@@ -78,6 +80,32 @@ export function SettingsModal() {
       setDirError((err as Error).message);
     } finally {
       setDirBusy(false);
+    }
+  };
+
+  const copyLog = async () => {
+    setLogMessage(null);
+    const text = formatDiagnostics();
+    try {
+      await navigator.clipboard.writeText(text);
+      setLogMessage('运行日志已复制');
+      return;
+    } catch {
+      // 部分 WebView 不开放剪贴板接口，退回 execCommand
+    }
+    try {
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      area.style.pointerEvents = 'none';
+      document.body.appendChild(area);
+      area.select();
+      const ok = document.execCommand('copy');
+      area.remove();
+      setLogMessage(ok ? '运行日志已复制' : '复制失败，请重试');
+    } catch {
+      setLogMessage('复制失败，请重试');
     }
   };
 
@@ -251,7 +279,12 @@ export function SettingsModal() {
             <button type="button" className="btn ghost" onClick={openTutorial}>
               玩法说明
             </button>
+            <button type="button" className="btn ghost" onClick={() => void copyLog()}>
+              复制运行日志
+            </button>
           </div>
+          {logMessage && <div className="settings-ok">{logMessage}</div>}
+          <div className="bg-setting-hint">遇到闪退或卡住时，可在重新打开后复制运行日志发给作者。</div>
         </div>
 
         <div className="modal-actions">

@@ -32,10 +32,13 @@ export function useDeviceStatus(): { time: string; battery: number | null } {
           .catch(() => undefined);
       };
       read();
-      const timer = window.setInterval(read, 60000);
+      const onVisible = () => {
+        if (document.visibilityState === 'visible') read();
+      };
+      document.addEventListener('visibilitychange', onVisible);
       return () => {
         cancelled = true;
-        window.clearInterval(timer);
+        document.removeEventListener('visibilitychange', onVisible);
       };
     }
 

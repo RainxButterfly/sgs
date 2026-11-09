@@ -144,7 +144,7 @@ export function LanPickPanel({
               <p>等待其他玩家选择，本局选将不能更换。</p>
             </div>
           ) : (
-          <div className="lobby-hero-grid">
+          <div className={`lobby-hero-grid ${guozhan ? 'pair-grid' : ''}`}>
             {validChoices.map((choice) => {
               const ids = choiceHeroIds(choice);
               const heroes = ids.map((id) => HERO_MAP.get(id)).filter((hero): hero is NonNullable<typeof hero> => !!hero);
