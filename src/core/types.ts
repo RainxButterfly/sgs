@@ -197,6 +197,16 @@ export type GameAction =
   | { type: 'endPlay' }
   | { type: 'cancel' };
 
+export interface AoeEntry {
+  playerId: number;
+  result: 'pending' | 'answered' | 'damage' | 'immune' | 'wuxie' | 'dead';
+  card?: Card;
+  as?: string;
+  skillId?: string;
+  hp?: number;
+  note?: string;
+}
+
 export type GameEvent =
   | { type: 'log'; text: string; kind?: LogEntry['kind'] }
   | { type: 'turn'; playerId: number; turn: number }
@@ -220,6 +230,13 @@ export type GameEvent =
       cards: Card[];
       picks: { playerId: number; card: Card }[];
       chooserId?: number;
+      done?: boolean;
+    }
+  | {
+      type: 'aoe';
+      cardName: string;
+      sourceId: number;
+      entries: AoeEntry[];
       done?: boolean;
     }
   | { type: 'gameOver'; text: string; winner: Role | Faction | 'draw' }

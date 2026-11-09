@@ -9,6 +9,7 @@ import {
   ROLE_NAME,
   SUIT_CN,
   type AskRequest,
+  type AoeEntry,
   type Card,
   type CardType,
   type CardOption,
@@ -573,7 +574,8 @@ export class Game {
 
   private judgeResult(card: Card, reason: string): boolean {
     if (reason.includes('闪电')) return card.suit === 'spade' && card.rank >= 2 && card.rank <= 9;
-    if (reason.includes('乐不思蜀')) return card.suit === 'heart';
+    if (reason.includes('乐不思蜀')) return card.suit !== 'heart';
+    if (reason.includes('兵粮寸断')) return card.suit !== 'club';
     if (reason.includes('刚烈')) return card.suit === 'heart';
     if (reason.includes('铁骑')) return isRed(card.suit);
     if (reason.includes('八卦')) return isRed(card.suit);
@@ -912,7 +914,8 @@ export class Game {
         p.alive &&
         p.id !== target.id &&
         p.id !== user.id &&
-        this.distance(target, p) <= this.attackRange(target),
+        this.distance(target, p) <= this.attackRange(target) &&
+        this.canBeTargeted(p, target, '杀'),
     );
   }
 
@@ -1131,14 +1134,16 @@ export class Game {
     } else if (asName === '乐不思蜀') {
       const target = this.players[targets[0]];
       if (target && target.alive && !(await this.askWuxie('乐不思蜀', target, user, `【${user.name}】对【${target.name}】使用乐不思蜀`))) {
-        target.judgeZone.push(card);
+        const delayed = card.name === asName ? card : { ...card, name: asName, type: 'delayed' as const };
+        target.judgeZone.push(delayed);
         this.removeFromLimbo(card);
-        this.log(`【${target.name}】的判定区被放置了 ${cardLabel(card)}`);
+        this.log(`【${target.name}】的判定区被放置了 ${cardLabel(delayed)}`);
       }
     } else if (asName === '闪电') {
-      user.judgeZone.push(card);
+      const delayed = card.name === asName ? card : { ...card, name: asName, type: 'delayed' as const };
+      user.judgeZone.push(delayed);
       this.removeFromLimbo(card);
-      this.log(`【${user.name}】的判定区被放置了 ${cardLabel(card)}`);
+      this.log(`【${user.name}】的判定区被放置了 ${cardLabel(delayed)}`);
     } else if (asName === '酒') {
       user.flags.jiu = 1;
       user.usedThisTurn.jiu = (user.usedThisTurn.jiu ?? 0) + 1;
@@ -1410,11 +1415,33 @@ export class Game {
   }
 
   private async resolveAoe(user: PlayerState, card: Card, responseName: '杀' | '闪'): Promise<void> {
-    const targets = this.players.filter((p) => p.alive && p.id !== user.id);
+    const targets = this.turnOrder().filter((p) => p.id !== user.id && p.alive);
+    const entries: AoeEntry[] = targets.map((p) => ({ playerId: p.id, result: 'pending' }));
+    const entryOf = (playerId: number) => entries.find((entry) => entry.playerId === playerId);
+    const emitAoe = (done = false) =>
+      this.emit({
+        type: 'aoe',
+        cardName: card.name,
+        sourceId: user.id,
+        entries: entries.map((entry) => ({ ...entry })),
+        done,
+      });
+    emitAoe();
+    const note = (playerId: number, patch: Partial<AoeEntry>) => {
+      const entry = entryOf(playerId);
+      if (entry) Object.assign(entry, patch);
+    };
     for (const target of targets) {
-      if (this.state.over || !target.alive) continue;
+      if (this.state.over) break;
+      if (!target.alive) {
+        note(target.id, { result: 'dead', hp: 0 });
+        emitAoe();
+        continue;
+      }
       if (isBlack(card.suit) && this.hasSkill(target, 'weimu')) {
         this.log(`【${target.name}】的帷幕生效，不受黑色${card.name}影响`, 'skill');
+        note(target.id, { result: 'immune', note: '帷幕', hp: target.hp });
+        emitAoe();
         continue;
       }
       if (
@@ -1422,22 +1449,38 @@ export class Game {
         (this.hasSkill(target, 'huoshou') || this.hasSkill(target, 'juxiang'))
       ) {
         this.log(`【${target.name}】不受南蛮入侵影响`, 'skill');
+        note(target.id, { result: 'immune', note: '巨象/祸首', hp: target.hp });
+        emitAoe();
         continue;
       }
       if (target.equips.armor?.name === '藤甲' && (card.name === '南蛮入侵' || card.name === '万箭齐发')) {
         this.log(`【${target.name}】的藤甲生效，${card.name}无效`, 'skill');
+        note(target.id, { result: 'immune', note: '藤甲', hp: target.hp });
+        emitAoe();
         continue;
       }
-      if (await this.askWuxie(card.name, target, user, `【${target.name}】受到${card.name}影响`)) continue;
-      if (responseName === '闪') {
-        const resp = await this.askRespond(target, '闪', { prompt: '万箭齐发：请打出一张闪', canCancel: true });
-        if (resp) continue;
-        await this.damage(user, target, 1, card, card.name);
-      } else {
-        const resp = await this.askRespond(target, '杀', { prompt: '南蛮入侵：请打出一张杀', canCancel: true });
-        if (resp) continue;
-        await this.damage(user, target, 1, card, card.name);
+      if (await this.askWuxie(card.name, target, user, `【${target.name}】受到${card.name}影响`)) {
+        note(target.id, { result: 'wuxie', hp: target.hp });
+        emitAoe();
+        continue;
       }
+      const resp = responseName === '闪'
+        ? await this.askRespond(target, '闪', { prompt: '万箭齐发：请打出一张闪', canCancel: true })
+        : await this.askRespond(target, '杀', { prompt: '南蛮入侵：请打出一张杀', canCancel: true });
+      if (resp) {
+        note(target.id, {
+          result: 'answered',
+          as: resp.as,
+          card: resp.card ?? undefined,
+          skillId: resp.skillId,
+          hp: target.hp,
+        });
+        emitAoe();
+        continue;
+      }
+      await this.damage(user, target, 1, card, card.name);
+      note(target.id, { result: 'damage', hp: Math.max(0, target.hp) });
+      emitAoe();
     }
     if (card.name === '南蛮入侵') {
       const juxiang = this.players.find(
@@ -1448,6 +1491,7 @@ export class Game {
         this.log(`【${juxiang.name}】的巨象获得了南蛮入侵`, 'skill');
       }
     }
+    emitAoe(true);
   }
 
   private async resolvePeachGarden(user: PlayerState, card: Card): Promise<void> {
@@ -2041,7 +2085,7 @@ export class Game {
 
   private async judgePhase(player: PlayerState): Promise<void> {
     while (player.judgeZone.length > 0 && player.alive && !this.state.over) {
-      const card = player.judgeZone.shift()!;
+      const card = player.judgeZone.pop()!;
       if (card.name === '乐不思蜀') {
         this.limbo.push(card);
         const nullified = await this.askWuxie('乐不思蜀', player, player, `【${player.name}】判定区的乐不思蜀`);
@@ -2073,12 +2117,13 @@ export class Game {
           this.toDiscard(card);
         } else {
           const next = this.nextAlive(player);
-          if (next) {
+          if (next && !next.judgeZone.some((c) => c.name === '闪电')) {
             next.judgeZone.push(card);
             this.removeFromLimbo(card);
             this.log(`闪电移动到【${next.name}】的判定区`);
           } else {
             this.toDiscard(card);
+            this.log(next ? '下家判定区已有闪电，闪电置入弃牌堆' : '闪电无人可传，置入弃牌堆');
           }
         }
       } else if (card.name === '兵粮寸断') {
@@ -2135,10 +2180,17 @@ export class Game {
     }
   }
 
+  private resetTurnFlags(player: PlayerState): void {
+    const persistent = new Set(['niepan', 'luanwu', 'zaoxian', 'ruoyu', 'hunzi', 'huashen', 'zhiji']);
+    for (const key of Object.keys(player.flags)) {
+      if (!persistent.has(key)) delete player.flags[key];
+    }
+  }
+
   private async runTurn(player: PlayerState): Promise<void> {
     this.state.turn += 1;
     player.usedThisTurn = {};
-    player.flags = {};
+    this.resetTurnFlags(player);
     player.skipPhases = [];
     this.state.phase = 'prepare';
     this.emit({ type: 'turn', playerId: player.id, turn: this.state.turn });
@@ -2196,7 +2248,7 @@ export class Game {
         }
         if (player.flipped) {
           player.flipped = false;
-          player.flags = {};
+          this.resetTurnFlags(player);
           player.usedThisTurn = {};
           player.skipPhases = [];
           this.state.turn += 1;

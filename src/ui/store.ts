@@ -16,6 +16,7 @@ import { loadBackgroundSettings, saveBackgroundSettings } from './background';
 import { scheduleDataSnapshot } from './dataStorage';
 import { addMatchRecord, localDateKey } from './history';
 import type {
+  AoeEntry,
   AskRequest,
   Card,
   CardOption,
@@ -156,6 +157,13 @@ interface HarvestState {
   done?: boolean;
 }
 
+interface AoeState {
+  cardName: string;
+  sourceId: number;
+  entries: AoeEntry[];
+  done?: boolean;
+}
+
 interface GameStore {
   screen: Screen;
   game: GameLike | null;
@@ -172,6 +180,7 @@ interface GameStore {
   lastJudge: JudgeEvent | null;
   cardHistory: CardHistoryEntry[];
   harvest: HarvestState | null;
+  aoe: AoeState | null;
   flash: FlashEvent | null;
   error: string | null;
   lanRole: 'host' | 'client' | null;
@@ -252,6 +261,7 @@ interface GameStore {
   openChat: () => void;
   closeChat: () => void;
   dismissHarvest: () => void;
+  dismissAoe: () => void;
   toggleCardChoice: (cardId: string) => void;
   confirmCards: () => void;
   toggleReorder: (cardId: string) => void;
@@ -296,6 +306,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lastJudge: null,
   cardHistory: [],
   harvest: null,
+  aoe: null,
   flash: null,
   error: null,
   lanRole: null,
@@ -512,6 +523,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastJudge: null,
       cardHistory: [],
       harvest: null,
+      aoe: null,
       flash: null,
     });
     set({ suspended: false });
@@ -908,6 +920,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastJudge: null,
       cardHistory: [],
       harvest: null,
+      aoe: null,
       flash: null,
       suspended: false,
     });
@@ -978,6 +991,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
         done: ev.done,
       };
     }
+    if (ev.type === 'aoe') {
+      patch.aoe = {
+        cardName: ev.cardName,
+        sourceId: ev.sourceId,
+        entries: ev.entries,
+        done: ev.done,
+      };
+    }
+    if (ev.type === 'turn' && ev.turn === 1) {
+      patch.aoe = null;
+      patch.harvest = null;
+    }
     if (ev.type === 'turn' || ev.type === 'playCard') {
       patch.skipWuxie = false;
     }
@@ -1007,7 +1032,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           targets: ev.type === 'playCard' ? ev.targets : [],
           turn,
         },
-      ].slice(-16);
+      ].slice(-40);
     } else if (ev.type === 'judge') {
       eventSeq += 1;
       patch.lastJudge = {
@@ -1029,7 +1054,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       patch.cardHistory = [
         ...baseHistory,
         { id: eventSeq, kind: 'judge' as const, playerId: ev.playerId, cards: [ev.card], label: ev.reason, turn },
-      ].slice(-16);
+      ].slice(-40);
     } else if (ev.type === 'discard' && ev.cards.length > 0) {
       eventSeq += 1;
       patch.cardHistory = [
@@ -1042,7 +1067,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           label: ev.reason ?? '弃置',
           turn,
         },
-      ].slice(-16);
+      ].slice(-40);
     } else if (ev.type === 'gain' && ev.cards.length > 0) {
       eventSeq += 1;
       patch.cardHistory = [
@@ -1055,7 +1080,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           label: ev.public ? '获得' : '获得一张牌',
           turn,
         },
-      ].slice(-16);
+      ].slice(-40);
     } else if (ev.type === 'reveal' && ev.cards.length > 0) {
       eventSeq += 1;
       patch.cardHistory = [
@@ -1068,7 +1093,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           label: '展示',
           turn,
         },
-      ].slice(-16);
+      ].slice(-40);
     } else if (ev.type === 'damage' || ev.type === 'heal') {
       eventSeq += 1;
       patch.flash = {
@@ -1087,12 +1112,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (get().result) set({ screen: 'result' });
       }, 1400);
       const finished = state.game;
-      if (state.lanRole === null && finished && recordedGame !== finished) {
+      if (!state.spectate && finished && recordedGame !== finished) {
         recordedGame = finished;
+        const delay = state.lanRole === 'client' ? 220 : 0;
         setTimeout(() => {
           const current = get();
-          if (current.game !== finished) return;
-          const finishedState = finished.state;
+          const finishedState = current.game?.state ?? finished.state;
           const human = finishedState.players[current.humanId];
           if (!human) return;
           const mode: 'identity' | 'duel' | 'landlord' | 'guozhan' =
@@ -1143,7 +1168,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             })),
             log: finishedState.log.slice(-400),
           });
-        }, 0);
+        }, delay);
       }
     }
     set(patch);
@@ -1329,6 +1354,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   closeChat: () => set({ chatOpen: false }),
 
   dismissHarvest: () => set({ harvest: null, version: get().version + 1 }),
+  dismissAoe: () => set({ aoe: null, version: get().version + 1 }),
 
   toggleCardChoice: (cardId) => {
     const { pending, cardChoices } = get();

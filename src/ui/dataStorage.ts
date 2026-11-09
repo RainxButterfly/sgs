@@ -39,6 +39,34 @@ function write(key: string, value: string | null | undefined): void {
   }
 }
 
+function mergeHistory(local: string | null, snapshot: string | null | undefined): string | null {
+  if (!local) return snapshot ?? null;
+  if (!snapshot) return local;
+  try {
+    const a = JSON.parse(local) as { key?: string; name?: string; matches?: { id?: string }[] }[];
+    const b = JSON.parse(snapshot) as typeof a;
+    if (!Array.isArray(a) || !Array.isArray(b)) return local;
+    const groups = new Map<string, { key: string; name: string; matches: { id?: string }[] }>();
+    for (const group of [...b, ...a]) {
+      if (!group || typeof group.key !== 'string' || !Array.isArray(group.matches)) continue;
+      const existing = groups.get(group.key);
+      if (!existing) {
+        groups.set(group.key, { key: group.key, name: group.name ?? group.key, matches: [...group.matches] });
+        continue;
+      }
+      const ids = new Set(existing.matches.map((match) => match.id));
+      for (const match of group.matches) {
+        if (!match.id || ids.has(match.id)) continue;
+        existing.matches.push(match);
+        ids.add(match.id);
+      }
+    }
+    return JSON.stringify([...groups.values()]);
+  } catch {
+    return local;
+  }
+}
+
 export function buildSnapshot(): string {
   const snapshot: Snapshot = {
     version: 1,
@@ -90,7 +118,7 @@ export async function initDataStorage(): Promise<boolean> {
     if (!raw) return false;
     const snapshot = JSON.parse(raw) as Snapshot;
     write(BACKGROUND_KEY, snapshot.background);
-    write(HISTORY_KEY, snapshot.history);
+    write(HISTORY_KEY, mergeHistory(read(HISTORY_KEY), snapshot.history));
     write(SESSION_KEY, snapshot.lanSession);
     write(NAME_KEY, snapshot.playerName);
     return true;

@@ -119,7 +119,7 @@ export function MobileGameScreen() {
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
   const humanEquips = equipNames(human);
-  const feed = cardHistory.slice(-16);
+  const feed = cardHistory.slice(-30);
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
     const card = entry.cards[0];
@@ -315,6 +315,8 @@ export function MobileGameScreen() {
             {Math.max(0, human.hp)}/{human.maxHp}
           </span>
           <span className="m-self-limit">手牌上限 {handLimit}</span>
+          {human.chained && <span className="m-tag">横置</span>}
+          {human.flipped && <span className="m-tag">翻面</span>}
           <span className="m-self-equips">装备 {humanEquips.join(' · ') || '无'}</span>
           {human.judgeZone.length > 0 && (
             <span className="m-self-judges">

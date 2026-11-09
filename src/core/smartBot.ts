@@ -128,7 +128,7 @@ function scorePlay(state: GameState, me: PlayerState, option: NonNullable<AskReq
     case '兵粮寸断':
       return enemyTargets.length ? 50 : 0;
     case '铁索连环':
-      return 20;
+      return targets.some((p) => !p.chained) ? 20 : 0;
     default: {
       const card = cardInHand(me, option.cardId);
       if (card?.equipSlot) {
@@ -159,6 +159,7 @@ function pickTargets(
   if (option.as === '杀' || option.as === '决斗') chosen.sort((a, b) => a.hp - b.hp);
   if (option.as === '过河拆桥' || option.as === '顺手牵羊') chosen.sort((a, b) => b.hand.length - a.hand.length);
   if (option.as === '乐不思蜀') chosen = chosen.filter((p) => !p.judgeZone.some((c) => c.name === '乐不思蜀'));
+  if (option.as === '铁索连环') chosen = chosen.filter((p) => !p.chained);
   if (!chosen.length) return [];
   let count = 1;
   if (option.as === '杀' && option.targetMax > 1) count = option.targetMax;
