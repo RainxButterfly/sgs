@@ -20,6 +20,20 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.9',
+    date: '2026-11-10',
+    title: '手机更新下载加速',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '更新下载改为同时尝试所有镜像，第一个能连上的镜像立即开始下载，不再按顺序等卡住的镜像。',
+          '每个镜像首包最多等 15 秒，卡住就自动放弃；下载失败仍会按顺序逐个重试并保留浏览器下载兜底。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.8',
     date: '2026-11-09',
     title: '小屏手机布局优化',

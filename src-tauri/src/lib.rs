@@ -189,36 +189,7 @@ async fn prepare_portable_update(
     urls: Vec<String>,
     sha256: String,
 ) -> Result<(), String> {
-    let mut errors: Vec<String> = Vec::new();
-    let mut data: Option<Vec<u8>> = None;
-    for (index, url) in urls.iter().enumerate() {
-        let _ = app.emit(
-            "update-mirror",
-            UpdateMirror {
-                index: index as u32 + 1,
-                total: urls.len() as u32,
-            },
-        );
-        match download_update(&app, url).await {
-            Ok(bytes) => {
-                let mut hasher = Sha256::new();
-                hasher.update(&bytes);
-                let actual: String = hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect();
-                if actual.eq_ignore_ascii_case(&sha256) {
-                    data = Some(bytes);
-                    break;
-                }
-                errors.push(format!("{url}: 更新包校验失败"));
-            }
-            Err(error) => errors.push(format!("{url}: {error}")),
-        }
-    }
-    let data = data.ok_or_else(|| {
-        format!(
-            "更新包下载失败。{}",
-            errors.last().cloned().unwrap_or_default()
-        )
-    })?;
+    let data = download_verified(&app, &urls, &sha256).await?;
 
     let pid = std::process::id();
     let temp = std::env::temp_dir();
@@ -322,36 +293,7 @@ async fn install_android_update(
     urls: Vec<String>,
     sha256: String,
 ) -> Result<(), String> {
-    let mut errors: Vec<String> = Vec::new();
-    let mut data: Option<Vec<u8>> = None;
-    for (index, url) in urls.iter().enumerate() {
-        let _ = app.emit(
-            "update-mirror",
-            UpdateMirror {
-                index: index as u32 + 1,
-                total: urls.len() as u32,
-            },
-        );
-        match download_update(&app, url).await {
-            Ok(bytes) => {
-                let mut hasher = Sha256::new();
-                hasher.update(&bytes);
-                let actual: String = hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect();
-                if actual.eq_ignore_ascii_case(&sha256) {
-                    data = Some(bytes);
-                    break;
-                }
-                errors.push(format!("{url}: 更新包校验失败"));
-            }
-            Err(error) => errors.push(format!("{url}: {error}")),
-        }
-    }
-    let data = data.ok_or_else(|| {
-        format!(
-            "更新包下载失败。{}",
-            errors.last().cloned().unwrap_or_default()
-        )
-    })?;
+    let data = download_verified(&app, &urls, &sha256).await?;
     let cache = app.path().app_cache_dir().map_err(|error| error.to_string())?;
     std::fs::create_dir_all(&cache).map_err(|error| error.to_string())?;
     let path = cache.join("siguoshan-update.apk");
@@ -412,6 +354,132 @@ fn open_update_url(_url: String) -> Result<(), String> {
 #[tauri::command]
 fn android_battery() -> Result<i32, String> {
     Ok(-1)
+}
+
+async fn first_response(urls: &[String]) -> Result<(usize, reqwest::Response), String> {
+    if urls.is_empty() {
+        return Err("没有可用的更新镜像".to_string());
+    }
+    let mut pending = FuturesUnordered::new();
+    for (index, url) in urls.iter().cloned().enumerate() {
+        pending.push(async move {
+            let client = reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(10))
+                .read_timeout(Duration::from_secs(20))
+                .user_agent("sanguosha-xinghe-updater/0.1")
+                .build()
+                .map_err(|error| format!("{url}: {error}"))?;
+            let response = tokio::time::timeout(
+                Duration::from_secs(15),
+                client.get(&url).send(),
+            )
+            .await
+            .map_err(|_| format!("{url}: 镜像响应超时"))?
+            .map_err(|error| format!("{url}: {error}"))?
+            .error_for_status()
+            .map_err(|error| format!("{url}: {error}"))?;
+            Ok::<(usize, reqwest::Response), String>((index, response))
+        });
+    }
+    let mut errors = Vec::new();
+    while let Some(result) = pending.next().await {
+        match result {
+            Ok(value) => return Ok(value),
+            Err(error) => errors.push(error),
+        }
+    }
+    Err(format!(
+        "所有镜像均无法连接。{}",
+        errors.last().cloned().unwrap_or_default()
+    ))
+}
+
+async fn download_response(
+    app: &tauri::AppHandle,
+    mut response: reqwest::Response,
+) -> Result<Vec<u8>, String> {
+    let total = response.content_length().unwrap_or(0);
+    let mut data = Vec::with_capacity(total as usize);
+    let mut downloaded = 0u64;
+    let mut last_emit = std::time::Instant::now();
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(|error| format!("读取更新包失败：{error}"))?
+    {
+        data.extend_from_slice(&chunk);
+        downloaded += chunk.len() as u64;
+        if last_emit.elapsed() > Duration::from_millis(120) {
+            let _ = app.emit(
+                "portable-update-progress",
+                UpdateProgress { downloaded, total },
+            );
+            last_emit = std::time::Instant::now();
+        }
+    }
+    let _ = app.emit(
+        "portable-update-progress",
+        UpdateProgress { downloaded, total },
+    );
+    Ok(data)
+}
+
+async fn download_verified(
+    app: &tauri::AppHandle,
+    urls: &[String],
+    sha256: &str,
+) -> Result<Vec<u8>, String> {
+    let mut errors: Vec<String> = Vec::new();
+    let check = |data: &[u8]| {
+        let mut hasher = Sha256::new();
+        hasher.update(data);
+        let actual: String = hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect();
+        actual.eq_ignore_ascii_case(sha256)
+    };
+
+    if let Ok((index, response)) = first_response(urls).await {
+        let _ = app.emit(
+            "update-mirror",
+            UpdateMirror {
+                index: index as u32 + 1,
+                total: urls.len() as u32,
+            },
+        );
+        match download_response(app, response).await {
+            Ok(data) => {
+                if check(&data) {
+                    return Ok(data);
+                }
+                errors.push(format!("{}: 更新包校验失败", urls[index]));
+            }
+            Err(error) => errors.push(format!("{}: {error}", urls[index])),
+        }
+    } else {
+        errors.push("所有镜像均无法连接".to_string());
+    }
+
+    for (index, url) in urls.iter().enumerate() {
+        let _ = app.emit(
+            "update-mirror",
+            UpdateMirror {
+                index: index as u32 + 1,
+                total: urls.len() as u32,
+            },
+        );
+        match download_update(app, url).await {
+            Ok(data) => {
+                if check(&data) {
+                    return Ok(data);
+                }
+                errors.push(format!("{url}: 更新包校验失败"));
+            }
+            Err(error) => errors.push(format!("{url}: {error}")),
+        }
+    }
+    Err(format!(
+        "更新包下载失败。{}",
+        errors.last().cloned().unwrap_or_default()
+    ))
 }
 
 async fn download_update(app: &tauri::AppHandle, url: &str) -> Result<Vec<u8>, String> {
