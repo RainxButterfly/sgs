@@ -540,7 +540,7 @@ const SKILLS: SkillDef[] = [
   {
     id: 'fanjian',
     name: '反间',
-    desc: '出牌阶段限一次，你可以令一名其他角色选择一种花色，然后获得你的一张随机手牌并展示；若此牌与所选花色不同，你对其造成 1 点伤害。',
+    desc: '出牌阶段限一次，你可以令一名其他角色选择一种花色，然后其获得你的一张手牌并展示；若此牌与所选花色不同，你对其造成 1 点伤害。',
     active: {
       oncePerTurn: true,
       usable: (_g, owner) => owner.hand.length > 0,
@@ -558,8 +558,17 @@ const SKILLS: SkillDef[] = [
           ],
         );
         if (!suit) return;
-        const card = game.randomItem(owner.hand);
-        if (!card) return;
+        const picked = await game.askCards(
+          owner,
+          owner.hand,
+          1,
+          1,
+          '反间：选择一张手牌交给目标',
+          undefined,
+          true,
+        );
+        if (!picked.length) return;
+        const card = picked[0];
         game.gainCard(target, card, owner, true);
         await game.afterHandChange(owner);
         if (card.suit !== suit) await game.damage(owner, target, 1, undefined, '反间');
@@ -1091,14 +1100,29 @@ const SKILLS: SkillDef[] = [
           '强袭：选择代价',
           [
             { id: 'hp', label: '失去 1 点体力' },
-            { id: 'weapon', label: '弃置武器牌', desc: owner.equips.weapon ? owner.equips.weapon.name : '没有武器' },
+            {
+              id: 'weapon',
+              label: '弃置武器牌',
+              desc: [
+                ...owner.hand.filter((card) => card.equipSlot === 'weapon').map((card) => card.name),
+                ...(owner.equips.weapon ? [owner.equips.weapon.name] : []),
+              ].join('、') || '没有武器',
+            },
           ],
           undefined,
           true,
         );
         if (!choice) return;
-        if (choice === 'weapon' && owner.equips.weapon) {
-          await game.discardCards(owner, [owner.equips.weapon], '强袭');
+        if (choice === 'weapon') {
+          const weapons = [
+            ...owner.hand.filter((card) => card.equipSlot === 'weapon'),
+            ...(owner.equips.weapon ? [owner.equips.weapon] : []),
+          ];
+          const picked = weapons.length
+            ? await game.askCards(owner, weapons, 1, 1, '强袭：选择一张武器牌弃置', undefined, false)
+            : [];
+          if (picked.length) await game.discardCards(owner, picked, '强袭');
+          else await game.loseHp(owner, 1);
         } else {
           await game.loseHp(owner, 1);
         }
@@ -1641,12 +1665,18 @@ const SKILLS: SkillDef[] = [
         when: (c) =>
           !!c.target &&
           c.target.id !== c.owner.id &&
-          (c.target.hand.length > 0 || Object.values(c.target.equips).some(Boolean)),
+          (c.target.hand.length > 0 ||
+            Object.values(c.target.equips).some(Boolean) ||
+            c.target.judgeZone.length > 0),
         optional: true,
         prompt: '是否发动【行殇】获得阵亡角色的所有牌？',
         effect: async (c) => {
           const target = c.target!;
-          const cards = [...target.hand, ...Object.values(target.equips).filter((x): x is Card => !!x)];
+          const cards = [
+            ...target.hand,
+            ...Object.values(target.equips).filter((x): x is Card => !!x),
+            ...target.judgeZone,
+          ];
           for (const card of cards) c.game.gainCard(c.owner, card, target, true);
           c.game.log(`【${c.owner.name}】行殇获得了【${target.name}】的所有牌`, 'skill');
         },
@@ -1728,7 +1758,7 @@ const SKILLS: SkillDef[] = [
   {
     id: 'benghuai',
     name: '崩坏',
-    desc: '锁定技，结束阶段，若你的体力值不是全场最少，你失去 1 点体力。',
+    desc: '锁定技，结束阶段，若你的体力值不是全场最少，你须选择：失去 1 点体力，或减 1 点体力上限。',
     locked: true,
     triggers: [
       {
@@ -1740,7 +1770,20 @@ const SKILLS: SkillDef[] = [
         },
         effect: async (c) => {
           c.game.log(`【${c.owner.name}】的崩坏生效`, 'skill');
-          await c.game.loseHp(c.owner, 1);
+          const canLowerMax = c.owner.maxHp > 1;
+          const choice = canLowerMax
+            ? await c.game.askOption(c.owner, '崩坏：请选择一项', [
+                { id: 'hp', label: '失去 1 点体力' },
+                { id: 'max', label: '减 1 点体力上限' },
+              ])
+            : 'hp';
+          if (choice === 'max' && canLowerMax) {
+            c.owner.maxHp -= 1;
+            c.owner.hp = Math.min(c.owner.hp, c.owner.maxHp);
+            c.game.log(`【${c.owner.name}】崩坏减少了 1 点体力上限`, 'skill');
+          } else {
+            await c.game.loseHp(c.owner, 1);
+          }
         },
       },
     ],

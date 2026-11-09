@@ -20,6 +20,26 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.8.7',
+    date: '2026-11-09',
+    title: '界面收紧与技能细节',
+    sections: [
+      {
+        kind: 'polish',
+        items: [
+          '斗地主叫分完成后收成一行结果，不再占掉半个选将页面；叫分提示改为左对齐。',
+          '手机座位上的倒计时、身份标记和详情按钮收紧尺寸，避免挤占武将名。',
+        ],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '反间改为由周瑜选择交给目标的手牌；强袭可以从手牌或装备区弃置武器；行殇包含判定区；崩坏改为失去体力或减体力上限二选一。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.8.6',
     date: '2026-11-09',
     title: '孙策技能与描述',

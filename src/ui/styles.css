@@ -11042,3 +11042,45 @@ button {
   color: var(--muted);
   font-size: 12px;
 }
+
+.bid-panel .setup-hint {
+  text-align: left;
+  white-space: normal;
+}
+
+.bid-panel.done {
+  margin: 8px 0 4px;
+  padding: 8px 12px;
+}
+
+.bid-panel.done .bid-result {
+  margin-top: 0;
+  gap: 2px;
+}
+
+.bid-panel.done .bid-result b {
+  font-size: 16px;
+}
+
+.bid-panel.done .bid-list {
+  margin-top: 2px;
+  font-size: 11px;
+}
+
+/* 手机座位头部控件收紧，避免身份标记/倒计时/详情挤在一起 */
+.m-seat-mark {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  font-size: 9px;
+}
+
+.m-seat-info {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.m-seat-head .countdown-ring b {
+  font-size: 8px;
+}
