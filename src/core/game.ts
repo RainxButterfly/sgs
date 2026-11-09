@@ -1610,6 +1610,12 @@ ${skill.desc}` : ''}`
         done,
       });
     emitAoe();
+    const huoshou =
+      card.name === '南蛮入侵'
+        ? this.players.find(
+            (p) => p.alive && p.id !== user.id && this.hasSkill(p, 'huoshou'),
+          )
+        : undefined;
     const note = (playerId: number, patch: Partial<AoeEntry>) => {
       const entry = entryOf(playerId);
       if (entry) Object.assign(entry, patch);
@@ -1663,7 +1669,7 @@ ${skill.desc}` : ''}`
         emitAoe();
         continue;
       }
-      await this.damage(user, target, 1, card, card.name);
+      await this.damage(huoshou ?? user, target, 1, card, card.name);
       note(target.id, { result: 'damage', hp: Math.max(0, target.hp) });
       emitAoe();
     }

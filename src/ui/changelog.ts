@@ -20,6 +20,21 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.7.12',
+    date: '2026-11-09',
+    title: '记录徽章与孟获判定',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '对局记录详情里的胜/负圆形徽章恢复为居中显示，文字不再贴左上角。',
+          '孟获【祸首】补上官方规则：其他角色使用【南蛮入侵】造成的伤害，来源视为孟获。',
+          '增加南蛮入侵伤害来源的回归测试；斗地主胜负、共苦、目标限制等模式测试继续保留。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.7.11',
     date: '2026-11-09',
     title: '观战体验与技能取消',

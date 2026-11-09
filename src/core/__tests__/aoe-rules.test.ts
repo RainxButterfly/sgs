@@ -56,6 +56,30 @@ describe('群体锦囊规则', () => {
   });
 });
 
+describe('南蛮入侵与祸首', () => {
+  it('孟获是其他角色使用南蛮入侵造成伤害的来源', async () => {
+    const io = new SimIO();
+    const game = makeGame(io);
+    const user = game.state.players[0];
+    const target = game.state.players[1];
+    const menghuo = game.state.players[2];
+    for (const player of game.state.players) player.hand = [];
+    menghuo.heroId = 'menghuo';
+    menghuo.skills = ['huoshou'];
+    target.hp = target.maxHp;
+
+    await (game as unknown as {
+      resolveAoe: (user: unknown, card: Card, responseName: '杀' | '闪') => Promise<void>;
+    }).resolveAoe(user, fakeCard('南蛮入侵', 'spade', 7), '杀');
+
+    const damage = io.events
+      .filter((event): event is Extract<GameEvent, { type: 'damage' }> => event.type === 'damage')
+      .filter((event) => event.targetId === target.id)
+      .pop();
+    expect(damage?.sourceId).toBe(menghuo.id);
+  });
+});
+
 describe('判定与铁索状态', () => {
   it('乐不思蜀和兵粮寸断的判定成功含义正确', () => {
     const game = makeGame(new SimIO());

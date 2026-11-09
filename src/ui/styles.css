@@ -10730,7 +10730,10 @@ button {
 }
 
 .history-detail-head .history-result {
-  margin-top: 0;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0 !important;
 }
 
 /* 图鉴/选将滚动时背景固定，避免下方变黑 */

@@ -1318,7 +1318,7 @@ const SKILLS: SkillDef[] = [
   {
     id: 'huoshou',
     name: '祸首',
-    desc: '锁定技，【南蛮入侵】对你无效。',
+    desc: '锁定技，【南蛮入侵】对你无效；你是其他角色使用的【南蛮入侵】造成伤害的来源。',
     locked: true,
   },
   {
