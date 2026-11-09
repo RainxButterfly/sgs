@@ -553,8 +553,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     const mode = rules?.mode ?? 'identity';
     const roles = buildRoles(count, mode);
-    if (mode !== 'landlord') roles.sort(() => Math.random() - 0.5);
-    else roles.fill('rebel');
+    if (mode !== 'landlord') {
+      for (let i = roles.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [roles[i], roles[j]] = [roles[j], roles[i]];
+      }
+    } else {
+      roles.fill('rebel');
+    }
     let bots: { name: string; heroId: string; heroIds?: string[] }[];
     let candidates: string[];
     let candidatePairs: { primary: string; secondary: string }[] | undefined;

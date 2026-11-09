@@ -1802,7 +1802,11 @@ const SKILLS: SkillDef[] = [
               const closest = game.alivePlayers()
                 .filter((x) => x.id !== p.id)
                 .sort((a, b) => game.distance(p, a) - game.distance(p, b))[0];
-              if (closest) {
+              if (
+                closest &&
+                game.distance(p, closest) <= game.attackRange(p) &&
+                game.canBeTargeted(closest, p, '杀')
+              ) {
                 await game.useCard(p, picked[0], '杀', [closest.id], 'luanwu');
                 continue;
               }
@@ -1962,21 +1966,27 @@ const SKILLS: SkillDef[] = [
   {
     id: 'fangquan',
     name: '放权',
-    desc: '出牌阶段限一次，你可以弃置一张手牌，令一名其他角色摸两张牌，然后弃置一张牌。',
+    desc: '出牌阶段限一次，你可以跳过出牌阶段，弃置一张手牌，令一名其他角色获得一个额外回合。',
     active: {
       oncePerTurn: true,
       usable: (_game, owner) => owner.hand.length > 0,
       run: async (game, owner) => {
-        const cost = await game.askCards(owner, owner.hand, 1, 1, '放权：选择一张手牌作为费用', undefined, false);
+        const cost = await game.askCards(
+          owner,
+          owner.hand,
+          1,
+          1,
+          '放权：选择一张手牌作为费用',
+          undefined,
+          true,
+        );
         if (!cost.length) return;
         const target = await game.askPlayer(owner, others(game, owner), '放权：选择一名其他角色');
         if (!target) return;
         await game.discardCards(owner, cost, '放权');
-        game.drawCards(target, 2, '放权');
-        if (target.hand.length > 0) {
-          const discard = await game.askCards(target, target.hand, 1, 1, '放权：弃置一张手牌', undefined, false);
-          if (discard.length) await game.discardCards(target, discard, '放权');
-        }
+        game.grantExtraTurn(target);
+        owner.flags.fangquanSkip = 1;
+        game.log(`【${owner.name}】放权，令【${target.name}】获得一个额外回合`, 'skill');
       },
     },
   },
@@ -2248,10 +2258,11 @@ const SKILLS: SkillDef[] = [
             `【${owner.name}】展示蛊惑牌【${card.name}】（${black(card) ? '黑色' : '红色'}）`,
             'judge',
           );
-          if (black(card)) {
+          const isTrue = card.name === declared;
+          if (!isTrue && black(card)) {
             await game.discardCards(owner, [card], '蛊惑');
             await game.loseHp(owner, 1);
-            game.log('蛊惑为黑色，此牌无效', 'skill');
+            game.log('蛊惑为黑色且与声明不符，此牌无效', 'skill');
             return;
           }
           for (const p of questioners) {
@@ -2266,16 +2277,60 @@ const SKILLS: SkillDef[] = [
   {
     id: 'xiaoguo',
     name: '骁果',
-    desc: '当你使用【杀】造成伤害后，若目标手牌数大于你，你摸一张牌。',
+    desc: '其他角色的结束阶段开始时，你可以弃置一张基本牌，令其选择：弃置一张装备牌（然后你摸一张牌），或受到你造成的 1 点伤害。',
     triggers: [
       {
-        event: 'damageDone',
+        event: 'phaseStart',
         when: (c) =>
-          c.source?.id === c.owner.id &&
-          c.target?.alive === true &&
-          c.target.hand.length > c.owner.hand.length,
+          c.data.phase === 'finish' &&
+          !!c.player &&
+          c.player.id !== c.owner.id &&
+          c.player.alive &&
+          c.owner.alive &&
+          c.owner.hand.some((card) => card.type === 'basic'),
+        optional: true,
+        prompt: '是否发动【骁果】？',
         effect: async (c) => {
-          c.game.drawCards(c.owner, 1, '骁果');
+          const target = c.player;
+          if (!target?.alive) return;
+          const basics = c.owner.hand.filter((card) => card.type === 'basic');
+          const cost = await c.game.askCards(
+            c.owner,
+            basics,
+            1,
+            1,
+            '骁果：弃置一张基本牌',
+            undefined,
+            true,
+          );
+          if (!cost.length) return;
+          await c.game.discardCards(c.owner, cost, '骁果');
+          const equips = Object.values(target.equips).filter((card): card is Card => !!card);
+          if (!equips.length) {
+            await c.game.damage(c.owner, target, 1, undefined, '骁果');
+            return;
+          }
+          const choice = await c.game.askOption(target, '骁果：请选择一项', [
+            { id: 'equip', label: '弃置一张装备牌' },
+            { id: 'damage', label: '受到 1 点伤害' },
+          ]);
+          if (choice === 'equip') {
+            const picked = await c.game.askCards(
+              target,
+              equips,
+              1,
+              1,
+              '骁果：选择一张装备牌弃置',
+              undefined,
+              false,
+            );
+            if (picked.length) {
+              await c.game.discardCards(target, picked, '骁果');
+              c.game.drawCards(c.owner, 1, '骁果');
+              return;
+            }
+          }
+          await c.game.damage(c.owner, target, 1, undefined, '骁果');
         },
       },
     ],

@@ -99,6 +99,7 @@ export class Game {
   private logSeq = 0;
   private stopped = false;
   private wuxieWindowPending = false;
+  private extraTurnPlayerId: number | null = null;
 
   constructor(setup: GameSetup, io: GameIO) {
     this.io = io;
@@ -246,7 +247,10 @@ export class Game {
       players,
       deck,
       discard: [],
-      current: players.findIndex((p) => p.role === 'lord'),
+      current:
+        mode === 'duel' || mode === 'guozhan'
+          ? Math.floor(this.random() * players.length)
+          : Math.max(0, players.findIndex((p) => p.role === 'lord')),
       turn: 0,
       phase: 'prepare',
       over: false,
@@ -1034,6 +1038,16 @@ ${skill.desc}` : ''}`
     return map;
   }
 
+  isBlackCard(player: PlayerState, card: Card): boolean {
+    if (!isBlack(card.suit)) return false;
+    return !(this.hasSkill(player, 'hongyan') && card.suit === 'spade');
+  }
+
+  isRedCard(player: PlayerState, card: Card): boolean {
+    if (isRed(card.suit)) return true;
+    return this.hasSkill(player, 'hongyan') && card.suit === 'spade';
+  }
+
   private cardOptionFor(
     user: PlayerState,
     card: Card,
@@ -1050,7 +1064,7 @@ ${skill.desc}` : ''}`
       as === '杀'
         ? info.ids.filter((id) => {
             const armor = this.players[id]?.equips.armor?.name;
-            if (armor === '仁王盾' && isBlack(card.suit)) return false;
+            if (armor === '仁王盾' && this.isBlackCard(user, card)) return false;
             if (armor === '藤甲' && !element) return false;
             return true;
           })
@@ -1146,6 +1160,10 @@ ${skill.desc}` : ''}`
       if (res.type === 'endPlay' || res.type === 'cancel') return;
       if (res.type === 'activateSkill') {
         await this.activateSkill(player, res.skillId);
+        if (player.flags.fangquanSkip) {
+          player.flags.fangquanSkip = 0;
+          return;
+        }
         continue;
       }
       if (res.type === 'useCard') {
@@ -1259,7 +1277,7 @@ ${skill.desc}` : ''}`
       await this.trigger('cardUsed', { player: user, card, data: { as: asName } });
     }
 
-    if (cardType === 'trick' && isBlack(card.suit) && !asName.includes('无懈可击')) {
+    if (cardType === 'trick' && this.isBlackCard(user, card) && !asName.includes('无懈可击')) {
       const blocked = targets.filter((id) => this.hasSkill(this.players[id], 'weimu'));
       if (blocked.length > 0) {
         for (const id of blocked) this.log(`【${this.players[id].name}】的帷幕生效，不能成为黑色锦囊的目标`, 'skill');
@@ -1523,7 +1541,8 @@ ${skill.desc}` : ''}`
     const ignoreArmor =
       user.equips.weapon?.name === '青釭剑' ||
       Number(user.flags.xianzhenWin ?? -1) === target.id;
-    const renwang = !ignoreArmor && target.equips.armor?.name === '仁王盾' && isBlack(card.suit);
+    const renwang =
+      !ignoreArmor && target.equips.armor?.name === '仁王盾' && this.isBlackCard(user, card);
     if (renwang) {
       this.log(`【${target.name}】的仁王盾生效，黑色杀无效`, 'skill');
       return;
@@ -1650,7 +1669,7 @@ ${skill.desc}` : ''}`
         emitAoe();
         continue;
       }
-      if (isBlack(card.suit) && this.hasSkill(target, 'weimu')) {
+      if (this.isBlackCard(user, card) && this.hasSkill(target, 'weimu')) {
         this.log(`【${target.name}】的帷幕生效，不受黑色${card.name}影响`, 'skill');
         note(target.id, { result: 'immune', note: '帷幕', hp: target.hp });
         emitAoe();
@@ -1711,7 +1730,7 @@ ${skill.desc}` : ''}`
   private async resolvePeachGarden(user: PlayerState, card: Card): Promise<void> {
     for (const p of this.turnOrder()) {
       if (!p.alive) continue;
-      if (isBlack(card.suit) && this.hasSkill(p, 'weimu')) {
+      if (this.isBlackCard(user, card) && this.hasSkill(p, 'weimu')) {
         this.log(`【${p.name}】的帷幕生效，不受黑色桃园结义影响`, 'skill');
         continue;
       }
@@ -1732,7 +1751,7 @@ ${skill.desc}` : ''}`
     this.log(`五谷丰登亮出：${revealed.map((c) => cardLabel(c)).join('、')}`, 'system');
     for (const p of this.turnOrder()) {
       if (!p.alive || revealed.length === 0) continue;
-      if (isBlack(card.suit) && this.hasSkill(p, 'weimu')) {
+      if (this.isBlackCard(user, card) && this.hasSkill(p, 'weimu')) {
         this.log(`【${p.name}】的帷幕生效，不受黑色五谷丰登影响`, 'skill');
         continue;
       }
@@ -2570,6 +2589,10 @@ ${skill.desc}` : ''}`
     }
   }
 
+  grantExtraTurn(player: PlayerState): void {
+    if (player.alive) this.extraTurnPlayerId = player.id;
+  }
+
   private advance(): void {
     const n = this.players.length;
     for (let i = 1; i <= n; i += 1) {
@@ -2603,6 +2626,18 @@ ${skill.desc}` : ''}`
           continue;
         }
         await this.runTurn(player);
+        if (this.state.over || this.stopped) break;
+        if (this.extraTurnPlayerId != null) {
+          const extraId = this.extraTurnPlayerId;
+          this.extraTurnPlayerId = null;
+          const extra = this.players[extraId];
+          if (extra?.alive && !this.state.over) {
+            const previous = this.state.current;
+            this.state.current = extra.id;
+            await this.runTurn(extra);
+            this.state.current = previous;
+          }
+        }
         if (this.state.over || this.stopped) break;
         this.advance();
       }
