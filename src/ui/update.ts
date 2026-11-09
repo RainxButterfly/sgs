@@ -25,6 +25,69 @@ export interface AppUpdateInfo {
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0';
 
+function compareVersion(a: string, b: string): number {
+  const left = a.split('.').map(Number);
+  const right = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(left.length, right.length); i += 1) {
+    const difference = (left[i] ?? 0) - (right[i] ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+async function fetchManifestFromWeb(name: string): Promise<PortableUpdateInfo | null> {
+  const stamp = Date.now();
+  const urls = [
+    `https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}?t=${stamp}`,
+    `https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}?t=${stamp}`,
+    `https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}?t=${stamp}`,
+    `https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/${name}?t=${stamp}`,
+  ];
+  let success = false;
+  let best: PortableUpdateInfo | null = null;
+  for (const url of urls) {
+    try {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), 9000);
+      const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      window.clearTimeout(timer);
+      if (!response.ok) continue;
+      const info = (await response.json()) as PortableUpdateInfo;
+      success = true;
+      if (info?.version && compareVersion(info.version, APP_VERSION) > 0) {
+        if (!best || compareVersion(info.version, best.version) > 0) best = info;
+      }
+    } catch {
+      // try the next mirror
+    }
+  }
+  if (!success) throw new Error('网页通道无法连接更新镜像');
+  return null;
+}
+
+export async function checkAndroidUpdateFromWeb(): Promise<AppUpdateInfo | null> {
+  const info = await fetchManifestFromWeb('latest-android.json');
+  if (!info) return null;
+  return {
+    version: info.version,
+    currentVersion: APP_VERSION,
+    notes: info.notes,
+    android: true,
+    raw: info,
+  };
+}
+
+export async function checkAppUpdateFromWeb(): Promise<AppUpdateInfo | null> {
+  const info = await fetchManifestFromWeb('latest-portable.json');
+  if (!info) return null;
+  return {
+    version: info.version,
+    currentVersion: APP_VERSION,
+    notes: info.notes,
+    raw: info,
+  };
+}
+
 export async function checkAppUpdate(): Promise<AppUpdateInfo | null> {
   if (!isTauri()) return null;
   const info = await invoke<PortableUpdateInfo | null>('check_portable_update');

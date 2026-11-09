@@ -20,6 +20,20 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.7.4',
+    date: '2026-11-09',
+    title: '手机更新通道修复',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '更新检查增加 WebView 网页通道，优先使用 ghfast、ghproxy 和 raw 清单，解决手机原生请求访问镜像失败的问题。',
+          '网页通道不可用时仍会回退到桌面/安卓原生更新检查，并保留手动下载链接和复制兜底。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.7.3',
     date: '2026-11-09',
     title: '联机选将与无懈体验',

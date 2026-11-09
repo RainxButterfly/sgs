@@ -7,7 +7,9 @@ import { LanClientManager, LanHostManager, createRoomInfo, isAndroidApp, isTauri
 import type { ChatMessage, LobbyState, RoomInfo, SpectatorInfo } from '../net/protocol';
 import {
   checkAndroidUpdate,
+  checkAndroidUpdateFromWeb,
   checkAppUpdate,
+  checkAppUpdateFromWeb,
   installAndroidUpdate,
   installAppUpdate,
   type AppUpdateInfo,
@@ -1005,11 +1007,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     set({ updateState: 'checking', updateError: null });
     try {
-      const info = await withTimeout(
-        isAndroidApp() ? checkAndroidUpdate() : checkAppUpdate(),
-        30000,
-        '检查更新超时，请稍后重试',
-      );
+      let info: AppUpdateInfo | null;
+      try {
+        info = await withTimeout(
+          isAndroidApp() ? checkAndroidUpdateFromWeb() : checkAppUpdateFromWeb(),
+          12000,
+          '网页通道检查超时',
+        );
+      } catch {
+        info = await withTimeout(
+          isAndroidApp() ? checkAndroidUpdate() : checkAppUpdate(),
+          30000,
+          '检查更新超时，请稍后重试',
+        );
+      }
       if (info) {
         set({
           updateInfo: info,
