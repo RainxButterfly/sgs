@@ -118,6 +118,24 @@ export function PromptBar() {
   if (pending.kind === 'respond') {
     const synthetic = (pending.cardOptions ?? []).filter((o) => o.cardId.startsWith('__'));
     const real = (pending.cardOptions ?? []).filter((o) => !o.cardId.startsWith('__'));
+    const selectedOption = selected
+      ? real.find(
+          (o) =>
+            o.cardId === selected.cardId &&
+            o.as === selected.as &&
+            (o.skillId ?? '') === (selected.skillId ?? ''),
+        )
+      : undefined;
+    const isWuxie = pending.respondName === '无懈可击';
+    const confirm = () => {
+      if (!selected) return;
+      useGameStore.getState().submit({
+        type: 'respondCard',
+        cardId: selected.cardId,
+        as: selected.as,
+        skillId: selected.skillId,
+      });
+    };
     return (
       <div className="prompt-bar active-respond">
         <div className="prompt-main">
@@ -126,7 +144,11 @@ export function PromptBar() {
             {pending.prompt}
           </div>
           <div className="prompt-status">
-            {real.length > 0 ? '点击手牌中的对应牌进行响应' : '没有可响应的手牌'}
+            {selected
+              ? `已选【${selected.as}】，点击确定打出`
+              : real.length > 0
+                ? '点击手牌中的对应牌进行响应'
+                : '没有可响应的手牌'}
           </div>
         </div>
         <div className="prompt-actions">
@@ -147,8 +169,21 @@ export function PromptBar() {
               {o.label ?? '发动'}
             </button>
           ))}
+          {isWuxie && (
+            <button type="button" className="btn ghost" onClick={() => useGameStore.getState().cancelAllWuxie()}>
+              本轮全部取消
+            </button>
+          )}
           <button type="button" className="btn ghost" onClick={() => useGameStore.getState().cancelPrompt()}>
             取消
+          </button>
+          <button
+            type="button"
+            className="btn primary"
+            disabled={!selected || !selectedOption}
+            onClick={confirm}
+          >
+            确定
           </button>
         </div>
       </div>

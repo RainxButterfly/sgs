@@ -6989,3 +6989,57 @@ button {
     color: rgba(219, 181, 108, 0.45);
   }
 }
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px) {
+  .mobile-game.is-prompting .m-piles,
+  .mobile-game.is-prompting .m-history {
+    display: none;
+  }
+
+  .mobile-game.is-prompting .m-stage {
+    justify-content: center;
+  }
+
+  .m-hand .card:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .modal {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 10px);
+    padding: 10px 12px;
+  }
+
+  .modal-cards {
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 0 4px;
+  }
+
+  .modal-cards .card {
+    width: 64px;
+    height: 92px;
+  }
+
+  .modal-cards .card-name {
+    font-size: 13px;
+  }
+
+  .modal-hint {
+    margin-top: 4px;
+    font-size: 10.5px;
+  }
+
+  .modal-actions {
+    position: sticky;
+    bottom: 0;
+    margin-top: 6px;
+    padding-top: 8px;
+    background: linear-gradient(180deg, rgba(42, 34, 24, 0.75), #2a2218 45%);
+  }
+
+  .modal-head {
+    flex: 0 0 auto;
+  }
+}

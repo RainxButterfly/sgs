@@ -254,7 +254,18 @@ console.log('打包 Android APK…');
 const gradlew = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
 execFileSync(
   gradlew,
-  ['assembleArm64Release', '-x', 'rustBuildArm64Release', '-x', 'rustBuildUniversalRelease', '--no-daemon'],
+  [
+    'assembleArm64Release',
+    '-x',
+    'rustBuildArm64Release',
+    '-x',
+    'rustBuildUniversalRelease',
+    '--no-daemon',
+    '-Dhttp.proxyHost=',
+    '-Dhttp.proxyPort=',
+    '-Dhttps.proxyHost=',
+    '-Dhttps.proxyPort=',
+  ],
   { cwd: androidDir, stdio: 'inherit', env, shell: process.platform === 'win32' },
 );
 

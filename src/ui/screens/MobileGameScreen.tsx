@@ -135,8 +135,10 @@ export function MobileGameScreen() {
     state.backToMenu();
   };
 
+  const prompting = pending?.playerId === humanId;
+
   return (
-    <div className="mobile-game">
+    <div className={`mobile-game ${prompting ? 'is-prompting' : ''}`}>
       <div className="game-bg" style={{ backgroundImage: `url(${bgImage ?? defaultBg})` }} />
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
 

@@ -149,6 +149,7 @@ interface GameStore {
   humanId: number;
   version: number;
   pending: AskRequest | null;
+  skipWuxie: boolean;
   result: { text: string; winner: string } | null;
   lastPlay: PlayEvent | null;
   lastJudge: JudgeEvent | null;
@@ -225,6 +226,7 @@ interface GameStore {
   endPlay: () => void;
   activateSkill: (skillId: string) => void;
   cancelPrompt: () => void;
+  cancelAllWuxie: () => void;
   toggleCardChoice: (cardId: string) => void;
   confirmCards: () => void;
   toggleReorder: (cardId: string) => void;
@@ -260,6 +262,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   humanId: 0,
   version: 0,
   pending: null,
+  skipWuxie: false,
   result: null,
   lastPlay: null,
   lastJudge: null,
@@ -867,6 +870,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   event: (ev) => {
     const state = get();
     const patch: Partial<GameStore> = { version: state.version + 1 };
+    if (ev.type === 'turn' || ev.type === 'playCard') {
+      patch.skipWuxie = false;
+    }
     if (ev.type === 'turn' && state.firstPlayerId === null) {
       patch.firstPlayerId = ev.playerId;
     }
@@ -1033,10 +1039,29 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   ask: (req) =>
     new Promise<GameAction>((resolve) => {
+      if (
+        req.kind === 'respond' &&
+        req.respondName === '无懈可击' &&
+        get().skipWuxie
+      ) {
+        resolve({ type: 'cancel' });
+        return;
+      }
+      const autoOption =
+        req.kind === 'respond' && req.respondName === '无懈可击'
+          ? (req.cardOptions ?? []).find((option) => !option.cardId.startsWith('__'))
+          : undefined;
       resolveAsk = resolve;
       set({
         pending: req,
-        selected: null,
+        selected: autoOption
+          ? {
+              cardId: autoOption.cardId,
+              as: autoOption.as,
+              skillId: autoOption.skillId,
+              element: autoOption.element,
+            }
+          : null,
         selectedTargets: [],
         asChooser: null,
         cardChoices: [],
@@ -1088,10 +1113,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!options.length) return;
     if (options.length === 1) {
       const option = options[0];
-      if (pending.kind === 'respond') {
-        get().submit({ type: 'respondCard', cardId, as: option.as, skillId: option.skillId });
-        return;
-      }
       set({
         selected: { cardId, as: option.as, skillId: option.skillId, element: option.element },
         selectedTargets: [],
@@ -1105,10 +1126,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   chooseAs: (as, skillId) => {
     const { asChooser, pending } = get();
     if (!asChooser) return;
-    if (pending?.kind === 'respond') {
-      get().submit({ type: 'respondCard', cardId: asChooser.cardId, as, skillId });
-      return;
-    }
     const option = asChooser.options.find((o) => o.as === as && (o.skillId ?? '') === (skillId ?? ''));
     set({
       selected: { cardId: asChooser.cardId, as, skillId: option?.skillId, element: option?.element },
@@ -1172,6 +1189,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   activateSkill: (skillId) => get().submit({ type: 'activateSkill', skillId }),
 
   cancelPrompt: () => get().submit({ type: 'cancel' }),
+
+  cancelAllWuxie: () => {
+    const pending = get().pending;
+    if (pending?.kind !== 'respond' || pending.respondName !== '无懈可击') return;
+    set({ skipWuxie: true });
+    get().submit({ type: 'cancel' });
+  },
 
   toggleCardChoice: (cardId) => {
     const { pending, cardChoices } = get();
