@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { loadBackgroundSettings } from './ui/background';
 import { ChatPanel } from './ui/components/ChatPanel';
 import { AoePanel } from './ui/components/AoePanel';
+import { ChangelogModal } from './ui/components/ChangelogModal';
 import { HarvestLayer } from './ui/components/HarvestModal';
 import { SettingsModal } from './ui/components/SettingsModal';
 import { initDataStorage } from './ui/dataStorage';
@@ -79,6 +80,7 @@ export default function App() {
         </div>
       )}
       <SettingsModal />
+      <ChangelogModal />
       <AoePanel />
       <HarvestLayer />
       <ChatPanel />

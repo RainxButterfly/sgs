@@ -10,6 +10,8 @@ export function SettingsModal() {
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
   const close = useGameStore((s) => s.closeSettings);
+  const openChangelog = useGameStore((s) => s.openChangelog);
+  const appVersion = useGameStore((s) => s.appVersion);
   const setBgImage = useGameStore((s) => s.setBgImage);
   const setBgDim = useGameStore((s) => s.setBgDim);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -198,6 +200,18 @@ export function SettingsModal() {
           ) : (
             <div className="bg-setting-hint">网页版由浏览器保存；桌面版和安卓版可以修改目录。</div>
           )}
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">版本与更新</div>
+          <p className="settings-section-desc">
+            当前版本 v{appVersion}。查看每个版本新增的功能、修复的问题和体验优化。
+          </p>
+          <div className="settings-actions">
+            <button type="button" className="btn ghost" onClick={openChangelog}>
+              查看更新日志
+            </button>
+          </div>
         </div>
 
         <div className="modal-actions">

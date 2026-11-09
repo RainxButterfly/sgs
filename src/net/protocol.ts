@@ -1,4 +1,4 @@
-import type { AskRequest, Card, CustomRules, GameAction, GameEvent, GameState, PlayerState } from '../core/types';
+import type { AskRequest, Card, CustomRules, GameAction, GameEvent, GameState, PlayerState, Role } from '../core/types';
 
 export interface RoomInfo {
   ip: string;
@@ -104,6 +104,10 @@ function redactPlayer(player: PlayerState, viewerId: number, over: boolean): Pla
 }
 
 export function redactState(state: GameState, viewerId: number): GameState {
+  const roleCounts: Record<Role, number> = { lord: 0, loyalist: 0, rebel: 0, traitor: 0 };
+  for (const player of state.players) {
+    if (player.alive) roleCounts[player.role] += 1;
+  }
   return {
     ...state,
     seed: 0,
@@ -112,6 +116,7 @@ export function redactState(state: GameState, viewerId: number): GameState {
     discard: state.discard,
     deckCount: state.deck.length,
     discardCount: state.discard.length,
+    roleCounts,
     log: state.log.slice(-150),
   };
 }

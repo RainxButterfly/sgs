@@ -168,8 +168,8 @@ export function MobileGameScreen() {
           <b>{mine ? '轮到你' : `等待 ${current?.name ?? ''}`}</b>
           <em>
             第 {game.state.turn} 回合 · {current?.heroName ?? ''} · {PHASE_NAME[game.state.phase]}
-            {composition ? ` · ${composition}` : ''}
           </em>
+          {composition && <span className="m-composition">{composition}</span>}
         </span>
         <div className="m-top-actions">
           <SpectatorBadge compact />

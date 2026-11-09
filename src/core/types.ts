@@ -104,6 +104,7 @@ export interface GameState {
   seed: number;
   deckCount?: number;
   discardCount?: number;
+  roleCounts?: Record<Role, number>;
   rules: CustomRules;
 }
 

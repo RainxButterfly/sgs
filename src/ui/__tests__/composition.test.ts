@@ -61,14 +61,28 @@ function state(players: PlayerState[]): GameState {
 }
 
 describe('身份与阵营人数', () => {
-  it('身份场按人数显示固定配置，不受隐藏身份影响', () => {
-    const hiddenRoles = Array.from({ length: 5 }, (_, id) => player(id, 'rebel', 'qun'));
-    expect(compositionText(state(hiddenRoles), 'identity')).toBe('主1 忠1 反2 内1');
-    const eight = Array.from({ length: 8 }, (_, id) => player(id, 'rebel', 'qun'));
-    expect(compositionText(state(eight), 'identity')).toBe('主1 忠2 反4 内1');
+  it('身份场统计当前存活人数，阵亡后减少', () => {
+    const players = [
+      player(0, 'lord', 'qun'),
+      player(1, 'loyalist', 'qun'),
+      player(2, 'rebel', 'qun'),
+      player(3, 'rebel', 'qun'),
+      player(4, 'traitor', 'qun'),
+    ];
+    expect(compositionText(state(players), 'identity')).toBe('主公：1 忠臣：1 反贼：2 内奸：1');
+    players[2].alive = false;
+    players[2].roleRevealed = true;
+    expect(compositionText(state(players), 'identity')).toBe('主公：1 忠臣：1 反贼：1 内奸：1');
   });
 
-  it('国战按势力统计', () => {
+  it('联机端使用房主下发的存活身份统计，不依赖被隐藏的角色字段', () => {
+    const players = Array.from({ length: 5 }, (_, id) => player(id, 'rebel', 'qun'));
+    const game = state(players);
+    game.roleCounts = { lord: 1, loyalist: 1, rebel: 1, traitor: 1 };
+    expect(compositionText(game, 'identity')).toBe('主公：1 忠臣：1 反贼：1 内奸：1');
+  });
+
+  it('国战按存活势力统计', () => {
     const players = [
       player(0, 'rebel', 'wei'),
       player(1, 'rebel', 'wei'),
@@ -76,6 +90,8 @@ describe('身份与阵营人数', () => {
       player(3, 'rebel', 'wu'),
       player(4, 'rebel', 'qun'),
     ];
-    expect(compositionText(state(players), 'guozhan')).toBe('魏2 蜀1 吴1 群1');
+    expect(compositionText(state(players), 'guozhan')).toBe('魏：2 蜀：1 吴：1 群：1');
+    players[1].alive = false;
+    expect(compositionText(state(players), 'guozhan')).toBe('魏：1 蜀：1 吴：1 群：1');
   });
 });

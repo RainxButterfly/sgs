@@ -1,6 +1,6 @@
 {
   "version": "0.6.3",
-  "notes": "v0.6.3：南蛮/万箭结算面板、判定结果显示、铁索状态、战报顺序与对局记录修复。",
+  "notes": "v0.6.3：南蛮/万箭结算面板、身份人数实时统计、更新日志与规则修复。",
   "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.6.3/updates/siguoshan-xinghe-win64.zip",
   "urls": [
     "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.6.3/updates/siguoshan-xinghe-win64.zip",
@@ -13,5 +13,5 @@
     "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.6.3/updates/siguoshan-xinghe-win64.zip",
     "https://raw.githubusercontent.com/RainxButterfly/sgs/v0.6.3/updates/siguoshan-xinghe-win64.zip"
   ],
-  "sha256": "9d2ca4bb571919349309839d833338b93995d0ccd99d001a3a35d3025dcb5f1e"
+  "sha256": "68995abfb731cce7e8ff8c200f8c589953358b234cb3f81055243aa8dbc75fa9"
 }

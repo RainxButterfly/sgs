@@ -206,6 +206,7 @@ interface GameStore {
   bgDim: number;
   settingsOpen: boolean;
   historyOpen: boolean;
+  changelogOpen: boolean;
   firstPlayerId: number | null;
 
   selected: { cardId: string; as: string; skillId?: string; element?: 'fire' | 'thunder' } | null;
@@ -241,6 +242,8 @@ interface GameStore {
   closeSettings: () => void;
   openHistory: () => void;
   closeHistory: () => void;
+  openChangelog: () => void;
+  closeChangelog: () => void;
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
   event: (ev: GameEvent) => void;
@@ -332,6 +335,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   bgDim: initialBackground.dim,
   settingsOpen: false,
   historyOpen: false,
+  changelogOpen: false,
   firstPlayerId: null,
   selected: null,
   selectedTargets: [],
@@ -881,6 +885,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   closeSettings: () => set({ settingsOpen: false }),
   openHistory: () => set({ historyOpen: true }),
   closeHistory: () => set({ historyOpen: false }),
+  openChangelog: () => set({ changelogOpen: true }),
+  closeChangelog: () => set({ changelogOpen: false }),
   setBgImage: (image) => {
     set({ bgImage: image });
     saveBackgroundSettings({ image, dim: get().bgDim });
