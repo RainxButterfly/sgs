@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { useGameSnapshot, useGameStore } from '../store';
 import { GameContextMenu } from '../components/GameContextMenu';
+import { GameRail } from '../components/GameRail';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroPanel } from '../components/HeroPanel';
 import { Hand } from '../components/Hand';
@@ -10,8 +11,31 @@ import { GameModals } from '../components/Modals';
 import { PlayerSeat } from '../components/PlayerSeat';
 import { PromptBar } from '../components/PromptBar';
 import { TableCenter } from '../components/TableCenter';
+import { TablePiles } from '../components/TablePiles';
 import { TopBar } from '../components/TopBar';
 import { tableSeatLabel } from '../labels';
+
+type SeatLayout = [number, number][];
+
+const WIDE_SEAT_LAYOUT: Record<number, SeatLayout> = {
+  1: [[50, 20]],
+  2: [[35, 24], [65, 24]],
+  3: [[10, 56], [50, 20], [90, 56]],
+  4: [[10, 68], [32, 24], [68, 24], [90, 68]],
+  5: [[10, 68], [18, 32], [50, 20], [82, 32], [90, 68]],
+  6: [[10, 68], [12, 34], [34, 24], [66, 24], [88, 34], [90, 68]],
+  7: [[10, 68], [10, 34], [30, 24], [50, 20], [70, 24], [90, 34], [90, 68]],
+};
+
+const COMPACT_SEAT_LAYOUT: Record<number, SeatLayout> = {
+  1: [[50, 22]],
+  2: [[35, 24], [65, 24]],
+  3: [[50, 20], [14, 58], [86, 58]],
+  4: [[30, 22], [70, 22], [14, 60], [86, 60]],
+  5: [[20, 22], [50, 20], [80, 22], [14, 62], [86, 62]],
+  6: [[22, 22], [50, 20], [78, 22], [14, 49], [86, 49], [50, 75]],
+  7: [[22, 22], [50, 20], [78, 22], [14, 49], [86, 49], [14, 74], [86, 74]],
+};
 
 export function GameScreen() {
   const { game } = useGameSnapshot();
@@ -31,6 +55,13 @@ export function GameScreen() {
   const selectedCardId = selected?.cardId;
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
+  const [compactRing, setCompactRing] = useState(() => window.innerWidth < 1460);
+
+  useEffect(() => {
+    const onResize = () => setCompactRing(window.innerWidth < 1460);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   if (!game) {
     return (
@@ -93,6 +124,7 @@ export function GameScreen() {
 
   const opponents = game.state.players.filter((p) => p.id !== humanId);
   const m = Math.max(1, n - 1);
+  const seatLayout = (compactRing ? COMPACT_SEAT_LAYOUT : WIDE_SEAT_LAYOUT)[Math.min(7, m)] ?? WIDE_SEAT_LAYOUT[7];
   const targeting = pending?.kind === 'play' && !!selectedOption && selectedOption.targetMax > 0;
 
   const exit = () => {
@@ -112,66 +144,68 @@ export function GameScreen() {
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
       <TopBar logOpen={logOpen} onToggleLog={() => setLogOpen((v) => !v)} onExit={exit} />
       <div className="table-area">
-        <div className="ring">
-          {opponents.map((player) => {
-            const rel = (player.seat - human.seat + n) % n;
-            const angle = Math.PI + (rel * Math.PI) / (m + 1);
-            const x = 50 + 43 * Math.cos(angle);
-            const y = 47 + 37 * Math.sin(angle);
-            return (
-              <PlayerSeat
-                key={player.id}
-                player={player}
-                mode={displayMode}
-                current={player.id === currentId}
-                targetable={targetable.has(player.id)}
-                targeted={!!lastPlay?.targets.includes(player.id)}
-                selected={selectedTargets.includes(player.id)}
-                mark={displayMode === 'identity' ? identityMarks[player.id] : undefined}
-                onMark={
-                  displayMode === 'identity'
-                    ? () => openIdentityMark(player.id)
-                    : undefined
-                }
-                clickable={targetable.has(player.id)}
-                flash={flash}
-                flashes={flashes}
-                speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
-                style={{ left: `${x}%`, top: `${y}%` }}
-                tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, player.id, n)}
-                unavailableHint={targeting && !targetable.has(player.id) ? '距离不足' : undefined}
-                onDetail={() => setDetailPlayer(player.id)}
-                onClick={() => useGameStore.getState().seatClick(player.id)}
-              />
-            );
-          })}
-        </div>
-        <div className="seat-position" style={{ left: '50%', top: '47%' }}>
-          <TableCenter />
-        </div>
-        <div className="own-area">
-          <HeroPanel
-            player={human}
-            mode={displayMode}
-            current={human.id === currentId}
-            flash={flash}
-            flashes={flashes}
-            speech={speechBubbles.find((bubble) => bubble.playerId === human.id) ?? null}
-            handLimitModifier={game.state.rules?.handLimitModifier ?? 0}
-            selfView
-            tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, human.id, n)}
-            onReveal={(index) => useGameStore.getState().revealGeneral(index)}
-            onDetail={() => setDetailPlayer(human.id)}
-          />
-          <div className="play-column">
-            <PromptBar />
-            <Hand
-              player={human}
-              pending={pending}
-              selectedCardId={selectedCardId}
-              onSelect={(id) => useGameStore.getState().selectCard(id)}
-            />
+        <div className="board-area">
+          <div className="ring">
+            {opponents.map((player) => {
+              const rel = (player.seat - human.seat + n) % n;
+              const [x, y] = seatLayout[Math.max(0, Math.min(m - 1, rel - 1))];
+              return (
+                <PlayerSeat
+                  key={player.id}
+                  player={player}
+                  mode={displayMode}
+                  current={player.id === currentId}
+                  targetable={targetable.has(player.id)}
+                  targeted={!!lastPlay?.targets.includes(player.id)}
+                  selected={selectedTargets.includes(player.id)}
+                  mark={displayMode === 'identity' ? identityMarks[player.id] : undefined}
+                  onMark={
+                    displayMode === 'identity'
+                      ? () => openIdentityMark(player.id)
+                      : undefined
+                  }
+                  clickable={targetable.has(player.id)}
+                  flash={flash}
+                  flashes={flashes}
+                  speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
+                  style={{ left: `${x}%`, top: `${y}%` }}
+                  tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, player.id, n)}
+                  unavailableHint={targeting && !targetable.has(player.id) ? '距离不足' : undefined}
+                  onDetail={() => setDetailPlayer(player.id)}
+                  onClick={() => useGameStore.getState().seatClick(player.id)}
+                />
+              );
+            })}
           </div>
+          <div className="seat-position" style={{ left: '50%', top: '55%' }}>
+            <TableCenter />
+          </div>
+          <TablePiles />
+        </div>
+        <GameRail onShowLog={() => setLogOpen(true)} />
+      </div>
+      <div className="own-area">
+        <HeroPanel
+          player={human}
+          mode={displayMode}
+          current={human.id === currentId}
+          flash={flash}
+          flashes={flashes}
+          speech={speechBubbles.find((bubble) => bubble.playerId === human.id) ?? null}
+          handLimitModifier={game.state.rules?.handLimitModifier ?? 0}
+          selfView
+          tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, human.id, n)}
+          onReveal={(index) => useGameStore.getState().revealGeneral(index)}
+          onDetail={() => setDetailPlayer(human.id)}
+        />
+        <div className="play-column">
+          <PromptBar />
+          <Hand
+            player={human}
+            pending={pending}
+            selectedCardId={selectedCardId}
+            onSelect={(id) => useGameStore.getState().selectCard(id)}
+          />
         </div>
       </div>
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />

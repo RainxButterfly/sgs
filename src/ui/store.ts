@@ -16,6 +16,7 @@ import {
   type AppUpdateInfo,
 } from './update';
 import { loadBackgroundSettings, saveBackgroundSettings } from './background';
+import { applyMatchXp, loadProfile, normalizePlayerName, saveProfile, type PlayerProfile, type XpGain } from './profile';
 import { scheduleDataSnapshot } from './dataStorage';
 import { addMatchRecord, localDateKey } from './history';
 import type {
@@ -60,6 +61,8 @@ interface SavedLanSession {
 const LAN_SESSION_KEY = 'sgk-lan-session';
 const AI_SPEED_KEY = 'sgs-ai-speed';
 const SELF_CARD_SIDE_KEY = 'sgs-self-card-side';
+const UI_THEME_KEY = 'sgs-ui-theme';
+const UI_PALETTE_KEY = 'sgs-ui-palette';
 
 function loadAiSpeed(): number {
   try {
@@ -77,6 +80,44 @@ function loadSelfCardSide(): 'left' | 'right' {
     return localStorage.getItem(SELF_CARD_SIDE_KEY) === 'left' ? 'left' : 'right';
   } catch {
     return 'right';
+  }
+}
+
+function loadUiTheme(): 'classic' | 'magic' {
+  try {
+    return localStorage.getItem(UI_THEME_KEY) === 'classic' ? 'classic' : 'magic';
+  } catch {
+    return 'magic';
+  }
+}
+
+function saveUiTheme(value: 'classic' | 'magic'): void {
+  try {
+    localStorage.setItem(UI_THEME_KEY, value);
+    scheduleDataSnapshot();
+  } catch {
+    // ignore storage failures
+  }
+}
+
+export type UiPalette = 'rainbow' | 'rock' | 'magic';
+
+function loadUiPalette(): UiPalette {
+  try {
+    const raw = localStorage.getItem(UI_PALETTE_KEY);
+    if (raw === 'rock' || raw === 'magic') return raw;
+    return 'rainbow';
+  } catch {
+    return 'rainbow';
+  }
+}
+
+function saveUiPalette(value: UiPalette): void {
+  try {
+    localStorage.setItem(UI_PALETTE_KEY, value);
+    scheduleDataSnapshot();
+  } catch {
+    // ignore storage failures
   }
 }
 
@@ -310,6 +351,8 @@ interface GameStore {
   bgImage: string | null;
   bgDim: number;
   selfCardSide: 'left' | 'right';
+  uiTheme: 'classic' | 'magic';
+  uiPalette: UiPalette;
   settingsOpen: boolean;
   historyOpen: boolean;
   changelogOpen: boolean;
@@ -318,6 +361,8 @@ interface GameStore {
   aiSpeed: number;
   myRole: Role | null;
   firstPlayerId: number | null;
+  profile: PlayerProfile;
+  xpGain: XpGain | null;
 
   selected: { cardId: string; as: string; skillId?: string; element?: 'fire' | 'thunder' } | null;
   selectedTargets: number[];
@@ -371,6 +416,9 @@ interface GameStore {
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
   setSelfCardSide: (side: 'left' | 'right') => void;
+  setUiTheme: (theme: 'classic' | 'magic') => void;
+  setUiPalette: (palette: UiPalette) => void;
+  setProfileName: (name: string) => void;
   event: (ev: GameEvent) => void;
   ask: (req: AskRequest) => Promise<GameAction>;
   submit: (action: GameAction) => void;
@@ -409,6 +457,7 @@ function clearAskTimer(): void {
 }
 let eventSeq = 0;
 let recordedGame: GameLike | null = null;
+let xpRecordedGame: GameLike | null = null;
 let sessionMarked = false;
 const initialBackground = loadBackgroundSettings();
 
@@ -488,6 +537,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   bgImage: initialBackground.image,
   bgDim: initialBackground.dim,
   selfCardSide: loadSelfCardSide(),
+  uiTheme: loadUiTheme(),
+  uiPalette: loadUiPalette(),
   settingsOpen: false,
   historyOpen: false,
   changelogOpen: false,
@@ -496,6 +547,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   aiSpeed: loadAiSpeed(),
   myRole: null,
   firstPlayerId: null,
+  profile: loadProfile(),
+  xpGain: null,
   selected: null,
   selectedTargets: [],
   identityMarks: {},
@@ -849,7 +902,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     endGameSession();
     try {
       const info = await createRoomInfo();
-      const hostName = name.trim() || '房主';
+      const hostName = name.trim() || get().profile.name || '房主';
+      get().setProfileName(hostName);
       try {
         localStorage.setItem('sgk-name', hostName);
       } catch {
@@ -890,7 +944,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }),
         onError: (message) => set({ netError: message }),
         onClosed: () => set({ netError: '房间连接已断开，请返回重试', lanHost: null }),
-      }, get().aiSpeed);
+      }, get().aiSpeed, get().profile.level);
       clearSavedLanSession();
       set({
         savedLanSession: null,
@@ -928,7 +982,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({ netError: '请输入房间码' });
       return;
     }
-    const playerName = name.trim() || '玩家';
+    const playerName = name.trim() || get().profile.name || '玩家';
+    get().setProfileName(playerName);
     try {
       localStorage.setItem('sgk-name', playerName);
     } catch {
@@ -1110,7 +1165,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           screen: 'menu',
           suspended: false,
         }),
-    }, spectate);
+    }, spectate, get().profile.level);
     const session: SavedLanSession = {
       address: `${ip}:${port}`,
       code: cleanCode,
@@ -1332,6 +1387,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setSelfCardSide: (side) => {
     saveSelfCardSide(side);
     set({ selfCardSide: side });
+  },
+  setUiTheme: (theme) => {
+    saveUiTheme(theme);
+    set({ uiTheme: theme });
+  },
+  setUiPalette: (palette) => {
+    saveUiPalette(palette);
+    set({ uiPalette: palette });
+  },
+
+  setProfileName: (name) => {
+    const profile: PlayerProfile = { ...get().profile, name: normalizePlayerName(name) };
+    saveProfile(profile);
+    try {
+      localStorage.setItem('sgk-name', profile.name);
+    } catch {
+      // ignore storage failures
+    }
+    set({ profile });
   },
 
   leaveLan: () => {
@@ -1713,6 +1787,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
             })),
             log: finishedState.log.slice(-400),
           });
+          if (xpRecordedGame !== finished) {
+            xpRecordedGame = finished;
+            const realPlayers = finishedState.players.filter((player) => !player.isBot).length;
+            const awarded = applyMatchXp(current.profile, mode, result, realPlayers);
+            set({ profile: awarded.profile, xpGain: awarded.gain });
+          }
         }, delay);
       }
     }

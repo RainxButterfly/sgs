@@ -115,6 +115,7 @@ class RelayClient {
 interface HostGuest {
   connId: number;
   name: string;
+  level: number;
   playerId: number;
   connected: boolean;
   choices: string[];
@@ -173,11 +174,13 @@ export class LanHostManager {
   private stateTimer: ReturnType<typeof setTimeout> | null = null;
   private closed = false;
   aiSpeed = 420;
+  private readonly hostLevel: number;
 
-  constructor(info: RoomInfo, hostName: string, hooks: HostHooks, aiSpeed = 420) {
+  constructor(info: RoomInfo, hostName: string, hooks: HostHooks, aiSpeed = 420, hostLevel = 1) {
     this.info = info;
     this.hostName = hostName;
     this.hooks = hooks;
+    this.hostLevel = Math.max(1, Math.min(99, Math.round(hostLevel) || 1));
     this.aiSpeed = Math.max(0, Math.min(1200, aiSpeed));
     this.hostChoices = this.rollChoices();
     this.lobby = this.buildLobby();
@@ -245,6 +248,7 @@ export class LanHostManager {
         playerId: 0,
         connId: this.hostConnId,
         name: this.hostName,
+        level: this.hostLevel,
         isHost: true,
         connected: true,
         heroId: this.hostHeroId ?? undefined,
@@ -255,6 +259,7 @@ export class LanHostManager {
         playerId: guest.playerId,
         connId: guest.connId,
         name: guest.name,
+        level: guest.level,
         isHost: false,
         connected: guest.connected,
         heroId: guest.heroId ?? undefined,
@@ -499,8 +504,14 @@ export class LanHostManager {
         if (existing) {
           existing.connId = event.id;
           if (event.ip) existing.ip = event.ip;
+          if (event.level) existing.level = event.level;
         } else {
-          this.spectators.push({ connId: event.id, name: joinName, ip: event.ip ?? '' });
+          this.spectators.push({
+            connId: event.id,
+            name: joinName,
+            ip: event.ip ?? '',
+            level: event.level ?? 1,
+          });
           if (this.started && this.game) this.game.log(`【${joinName}】进入观战`, 'system');
         }
         this.sendTo(event.id, { t: 'spectate' });
@@ -519,6 +530,7 @@ export class LanHostManager {
         if (rejoin) {
           rejoin.connId = event.id;
           rejoin.connected = true;
+          if (event.level) rejoin.level = event.level;
           if (this.started && this.game) {
             const player = this.game.state.players[rejoin.playerId];
             if (player) player.isBot = false;
@@ -556,6 +568,7 @@ export class LanHostManager {
         if (spectator) {
           spectator.connId = event.id;
           if (event.ip) spectator.ip = event.ip;
+          if (event.level) spectator.level = event.level;
           if (this.started && this.game) {
             this.sendTo(event.id, { t: 'spectate' });
             this.sendTo(event.id, {
@@ -570,6 +583,7 @@ export class LanHostManager {
           connId: event.id,
           name: joinName,
           ip: event.ip ?? '',
+          level: event.level ?? 1,
         };
         this.spectators.push(nextSpectator);
         if (this.started && this.game) {
@@ -587,6 +601,7 @@ export class LanHostManager {
       this.guests.push({
         connId: event.id,
         name: event.name || `玩家${event.id}`,
+        level: event.level ?? 1,
         playerId: this.guests.length + 1,
         connected: true,
         choices: this.rollChoices(),
@@ -1082,12 +1097,13 @@ export class LanClientManager {
     name: string,
     hooks: ClientHooks,
     spectate = false,
+    level = 1,
   ) {
     this.address = `${ip}:${port}`;
     this.code = code;
     this.hooks = hooks;
     const watch = spectate ? '&spectate=1' : '';
-    const url = `ws://${ip}:${port}/ws?room=${encodeURIComponent(code)}&name=${encodeURIComponent(name)}${watch}`;
+    const url = `ws://${ip}:${port}/ws?room=${encodeURIComponent(code)}&name=${encodeURIComponent(name)}&level=${Math.max(1, Math.round(level))}${watch}`;
     this.relay = new RelayClient(url);
     let welcomed = false;
     const welcomeTimer = window.setTimeout(() => {

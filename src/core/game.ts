@@ -1205,18 +1205,15 @@ ${skill.desc}` : ''}`
     if (as === '闪电' && user.judgeZone.some((c) => c.name === '闪电')) return null;
     const info = this.targetInfo(user, as, isLastHand);
     const element = as === '杀' ? effectiveElement ?? card.element : undefined;
-    const shaIds =
-      as === '杀' && skillId === 'gongqi'
-        ? this.players
-            .filter((p) => p.alive && p.id !== user.id && this.canBeTargeted(p, user, '杀'))
-            .map((p) => p.id)
-        : info.ids;
     let validTargets =
       as === '杀'
-        ? shaIds.filter((id) => {
+        ? info.ids.filter((id) => {
             const armor = this.players[id]?.equips.armor?.name;
-            if (armor === '仁王盾' && this.isBlackCard(user, card)) return false;
-            if (armor === '藤甲' && !element) return false;
+            const ignoreArmor =
+              user.equips.weapon?.name === '青釭剑' ||
+              Number(user.flags.xianzhenWin ?? -1) === id;
+            if (!ignoreArmor && armor === '仁王盾' && this.isBlackCard(user, card)) return false;
+            if (!ignoreArmor && armor === '藤甲' && !element) return false;
             return true;
           })
         : info.ids;
@@ -1247,7 +1244,7 @@ ${skill.desc}` : ''}`
       skillId,
       element,
       validTargets,
-      ignoreDistance: as === '杀' && skillId === 'gongqi',
+      ignoreDistance: false,
       targetMin: needsTarget ? (jiedao ? 2 : info.min) : 0,
       targetMax: needsTarget ? (jiedao ? 2 : info.max) : 0,
       targetAfter: jiedao ? this.jiedaoTargets(user) : undefined,
@@ -1660,6 +1657,9 @@ ${skill.desc}` : ''}`
     const slot = card.equipSlot;
     if (!slot || source.equips[slot]?.id !== card.id || target.equips[slot]) return false;
     source.equips[slot] = undefined;
+    if (card.name === '白银狮子' && source.alive) {
+      this.heal(source, source, 1, { reason: '白银狮子' });
+    }
     target.equips[slot] = card;
     this.emit({ type: 'equip', playerId: source.id, slot, card: undefined });
     this.emit({ type: 'equip', playerId: target.id, slot, card });
@@ -1805,7 +1805,11 @@ ${skill.desc}` : ''}`
       this.log('【贯石斧】生效，此杀依然命中', 'skill');
     }
 
-    if (user.equips.weapon?.name === '寒冰剑' && this.hasCards(target)) {
+    const targetCardCount =
+      target.hand.length +
+      Object.values(target.equips).filter((c) => !!c).length +
+      target.judgeZone.length;
+    if (user.equips.weapon?.name === '寒冰剑' && targetCardCount >= 2) {
       const ok = await this.confirm(user, '是否发动【寒冰剑】？防止此伤害，改为弃置目标两张牌', '寒冰剑');
       if (ok) {
         for (let i = 0; i < 2; i += 1) {
@@ -2381,7 +2385,13 @@ ${skill.desc}` : ''}`
     return false;
   }
 
-  async useShaOn(player: PlayerState, victim: PlayerState, reason: string): Promise<boolean> {
+  async useShaOn(
+    player: PlayerState,
+    victim: PlayerState,
+    reason: string,
+    countSha = true,
+    promptOverride?: string,
+  ): Promise<boolean> {
     const options: CardOption[] = [];
     for (const card of [...player.hand, ...Object.values(player.equips).filter((c): c is Card => !!c)]) {
       if (this.qianxiBlocked(player, card)) continue;
@@ -2414,7 +2424,9 @@ ${skill.desc}` : ''}`
       id: this.askId(),
       playerId: player.id,
       kind: 'respond',
-      prompt: `${reason}：对【${victim.name}】使用一张杀${reason === '借刀杀人' ? '，否则将武器交给使用者' : '，否则令其弃置你一张牌'}`,
+      prompt:
+        promptOverride ??
+        `${reason}：对【${victim.name}】使用一张杀${reason === '借刀杀人' ? '，否则将武器交给使用者' : '，否则令其弃置你一张牌'}`,
       respondName: '杀',
       cardOptions: options,
       canCancel: true,
@@ -2430,7 +2442,8 @@ ${skill.desc}` : ''}`
     this.limbo.push(card);
     this.emit({ type: 'playCard', playerId: player.id, card, as: '杀', targets: [victim.id], skillId: res.skillId });
     this.log(`【${player.name}】对【${victim.name}】使用了杀`, 'info');
-    player.usedThisTurn.sha = (player.usedThisTurn.sha ?? 0) + 1;
+    player.flags.lastShaTurn = this.state.turn;
+    if (countSha) player.usedThisTurn.sha = (player.usedThisTurn.sha ?? 0) + 1;
     await this.notifyHandLost(player);
     await this.useSha(player, card, [victim.id], card.element);
     this.cleanupLimbo(card);

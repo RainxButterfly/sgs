@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { toDataURL } from 'qrcode';
 import { HERO_MAP } from '../../core/deck';
 import { DEFAULT_RULES, ROLE_NAME, type Role } from '../../core/types';
 import { LanPickPanel } from '../components/LanPickPanel';
+import { KickMenu } from '../components/KickMenu';
+import { NameChip } from '../components/NameChip';
 import { RulesEditor } from '../components/RulesEditor';
+import { matchXpBreakdown, profileProgress, xpForLevel, type MatchMode } from '../profile';
 import { useGameStore } from '../store';
 
 export function LobbyScreen() {
@@ -23,8 +26,19 @@ export function LobbyScreen() {
   const joinedRoom = useGameStore((s) => s.room);
   const lanHost = useGameStore((s) => s.lanHost);
   const myRole = useGameStore((s) => s.myRole);
+  const profile = useGameStore((s) => s.profile);
   const [count, setCount] = useState(8);
   const [copied, setCopied] = useState<string | null>(null);
+  const [spectatorOpen, setSpectatorOpen] = useState(false);
+  const [advancedRules, setAdvancedRules] = useState(false);
+  const [configOpen, setConfigOpen] = useState(false);
+  const [kickMenu, setKickMenu] = useState<{
+    x: number;
+    y: number;
+    name: string;
+    kind: 'player' | 'spectator';
+    id: number;
+  } | null>(null);
   const host = lanRole === 'host';
   const room = lobby?.room;
   const nicLabel = (name: string) =>
@@ -127,19 +141,21 @@ export function LobbyScreen() {
     : Math.max(players.length, minPlayers);
   const picking = lobby.picking === true;
   const pickCount = Math.max(lobby.targetCount ?? startCount, players.length);
-  const kickPlayer = (playerId: number, name: string, permanent = false) => {
-    const message = permanent
-      ? `确定将【${name}】永久移出房间吗？对方将无法再用这个名字加入。`
-      : `确定将【${name}】移出房间吗？对方仍可重新加入。`;
-    if (!window.confirm(message)) return;
-    lanHost?.kickPlayer(playerId, permanent);
+  const showRules = mode === 'custom' || advancedRules;
+  const openKickMenu = (
+    event: MouseEvent,
+    kind: 'player' | 'spectator',
+    id: number,
+    name: string,
+  ) => {
+    event.stopPropagation();
+    setKickMenu({ x: event.clientX, y: event.clientY, name, kind, id });
   };
-  const kickSpectator = (connId: number, name: string, permanent = false) => {
-    const message = permanent
-      ? `确定将观战者【${name}】永久移出吗？对方将无法再用这个名字加入。`
-      : `确定将观战者【${name}】移出观战席吗？对方仍可重新加入。`;
-    if (!window.confirm(message)) return;
-    lanHost?.kickSpectator(connId, permanent);
+  const applyKick = (permanent: boolean) => {
+    if (!kickMenu) return;
+    if (kickMenu.kind === 'player') lanHost?.kickPlayer(kickMenu.id, permanent);
+    else lanHost?.kickSpectator(kickMenu.id, permanent);
+    setKickMenu(null);
   };
   const gameModeLabel =
     gameMode === 'duel'
@@ -156,6 +172,24 @@ export function LobbyScreen() {
   }${rules.hpModifier} · 手牌上限 ${rules.handLimitModifier >= 0 ? '+' : ''}${rules.handLimitModifier} · 身份${
     rules.revealRoles ? '公开' : '隐藏'
   } · 技能${rules.skillsEnabled ? '开启' : '关闭'} · 军争${rules.military ? '开启' : '关闭'}`;
+  const xpPreview = matchXpBreakdown(
+    gameMode as MatchMode,
+    'win',
+    Math.max(1, players.length),
+  );
+  const xpNeed = xpForLevel(profile.level);
+  let afterLevel = profile.level;
+  let afterXp = profile.xp + xpPreview.total;
+  while (afterLevel < 99) {
+    const need = xpForLevel(afterLevel);
+    if (afterXp < need) break;
+    afterXp -= need;
+    afterLevel += 1;
+  }
+  if (afterLevel >= 99) afterXp = 0;
+  const afterNeed = xpForLevel(afterLevel);
+  const currentProgress = profileProgress(profile);
+  const afterProgress = afterLevel >= 99 ? 100 : (afterXp / afterNeed) * 100;
 
   const copy = async (text: string, key: string) => {
     const done = () => {
@@ -234,9 +268,67 @@ export function LobbyScreen() {
           )
         ) : (
           <>
-        <div className="lobby-grid">
-          <section className="room-card">
-            <div className="room-card-title">房间信息</div>
+        <div className="lobby-grid lobby-grid-v2">
+          <section className="room-card room-holo">
+            <div className="room-holo-head">
+              <div className="room-holo-code">
+                <span className="room-holo-kicker">
+                  <i className={`room-live-dot ${picking ? 'is-picking' : ''}`} />
+                  {picking ? '全员选将中' : players.some((p) => !p.connected) ? '有玩家掉线' : '等待入座'}
+                </span>
+                <div className="hero-room-code" aria-label={`房间码 ${lobby.room.code}`}>
+                  {lobby.room.code.split('').map((char, index) => (
+                    <span
+                      key={`${char}-${index}`}
+                      className={`hero-room-char char-${index % 6}`}
+                      style={{ animationDelay: `${index * -0.36}s` }}
+                      aria-hidden="true"
+                    >
+                      {char}
+                    </span>
+                  ))}
+                  <button
+                    type="button"
+                    className="hero-room-copy"
+                    onClick={() => copy(lobby.room.code, 'code')}
+                  >
+                    {copied === 'code' ? '已复制' : '复制'}
+                  </button>
+                </div>
+                <div className="hero-room-sub">房间码 · 手机输入即可加入，对局中也能进来观战</div>
+              </div>
+              <button
+                type="button"
+                className={`room-spectator-btn ${spectators.length ? 'has-people' : ''}`}
+                onClick={() => setSpectatorOpen(true)}
+              >
+                <span>观战席</span>
+                <b>{spectators.length}</b>
+                <em>{spectators.length ? '查看名单' : '暂时无人'}</em>
+              </button>
+            </div>
+
+            <div className="room-stat-grid">
+              <div>
+                <span>模式</span>
+                <b>{gameModeLabel}</b>
+              </div>
+              <div>
+                <span>座次</span>
+                <b>
+                  {players.length} / {maxTotal}
+                </b>
+              </div>
+              <div>
+                <span>开局人数</span>
+                <b>{startCount} 人</b>
+              </div>
+              <div>
+                <span>出牌方向</span>
+                <b>开局随机</b>
+              </div>
+            </div>
+
             {host ? (
               <>
                 <div className="room-row">
@@ -286,41 +378,196 @@ export function LobbyScreen() {
                 </button>
               </div>
             )}
-            <div className="room-row">
-              <span className="room-label">房间码</span>
-              <span className="room-value code">{lobby.room.code}</span>
-              <button type="button" className="btn ghost small" onClick={() => copy(lobby.room.code, 'code')}>
-                {copied === 'code' ? '已复制' : '复制'}
-              </button>
-            </div>
             {host && (
-              <div className="address-hint">
-                二维码使用当前选中的地址。ZeroTier 地址打不开时，请允许四国闪通过 Windows 防火墙，或切换到局域网地址。
-              </div>
-            )}
-            {host && (
-              <div className="room-qr">
-                {qr ? (
-                  <img src={qr} alt="手机扫码加入" />
-                ) : (
-                  <div className="qr-placeholder">二维码生成中…</div>
-                )}
-                <div className="qr-text">
-                  <b>手机扫码加入</b>
-                  <span>手机与电脑处于同一 WiFi 或虚拟局域网时，用相机扫码即可进入房间。</span>
-                  <span className="qr-url">{joinUrl}</span>
+              <>
+                <div className="room-qr">
+                  {qr ? (
+                    <img src={qr} alt="手机扫码加入" />
+                  ) : (
+                    <div className="qr-placeholder">二维码生成中…</div>
+                  )}
+                  <div className="qr-text">
+                    <b>手机扫码加入</b>
+                    <span>手机与电脑处于同一 WiFi 或虚拟局域网时，用相机扫码即可进入房间。</span>
+                    <span className="qr-url">{joinUrl}</span>
+                  </div>
                 </div>
-              </div>
+                <div className="room-hint compact">
+                  二维码使用当前选中的地址。ZeroTier 地址打不开时，请允许四国闪通过 Windows 防火墙，或切换到局域网地址。
+                </div>
+              </>
             )}
+
+            <div className={`room-config ${host ? '' : 'room-config-readonly'}`}>
+              <div className="room-config-head">
+                <span className="setup-label">对局配置</span>
+                <em>
+                  {gameModeLabel} · {startCount} 人
+                </em>
+                {host && (
+                  <button
+                    type="button"
+                    className="btn ghost small room-config-toggle"
+                    onClick={() => setConfigOpen((value) => !value)}
+                  >
+                    {configOpen ? '收起配置' : '调整配置'}
+                  </button>
+                )}
+              </div>
+              {host ? (
+                <>
+                  {configOpen && (
+                    <>
+                  <div className="room-config-grid">
+                    <div className="room-config-block">
+                      <span>模式</span>
+                      <div className="count-group">
+                        {([
+                          ['identity', '身份场'],
+                          ['duel', '1v1'],
+                          ['landlord', '斗地主'],
+                          ['guozhan', '国战'],
+                          ['custom', '自定义'],
+                        ] as const).map(([id, label]) => {
+                          const active =
+                            id === 'identity'
+                              ? gameMode === 'identity' && mode === 'standard'
+                              : id === 'custom'
+                                ? mode === 'custom' && gameMode === 'identity'
+                                : gameMode === id;
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              className={`count-btn ${active ? 'on' : ''}`}
+                              onClick={() => {
+                                if (id === 'custom') setLanRules('custom', { ...rules, mode: 'identity' });
+                                else if (id === 'identity')
+                                  setLanRules('standard', { ...DEFAULT_RULES, military: rules.military, mode: 'identity' });
+                                else setLanRules('custom', { ...rules, mode: id });
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="room-config-block">
+                      <span>开局人数</span>
+                      <div className="count-group">
+                        {counts.map((value) => (
+                          <button
+                            key={value}
+                            type="button"
+                            className={`count-btn ${startCount === value ? 'on' : ''}`}
+                            disabled={value < players.length}
+                            onClick={() => {
+                              setCount(value);
+                              setLanCount(value);
+                            }}
+                          >
+                            {value}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="room-config-row">
+                    <button
+                      type="button"
+                      className={`count-btn ${rules.military ? 'on' : ''}`}
+                      onClick={() => setLanRules(mode, { ...rules, military: !rules.military })}
+                    >
+                      军争篇
+                    </button>
+                    <button
+                      type="button"
+                      className={`count-btn ${showRules ? 'on' : ''}`}
+                      onClick={() => setAdvancedRules((value) => !value)}
+                    >
+                      高级规则
+                    </button>
+                    <button
+                      type="button"
+                      className={`fill-switch ${fillBots ? 'on' : ''}`}
+                      onClick={() => lanHost?.setFillBots(!fillBots)}
+                      aria-pressed={fillBots}
+                    >
+                      <span>
+                        <b>AI 补空位</b>
+                        <em>{fillBots ? '空位由电脑补足' : '只用真实玩家'}</em>
+                      </span>
+                      <i />
+                    </button>
+                  </div>
+                  {showRules && (
+                    <>
+                      <RulesEditor rules={rules} onChange={(next) => setLanRules('custom', next)} />
+                      <span className="room-config-hint">
+                        调整以上任意一项会把房间切换为自定义规则；2 人为无身份单挑，3–4 人为主公/忠臣/反贼。
+                      </span>
+                    </>
+                  )}
+                    </>
+                  )}
+                  <div className="room-config-hint">{ruleSummary}</div>
+                  <div className="start-row room-start-row">
+                    <span className="setup-hint">
+                      实际开局 {startCount} 人
+                      {fillBots ? ' · 空位由电脑补足' : ' · 不补电脑'}
+                      {!fillBots && players.length < minPlayers ? ` · 至少需要 ${minPlayers} 人` : ''}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn primary big"
+                      disabled={
+                        players.some((player) => !player.connected) ||
+                        !!bidding ||
+                        (!fillBots && players.length < minPlayers)
+                      }
+                      onClick={() => startLanPick(startCount)}
+                    >
+                      开始选将
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="room-config-readonly-grid">
+                    <span>规则</span>
+                    <b>{ruleSummary}</b>
+                  </div>
+                  <div className="room-config-readonly-grid">
+                    <span>空位</span>
+                    <b>{fillBots ? '电脑补足' : '只用真实玩家'}</b>
+                  </div>
+                  <div className="room-config-hint">房主可切换模式、人数与规则；你这边会实时同步。</div>
+                  <div className="start-row waiting-row">
+                    <span className="waiting-dot" />
+                    <span>
+                      {spectate ? '你以观战身份加入，房主开始后会自动进入观战画面…' : '等待房主开始选将…'}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
           </section>
 
           <section className="player-list-card">
-            <div className="room-card-title">座次（{players.length}/{maxTotal}）</div>
+            <div className="room-card-title">
+              座次
+              <span className="room-title-count">
+                {players.length}/{maxTotal}
+              </span>
+            </div>
             <div className="player-list">
               {players.map((player) => (
                 <div key={player.connId} className={`lobby-player ${player.isHost ? 'is-host' : ''}`}>
                   <span className="lobby-seat">{player.isHost ? '房主' : '玩家'}</span>
-                  <span className="lobby-name">{player.name}</span>
+                  <span className="lobby-name">
+                    <NameChip name={player.name} level={player.level ?? 1} size="sm" />
+                  </span>
                   <span className="lobby-hero-tag">
                     {player.heroIds?.length
                       ? `已选 · ${player.heroIds.map((id) => HERO_MAP.get(id)?.name ?? '').join(' / ')}`
@@ -330,22 +577,13 @@ export function LobbyScreen() {
                   </span>
                   <span className="lobby-status">{player.connected ? '已入座' : '掉线'}</span>
                   {host && !player.isHost && (
-                    <span className="lobby-kick-group">
-                      <button
-                        type="button"
-                        className="lobby-kick"
-                        onClick={() => kickPlayer(player.playerId, player.name)}
-                      >
-                        移出
-                      </button>
-                      <button
-                        type="button"
-                        className="lobby-kick permanent"
-                        onClick={() => kickPlayer(player.playerId, player.name, true)}
-                      >
-                        永移
-                      </button>
-                    </span>
+                    <button
+                      type="button"
+                      className="lobby-kick"
+                      onClick={(event) => openKickMenu(event, 'player', player.playerId, player.name)}
+                    >
+                      移出
+                    </button>
                   )}
                 </div>
               ))}
@@ -357,166 +595,138 @@ export function LobbyScreen() {
                   </div>
                 ))}
             </div>
-          </section>
-
-          <section className="player-list-card spectator-card">
-            <div className="room-card-title">观战席（{spectators.length}）</div>
-            <div className="player-list">
-              {spectators.map((spectator) => (
-                <div key={spectator.connId} className="lobby-player spectator-player">
-                  <span className="lobby-seat">观战</span>
-                  <span className="lobby-name">{spectator.name}</span>
-                  <span className="lobby-status">{spectator.ip || 'IP 未知'}</span>
-                  {host && (
-                    <span className="lobby-kick-group">
-                      <button
-                        type="button"
-                        className="lobby-kick"
-                        onClick={() => kickSpectator(spectator.connId, spectator.name)}
-                      >
-                        移出
-                      </button>
-                      <button
-                        type="button"
-                        className="lobby-kick permanent"
-                        onClick={() => kickSpectator(spectator.connId, spectator.name, true)}
-                      >
-                        永移
-                      </button>
-                    </span>
-                  )}
-                </div>
-              ))}
-              {spectators.length === 0 && <div className="lobby-empty">还没有人观战</div>}
+            <button
+              type="button"
+              className="lobby-spectator-strip"
+              onClick={() => setSpectatorOpen(true)}
+            >
+              <span className="lobby-spectator-icon">观</span>
+              <span>
+                <b>观战席 · {spectators.length} 人</b>
+                <em>{spectators.length ? spectators.map((item) => item.name).join('、') : '点击查看，对局中也可进入观战'}</em>
+              </span>
+              <i>查看</i>
+            </button>
+            <div className="lobby-xp-card">
+              <div className="lobby-xp-head">
+                <span>你的经验</span>
+                <em>本局最多 +{xpPreview.total}</em>
+              </div>
+              <div className="lobby-xp-bar">
+                <i style={{ width: `${currentProgress}%` }} />
+                <span className="lobby-xp-now">
+                  Lv.{profile.level} · {profile.xp} / {xpNeed}
+                </span>
+                <span className="lobby-xp-after">
+                  → {afterLevel > profile.level ? `Lv.${afterLevel} · ` : ''}
+                  {afterXp} / {afterNeed}
+                </span>
+                {afterLevel === profile.level && (
+                  <em
+                    className="lobby-xp-delta"
+                    style={{
+                      left: `${currentProgress}%`,
+                      width: `${Math.max(0, afterProgress - currentProgress)}%`,
+                    }}
+                  />
+                )}
+              </div>
+              <div className="lobby-xp-chips">
+                <span>基础 {xpPreview.base}</span>
+                <span>胜利 +{xpPreview.winBonus}</span>
+                {xpPreview.realBonus > 0 && <span>真人 +{xpPreview.realBonus}</span>}
+              </div>
+            </div>
+            <div className="lobby-side-summary">
+              <div className="room-card-title">
+                本局规则
+                <span className="room-title-count">SUMMARY</span>
+              </div>
+              <div className="lobby-side-line">
+                <span>模式</span>
+                <b>{gameModeLabel} · {startCount} 人</b>
+              </div>
+              <div className="lobby-side-line">
+                <span>初始手牌 / 摸牌</span>
+                <b>{rules.initialHand} / {rules.drawCount}</b>
+              </div>
+              <div className="lobby-side-line">
+                <span>身份</span>
+                <b>{rules.revealRoles ? '公开' : '隐藏'}</b>
+              </div>
+              <div className="lobby-side-line">
+                <span>空位</span>
+                <b>{fillBots ? '电脑补足' : '只用真实玩家'}</b>
+              </div>
             </div>
           </section>
         </div>
 
-        {host ? (
-          <>
-            <div className="lobby-rules">
-              <div className="lobby-rules-head">
-                <span className="setup-label">对局模式</span>
-                <div className="count-group">
-                  {([
-                    ['identity', '身份场'],
-                    ['duel', '1v1'],
-                    ['landlord', '斗地主'],
-                    ['guozhan', '国战'],
-                    ['custom', '自定义'],
-                  ] as const).map(([id, label]) => {
-                    const active =
-                      id === 'identity'
-                        ? gameMode === 'identity' && mode === 'standard'
-                        : id === 'custom'
-                          ? mode === 'custom' && gameMode === 'identity'
-                          : gameMode === id;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        className={`count-btn ${active ? 'on' : ''}`}
-                        onClick={() => {
-                          if (id === 'custom') setLanRules('custom', { ...rules, mode: 'identity' });
-                          else if (id === 'identity') setLanRules('standard', { ...DEFAULT_RULES, military: rules.military, mode: 'identity' });
-                          else setLanRules('custom', { ...rules, mode: id });
-                        }}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
+        {spectatorOpen && (
+          <div className="modal-backdrop spectator-backdrop" onClick={() => setSpectatorOpen(false)}>
+            <div
+              className="modal spectator-list-modal lobby-spectator-modal"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="modal-head">
+                <div className="modal-title">观战席 · {spectators.length} 人</div>
+                <button type="button" className="modal-minimize" onClick={() => setSpectatorOpen(false)}>
+                  关闭
+                </button>
+              </div>
+              {spectators.length === 0 ? (
+                <div className="spectator-empty">
+                  <p>还没有人观战。</p>
+                  <p className="muted">
+                    把房间码 <b>{lobby.room.code}</b> 和地址分享给朋友，对局中也可以以观战身份进入。
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  className={`count-btn ${rules.military ? 'on' : ''}`}
-                  onClick={() => setLanRules(mode, { ...rules, military: !rules.military })}
-                >
-                  军争篇
-                </button>
-                <button
-                  type="button"
-                  className={`count-btn ${fillBots ? 'on' : ''}`}
-                  onClick={() => lanHost?.setFillBots(!fillBots)}
-                >
-                  空位电脑补足
-                </button>
-                <span className="setup-hint">
-                  {gameMode === 'guozhan'
-                    ? '魏蜀吴群阵营团战，存活到最后的势力获胜'
-                    : gameMode === 'landlord'
-                      ? '地主 1 · 农民 2'
-                      : gameMode === 'duel'
-                        ? '1v1 单挑 · 双方没有身份'
-                        : mode === 'custom'
-                          ? '自定义规则对所有玩家生效'
-                          : '主公 +1 体力，身份随机隐藏'}
-                </span>
-              </div>
-              {mode === 'custom' && (
-                <>
-                  <RulesEditor rules={rules} onChange={(next) => setLanRules('custom', next)} />
-                  <span className="setup-hint">
-                    2 人为无身份单挑；3–4 人为主公/忠臣/反贼；5 人以上使用标准身份配置。
-                  </span>
-                </>
+              ) : (
+                <ul className="spectator-list">
+                  {spectators.map((spectator) => (
+                    <li key={spectator.connId}>
+                      <span className="spectator-avatar">{spectator.name.slice(0, 1)}</span>
+                      <span className="spectator-name">
+                        <NameChip name={spectator.name} level={spectator.level ?? 1} size="sm" />
+                      </span>
+                      <code className="spectator-ip">{spectator.ip || 'IP 未知'}</code>
+                      {host && (
+                        <button
+                          type="button"
+                          className="lobby-kick"
+                          onClick={(event) => openKickMenu(event, 'spectator', spectator.connId, spectator.name)}
+                        >
+                          移出
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               )}
-            </div>
-            <div className="start-row">
-              <div className="count-group">
-                {counts.map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    className={`count-btn ${startCount === n ? 'on' : ''}`}
-                    disabled={n < players.length}
-                    onClick={() => {
-                      setCount(n);
-                      setLanCount(n);
-                    }}
-                  >
-                    {n} 人
-                  </button>
-                ))}
+              <div className="modal-actions">
+                <button type="button" className="btn primary" onClick={() => setSpectatorOpen(false)}>
+                  关闭
+                </button>
               </div>
-              <span className="setup-hint">
-                实际开局人数 {startCount}
-                {fillBots ? ' · 空位由电脑补足' : ' · 不补电脑'}
-                {!fillBots && players.length < minPlayers ? ` · 至少需要 ${minPlayers} 人` : ''}
-              </span>
-              <button
-                type="button"
-                className="btn primary big"
-                disabled={
-                  players.some((p) => !p.connected) ||
-                  !!bidding ||
-                  (!fillBots && players.length < minPlayers)
-                }
-                onClick={() => startLanPick(startCount)}
-              >
-                开始选将
-              </button>
             </div>
-          </>
-        ) : (
-          <>
-            <div className="lobby-rules-summary">
-              模式：{gameModeLabel}
-              {mode === 'custom' || gameMode !== 'identity' ? ` · ${ruleSummary}` : ' · 5–8 人'}
-              {fillBots ? ' · 空位电脑补足' : ' · 不补电脑'}
-            </div>
-            <div className="start-row waiting-row">
-              <span className="waiting-dot" />
-              <span>
-                {spectate ? '你以观战身份加入，房主开始后会自动进入观战画面…' : '等待房主开始选将…'}
-              </span>
-            </div>
-          </>
+          </div>
         )}
+
           </>
         )}
 
         {netError && <div className="net-error">{netError}</div>}
+        {kickMenu && (
+          <KickMenu
+            x={kickMenu.x}
+            y={kickMenu.y}
+            name={kickMenu.name}
+            kind={kickMenu.kind}
+            onKick={() => applyKick(false)}
+            onPermanent={() => applyKick(true)}
+            onClose={() => setKickMenu(null)}
+          />
+        )}
       </div>
     </div>
   );

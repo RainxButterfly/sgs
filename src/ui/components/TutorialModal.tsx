@@ -34,6 +34,7 @@ const STEPS = [
 export function TutorialModal() {
   const open = useGameStore((s) => s.tutorialOpen);
   const close = useGameStore((s) => s.closeTutorial);
+  const settingsOpen = useGameStore((s) => s.settingsOpen);
   const [step, setStep] = useState(0);
   useEffect(() => {
     if (open) setStep(0);
@@ -79,7 +80,7 @@ export function TutorialModal() {
             </button>
           ) : (
             <button type="button" className="btn primary" onClick={finish}>
-              开始游戏
+              {settingsOpen ? '返回设置' : '开始游戏'}
             </button>
           )}
         </div>

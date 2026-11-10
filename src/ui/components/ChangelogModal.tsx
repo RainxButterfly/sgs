@@ -31,6 +31,8 @@ function versionLabel(version: string): string {
 export function ChangelogModal() {
   const open = useGameStore((s) => s.changelogOpen);
   const close = useGameStore((s) => s.closeChangelog);
+  const closeSettings = useGameStore((s) => s.closeSettings);
+  const settingsOpen = useGameStore((s) => s.settingsOpen);
   const appVersion = useGameStore((s) => s.appVersion);
   const [selected, setSelected] = useState(CHANGELOG[0]?.version ?? '');
 
@@ -44,6 +46,12 @@ export function ChangelogModal() {
   const entry = CHANGELOG.find((item) => item.version === selected) ?? CHANGELOG[0];
   if (!entry) return null;
   const isCurrent = coversVersion(entry, appVersion);
+  const itemCount = entry.versions?.length
+    ? entry.versions.reduce(
+        (total, version) => total + version.sections.reduce((sum, section) => sum + section.items.length, 0),
+        0,
+      )
+    : entry.sections.reduce((sum, section) => sum + section.items.length, 0);
   const renderSections = (version: ChangelogVersion) =>
     version.sections.map((section) => (
       <section key={`${version.version}-${section.kind}`} className={`changelog-section ${section.kind}`}>
@@ -61,7 +69,14 @@ export function ChangelogModal() {
       <div className="modal changelog-modal" onClick={(event) => event.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">更新日志</div>
-          <button type="button" className="modal-minimize" onClick={close}>
+          <button
+            type="button"
+            className="modal-minimize"
+            onClick={() => {
+              close();
+              if (settingsOpen) closeSettings();
+            }}
+          >
             关闭
           </button>
         </div>
@@ -91,6 +106,7 @@ export function ChangelogModal() {
               <div className="changelog-heading-meta">
                 <span className="changelog-date">{entry.date}</span>
                 {isCurrent && <span className="changelog-current">当前版本</span>}
+                <span className="changelog-count">共 {itemCount} 项</span>
               </div>
               <h3>{entry.title}</h3>
               <span className="changelog-range">{entryLabel(entry)}</span>
@@ -124,7 +140,7 @@ export function ChangelogModal() {
         </div>
         <div className="modal-actions">
           <button type="button" className="btn primary" onClick={close}>
-            知道了
+            {settingsOpen ? '返回设置' : '知道了'}
           </button>
         </div>
       </div>

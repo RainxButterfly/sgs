@@ -4,6 +4,8 @@ import { isAndroidApp, isTauri } from '../../net/lan';
 import { prepareBackgroundImage } from '../background';
 import { applyDataDir, pickDataDir, readDataDirInfo, writeDataSnapshot } from '../dataStorage';
 import { formatDiagnostics } from '../diagnostics';
+import { levelTitle, profileProgress, xpForLevel } from '../profile';
+import { NameChip } from './NameChip';
 import { useGameStore } from '../store';
 
 export function SettingsModal() {
@@ -11,11 +13,16 @@ export function SettingsModal() {
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
   const selfCardSide = useGameStore((s) => s.selfCardSide);
+  const uiTheme = useGameStore((s) => s.uiTheme);
+  const setUiTheme = useGameStore((s) => s.setUiTheme);
+  const uiPalette = useGameStore((s) => s.uiPalette);
+  const setUiPalette = useGameStore((s) => s.setUiPalette);
   const close = useGameStore((s) => s.closeSettings);
   const openChangelog = useGameStore((s) => s.openChangelog);
   const openAbout = useGameStore((s) => s.openAbout);
   const openTutorial = useGameStore((s) => s.openTutorial);
   const appVersion = useGameStore((s) => s.appVersion);
+  const profile = useGameStore((s) => s.profile);
   const aiSpeed = useGameStore((s) => s.aiSpeed);
   const setAiSpeed = useGameStore((s) => s.setAiSpeed);
   const setBgImage = useGameStore((s) => s.setBgImage);
@@ -142,8 +149,76 @@ export function SettingsModal() {
   return (
     <div className="modal-backdrop" onClick={close}>
       <div className="modal settings-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="settings-hero">
+          <div className="settings-hero-main">
+            <div className="settings-hero-head">
+              <NameChip name={profile.name} level={profile.level} size="lg" />
+              <span className="settings-hero-title">{levelTitle(profile.level)}</span>
+              <span className="settings-hero-xp">
+                {profile.level >= 99 ? '已满级' : `经验 ${profile.xp} / ${xpForLevel(profile.level)}`}
+              </span>
+            </div>
+            <div className="settings-hero-bar">
+              <i style={{ width: `${profileProgress(profile)}%` }} />
+            </div>
+            <div className="settings-hero-meta">
+              <span>对局 {profile.totalGames}</span>
+              <span>胜场 {profile.wins}</span>
+              <span>v{appVersion}</span>
+            </div>
+          </div>
+          <button type="button" className="settings-hero-close" onClick={close} aria-label="关闭设置">
+            ×
+          </button>
+        </div>
         <div className="modal-title">设置</div>
         <p className="modal-desc">界面和对局选项会保存在本机。</p>
+
+        <div className="settings-section settings-theme-section">
+          <div className="settings-section-title">界面主题</div>
+          <p className="settings-section-desc">经典原版保留金色国风；星虹魔法使用紫黑玻璃、星点背景和固定的粉紫高光。</p>
+          <div className="settings-actions settings-theme-actions">
+            <button
+              type="button"
+              className={`btn ghost ${uiTheme === 'classic' ? 'on' : ''}`}
+              onClick={() => setUiTheme('classic')}
+            >
+              经典原版
+            </button>
+            <button
+              type="button"
+              className={`btn ghost ${uiTheme === 'magic' ? 'on' : ''}`}
+              onClick={() => setUiTheme('magic')}
+            >
+              星虹魔法
+            </button>
+          </div>
+          <div className={`settings-palette-row ${uiTheme === 'magic' ? '' : 'is-disabled'}`}>
+            <span className="settings-palette-label">魔法配色</span>
+            {(
+              [
+                ['rainbow', '彩虹'],
+                ['rock', '摇滚粉'],
+                ['magic', '魔法紫'],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                className={`theme-swatch swatch-${key} ${uiPalette === key ? 'on' : ''}`}
+                onClick={() => {
+                  if (uiTheme !== 'magic') setUiTheme('magic');
+                  setUiPalette(key);
+                }}
+                title={`魔法配色：${label}`}
+                aria-label={`魔法配色：${label}`}
+              />
+            ))}
+            <span className="settings-palette-hint">选择星虹魔法后可切换整体配色</span>
+          </div>
+        </div>
+
+        <div className="settings-grid">
 
         <div className="settings-section">
           <div className="settings-section-title">对局背景</div>
@@ -217,7 +292,7 @@ export function SettingsModal() {
         <div className="settings-section">
           <div className="settings-section-title">数据保存位置</div>
           <p className="settings-section-desc">
-            对局记录、对局背景和联机信息会保存到这里的 siguoshan-data.json。
+            对局记录、对局背景、等级经验和联机信息会备份到当前目录的数据快照中。
           </p>
           {isTauri() ? (
             <>
@@ -292,7 +367,7 @@ export function SettingsModal() {
           <p className="settings-section-desc">
             当前版本 v{appVersion}。查看每个版本新增的功能、修复的问题和体验优化。
           </p>
-          <div className="settings-actions">
+          <div className="settings-actions settings-actions-grid">
             <button type="button" className="btn ghost" onClick={openChangelog}>
               查看更新日志
             </button>
@@ -310,6 +385,7 @@ export function SettingsModal() {
           <div className="bg-setting-hint">遇到闪退或卡住时，可在重新打开后复制运行日志发给作者。</div>
         </div>
 
+        </div>
         <div className="modal-actions">
           <button type="button" className="btn primary" onClick={close}>
             完成

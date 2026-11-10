@@ -17,7 +17,7 @@ describe('标准牌堆', () => {
   });
 
   it('武将库包含标准包与扩展武将且不重复', () => {
-    expect(HEROES.length).toBeGreaterThanOrEqual(69);
+    expect(HEROES.length).toBeGreaterThanOrEqual(68);
     expect(new Set(HEROES.map((hero) => hero.id)).size).toBe(HEROES.length);
   });
 });

@@ -18,14 +18,23 @@ export function AoePanel() {
   if (!aoe || !game || screen !== 'game') return null;
   const source = game.state.players[aoe.sourceId];
   const playerName = (id: number) => game.state.players[id]?.name ?? `座位${id}`;
+  const targetNames = aoe.entries.map((entry) => playerName(entry.playerId));
+  const targetLabel =
+    targetNames.length === 0
+      ? '无目标'
+      : targetNames.length > 3
+        ? `${targetNames.slice(0, 3).join('、')} 等 ${targetNames.length} 人`
+        : targetNames.join('、');
 
   return (
     <aside className={`aoe-panel ${aoe.done ? 'done' : ''}`}>
       <div className="aoe-head">
         <div>
-          <span className="aoe-kicker">结算顺序</span>
-          <b>
-            {source?.name ?? '?'} 使用【{aoe.cardName}】
+          <span className="aoe-kicker">结算顺序 · 使用【{aoe.cardName}】</span>
+          <b className="aoe-route-line">
+            <span>{source?.name ?? '?'}</span>
+            <i>→</i>
+            <em>{targetLabel}</em>
           </b>
         </div>
         <button type="button" className="aoe-close" onClick={dismiss} aria-label="关闭结算面板">

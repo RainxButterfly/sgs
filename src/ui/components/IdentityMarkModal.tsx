@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ROLE_NAME, type Role } from '../../core/types';
 import { useGameStore } from '../store';
 
@@ -9,7 +10,16 @@ export function IdentityMarkModal() {
   const marks = useGameStore((s) => s.identityMarks);
   const setMark = useGameStore((s) => s.setIdentityMark);
   const close = useGameStore((s) => s.closeIdentityMark);
-  if (playerId == null || !game) return null;
+  const open = playerId != null && !!game;
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, close]);
+  if (!open) return null;
   const player = game.state.players[playerId];
   if (!player) return null;
   const current = marks[playerId];

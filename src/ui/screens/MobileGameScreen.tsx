@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
+import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
 import { cardDisplayName, factionKnown, playerHeroNames, rankText, shortCardName, visibleHeroNames, visibleSkillIds, SUIT_CHAR } from '../labels';
@@ -9,6 +10,7 @@ import { CardView } from '../components/CardView';
 import { CountdownRing } from '../components/CountdownRing';
 import { DiscardModal } from '../components/DiscardModal';
 import { HeroDetailModal } from '../components/HeroDetail';
+import { HeroHover, HoverInfo } from '../components/HoverInfo';
 import { Hand } from '../components/Hand';
 import { LogPanel } from '../components/LogPanel';
 import { GameModals } from '../components/Modals';
@@ -42,13 +44,15 @@ const EQUIP_ICON: Record<'weapon' | 'armor' | 'horsePlus' | 'horseMinus', string
   horseMinus: '−',
 };
 
-function equipBadges(player: PlayerState) {
+function equipTokens(player: PlayerState) {
   return (['weapon', 'armor', 'horsePlus', 'horseMinus'] as const).map((slot) => {
     const card = player.equips[slot];
     if (!card) return null;
+    const prefix = slot === 'horsePlus' ? '+1 ' : slot === 'horseMinus' ? '-1 ' : '';
     return (
-      <span key={slot} className={`m-equip-badge equip-${slot}`} title={`${EQUIP_ICON[slot]} ${card.name}`}>
-        {EQUIP_ICON[slot]}
+      <span key={slot} className={`m-gear-token equip-${slot}`} title={`${EQUIP_ICON[slot]} ${card.name}`}>
+        {prefix}
+        {card.name}
       </span>
     );
   });
@@ -217,13 +221,13 @@ export function MobileGameScreen() {
         </span>
         <div className="m-top-actions">
           <SpectatorBadge compact />
-          <button type="button" onClick={openChat}>
+          <button type="button" className="m-top-chat" onClick={openChat}>
             聊天{chatUnread > 0 && <span className="chat-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
           </button>
-          <button type="button" onClick={() => setLogOpen(true)}>
+          <button type="button" className="m-top-log" onClick={() => setLogOpen(true)}>
             战报
           </button>
-          <button type="button" onClick={() => useGameStore.getState().openSettings()}>
+          <button type="button" className="m-top-settings" onClick={() => useGameStore.getState().openSettings()}>
             设置
           </button>
           <button type="button" onClick={exit}>
@@ -254,6 +258,28 @@ export function MobileGameScreen() {
               : pending?.playerId === player.id && pending.timeout && promptDeadline
                 ? { deadline: promptDeadline, totalMs: pending.timeout }
                 : null;
+          const canMark =
+            mode === 'identity' && player.role !== 'lord' && !player.roleRevealed && player.alive;
+          const hero = HERO_MAP.get(player.heroId);
+          const seatHead = (
+            <>
+              <span className="m-seat-no">{tableNo}</span>
+              <span className="faction-badge">
+                {factionKnown(player, mode) ? FACTION_NAME[player.faction] : '暗'}
+              </span>
+              <b title={visibleHeroNames(player, mode)}>{visibleHeroNames(player, mode)}</b>
+              {player.ambition && <span className="ambition-tag">野心家</span>}
+              {role && <span className={`m-role role-${player.role}`}>{role}</span>}
+              {seatTimer && player.alive && (
+                <CountdownRing
+                  deadline={seatTimer.deadline}
+                  totalMs={seatTimer.totalMs}
+                  size={18}
+                  className="m-seat-timer"
+                />
+              )}
+            </>
+          );
           return (
             <div
               key={player.id}
@@ -286,50 +312,13 @@ export function MobileGameScreen() {
                     {item.amount}
                   </span>
                 ))}
-              <div className="m-seat-head">
-                <span className="m-seat-no">{tableNo}</span>
-                <span className="faction-badge">
-                  {factionKnown(player, mode) ? FACTION_NAME[player.faction] : '暗'}
-                </span>
-                <b title={visibleHeroNames(player, mode)}>{visibleHeroNames(player, mode)}</b>
-                {player.ambition && <span className="ambition-tag">野心家</span>}
-                {role && <span className={`m-role role-${player.role}`}>{role}</span>}
-                {seatTimer && player.alive && (
-                  <CountdownRing
-                    deadline={seatTimer.deadline}
-                    totalMs={seatTimer.totalMs}
-                    size={18}
-                    className="m-seat-timer"
-                  />
-                )}
-                {mode === 'identity' && (
-                  <button
-                    type="button"
-                    className={`m-seat-mark ${identityMarks[player.id] ? `role-${identityMarks[player.id]}` : ''}`}
-                    title="标记你判断的身份（仅自己可见）"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openIdentityMark(player.id);
-                    }}
-                  >
-                    {identityMarks[player.id]
-                      ? ROLE_NAME[identityMarks[player.id]!].slice(0, 1)
-                      : '标'}
-                  </button>
-                )}
-                {factionKnown(player, mode) && (
-                  <button
-                    type="button"
-                    className="m-seat-info"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setDetailPlayer(player.id);
-                    }}
-                  >
-                    i
-                  </button>
-                )}
-              </div>
+              {factionKnown(player, mode) ? (
+                <HoverInfo as="div" className="m-seat-head" content={<HeroHover hero={hero} player={player} />}>
+                  {seatHead}
+                </HoverInfo>
+              ) : (
+                <div className="m-seat-head">{seatHead}</div>
+              )}
               <div className="m-seat-name">{player.name}</div>
               <div className="m-seat-stats">
                 <span className="m-hp">
@@ -341,7 +330,7 @@ export function MobileGameScreen() {
                 {player.flipped && <span className="m-tag">翻面</span>}
               </div>
               <div className="m-seat-gear">
-                {equipBadges(player)}
+                {equipTokens(player)}
                 {player.judgeZone.map((card) => (
                   <span key={card.id} className={`m-judge-icon judge-${card.name}`} title={card.name}>
                     {judgeIcon(card.name)}
@@ -352,6 +341,39 @@ export function MobileGameScreen() {
                 <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
               </div>
               <div className="m-seat-skills">{skills.join(' · ') || '无技能'}</div>
+              {(mode === 'identity' || factionKnown(player, mode)) && (
+                <div className="m-seat-actions">
+                  {canMark && (
+                    <button
+                      type="button"
+                      className={`m-seat-mark ${identityMarks[player.id] ? `role-${identityMarks[player.id]}` : ''}`}
+                      title="标记你判断的身份（仅自己可见）"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openIdentityMark(player.id);
+                      }}
+                    >
+                      {identityMarks[player.id]
+                        ? ROLE_NAME[identityMarks[player.id]!].slice(0, 1)
+                        : '标'}
+                    </button>
+                  )}
+                  {factionKnown(player, mode) && (
+                    <button
+                      type="button"
+                      className="m-seat-info"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setDetailPlayer(player.id);
+                      }}
+                    >
+                      i
+                    </button>
+                  )}
+                </div>
+              )}
               {player.id === currentId && <span className="m-current">行动中</span>}
               {selectedTarget ? (
                 <span className="m-target-selected">已选目标</span>
@@ -488,13 +510,13 @@ export function MobileGameScreen() {
           {human.flipped && <span className="m-tag">翻面</span>}
         </div>
         <div className="m-self-gear">
-          {equipBadges(human)}
+          {equipTokens(human)}
           {human.judgeZone.map((card) => (
             <span key={card.id} className={`m-judge-icon judge-${card.name}`} title={card.name}>
               {judgeIcon(card.name)}
             </span>
           ))}
-          {equipBadges(human).every((item) => !item) && human.judgeZone.length === 0 && (
+          {equipTokens(human).every((item) => !item) && human.judgeZone.length === 0 && (
             <span className="m-self-empty">无装备/判定</span>
           )}
         </div>

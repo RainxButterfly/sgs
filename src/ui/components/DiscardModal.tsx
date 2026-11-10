@@ -11,6 +11,7 @@ export function DiscardModal({ cards, onClose }: { cards: Card[]; onClose: () =>
             关闭
           </button>
         </div>
+        <div className="discard-note">弃牌堆是公开信息，任何玩家都可以查看；谁因什么弃了什么会显示在牌桌底部和战报中。</div>
         {cards.length === 0 ? (
           <div className="discard-empty">还没有弃牌</div>
         ) : (

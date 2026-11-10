@@ -618,6 +618,7 @@ struct WsQuery {
     room: String,
     secret: Option<String>,
     name: Option<String>,
+    level: Option<String>,
     spectate: Option<String>,
 }
 
@@ -937,6 +938,7 @@ async fn handle_socket(socket: WebSocket, room: Arc<Room>, query: WsQuery, ip: S
                         "id": id,
                         "name": name,
                         "ip": ip,
+                        "level": query.level.as_deref().and_then(|value| value.parse::<i64>().ok()),
                         "spectate": query.spectate.as_deref() == Some("1"),
                     });
                     (host.tx.clone(), event.to_string())

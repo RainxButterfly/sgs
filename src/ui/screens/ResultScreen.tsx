@@ -1,6 +1,7 @@
 import { useGameSnapshot, useGameStore } from '../store';
 import { FACTION_NAME, ROLE_NAME } from '../../core/types';
 import { playerHeroNames } from '../labels';
+import { levelTitle, modeLabel, profileProgress } from '../profile';
 
 const WINNER_LABEL: Record<string, string> = {
   lord: '主公阵营获胜',
@@ -13,6 +14,8 @@ export function ResultScreen() {
   const { game } = useGameSnapshot();
   const humanId = useGameStore((s) => s.humanId);
   const result = useGameStore((s) => s.result);
+  const profile = useGameStore((s) => s.profile);
+  const xpGain = useGameStore((s) => s.xpGain);
   const restart = useGameStore((s) => s.restart);
   const back = useGameStore((s) => s.backToMenu);
   if (!game || !result) return null;
@@ -52,6 +55,34 @@ export function ResultScreen() {
         <div className="result-kicker">{winnerLabel}</div>
         <h1 className="result-title">{humanWon ? '胜 利' : '败 北'}</h1>
         <p className="result-text">{result.text}</p>
+        {xpGain && (
+          <div className={`result-xp ${xpGain.levelsGained > 0 ? 'level-up' : ''}`}>
+            <div className="result-xp-level">
+              <small>Lv.{xpGain.levelBefore}</small>
+              <span>→</span>
+              <b>Lv.{profile.level}</b>
+              <em>{levelTitle(profile.level)}</em>
+            </div>
+            <div className="result-xp-main">
+              <div className="result-xp-head">
+                <b>+{xpGain.total} 经验</b>
+                <span>
+                  {modeLabel(xpGain.mode)}
+                  {xpGain.realPlayers > 1 ? ` · ${xpGain.realPlayers} 名真人` : ' · 人机对局'}
+                </span>
+              </div>
+              <div className="result-xp-bar">
+                <i style={{ width: `${profileProgress(profile)}%` }} />
+              </div>
+              <div className="result-xp-breakdown">
+                <span>基础 {xpGain.base}</span>
+                {xpGain.winBonus > 0 && <span>胜利 +{xpGain.winBonus}</span>}
+                {xpGain.realBonus > 0 && <span>真人 +{xpGain.realBonus}</span>}
+                {xpGain.levelsGained > 0 && <b>升 {xpGain.levelsGained} 级</b>}
+              </div>
+            </div>
+          </div>
+        )}
         <div className="result-table">
           {game.state.players.map((p) => {
             

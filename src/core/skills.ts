@@ -524,7 +524,10 @@ const SKILLS: SkillDef[] = [
       {
         event: 'phaseStart',
         when: (c) =>
-          isCurrent(c) && c.data.phase === 'discard' && (c.owner.usedThisTurn.sha ?? 0) === 0,
+          isCurrent(c) &&
+          c.data.phase === 'discard' &&
+          (c.owner.usedThisTurn.sha ?? 0) === 0 &&
+          c.owner.flags.lastShaTurn !== c.game.state.turn,
         optional: true,
         prompt: '是否发动【克己】跳过弃牌阶段？',
         effect: async (c) => {
@@ -870,11 +873,22 @@ const SKILLS: SkillDef[] = [
     triggers: [
       {
         event: 'shaDodged',
-        when: (c) => c.source?.id === c.owner.id && !!c.target && c.owner.hand.length > 0,
+        when: (c) =>
+          c.source?.id === c.owner.id &&
+          !!c.target &&
+          c.owner.alive &&
+          c.game.canBeTargeted(c.target, c.owner, '杀') &&
+          allCards(c.owner).length > 0,
         optional: true,
         prompt: '是否发动【青龙偃月刀】再使用一张杀？',
         effect: async (c) => {
-          await c.game.useShaOn(c.owner, c.target!, '青龙偃月刀');
+          await c.game.useShaOn(
+            c.owner,
+            c.target!,
+            '青龙偃月刀',
+            false,
+            `青龙偃月刀：是否对【${c.target!.name}】再使用一张杀？`,
+          );
         },
       },
     ],
@@ -886,6 +900,7 @@ const SKILLS: SkillDef[] = [
     active: {
       usable: (game, owner) =>
         owner.hand.length >= 2 &&
+        game.shaTargets(owner).length > 0 &&
         (game.skillsOf(owner).some((s) => s.unlimitedSha) || (owner.usedThisTurn.sha ?? 0) < 1),
       run: async (game, owner) => {
         const picked = await game.askCards(owner, owner.hand, 2, 2, '丈八蛇矛：选择两张手牌当杀');
@@ -901,7 +916,7 @@ const SKILLS: SkillDef[] = [
   {
     id: 'fangtian',
     name: '方天画戟',
-    desc: '锁定技，当你使用最后一张手牌【杀】时，你可以额外选择至多两个目标。',
+    desc: '当你使用最后一张手牌【杀】时，你可以额外选择至多两个目标。',
     locked: true,
   },
   {
@@ -921,9 +936,23 @@ const SKILLS: SkillDef[] = [
         effect: async (c) => {
           const target = c.target!;
           if (!target.alive) return;
-          const horse = target.equips.horsePlus ?? target.equips.horseMinus;
-          if (!horse) return;
-          await c.game.discardCards(target, [horse], '麒麟弓');
+          const horses = [target.equips.horsePlus, target.equips.horseMinus].filter(
+            (horse): horse is NonNullable<typeof horse> => !!horse,
+          );
+          if (!horses.length) return;
+          let picked = horses;
+          if (horses.length > 1) {
+            picked = await c.game.askCards(
+              c.owner,
+              horses,
+              1,
+              1,
+              '麒麟弓：选择弃置一张坐骑牌',
+              undefined,
+              false,
+            );
+          }
+          if (picked.length) await c.game.discardCards(target, picked, '麒麟弓');
         },
       },
     ],
@@ -3030,15 +3059,27 @@ const SKILLS: SkillDef[] = [
   {
     id: 'gongqi',
     name: '弓骑',
-    desc: '你可以将一张装备牌当【杀】使用或打出。',
-    viewAs: [
-      {
-        as: '杀',
-        usage: 'both',
-        fromEquip: true,
-        filter: (_game, _owner, card) => !!card.equipSlot,
+    desc: '出牌阶段限一次，你可以弃置一张牌，令本回合攻击范围无限；若弃置的是装备牌，你可以弃置一名其他角色的一张牌。',
+    attackRange: (game, owner) => (owner.flags.gongqi === game.state.turn ? 99 : 0),
+    active: {
+      oncePerTurn: true,
+      usable: (_game, owner) => allCards(owner).length > 0,
+      run: async (game, owner) => {
+        const picked = await game.askCards(owner, allCards(owner), 1, 1, '弓骑：弃置一张牌');
+        if (picked.length !== 1) return;
+        const isEquip = !!picked[0].equipSlot;
+        await game.discardCards(owner, picked, '弓骑');
+        owner.flags.gongqi = game.state.turn;
+        game.log(`【${owner.name}】发动弓骑，本回合攻击范围无限`, 'skill');
+        if (!isEquip) return;
+        const targets = others(game, owner).filter((player) => game.hasAnyCard(player));
+        if (!targets.length) return;
+        const target = await game.askPlayer(owner, targets, '弓骑：弃置一名其他角色的一张牌', undefined, true);
+        if (!target) return;
+        const card = await game.pickCardFrom(target, owner, '弓骑：选择一张牌弃置');
+        if (card) await game.discardCards(target, [card], '弓骑');
       },
-    ],
+    },
   },
   {
     id: 'juyi',

@@ -111,25 +111,26 @@ export function HeroPanel({
           <div className="hp-meter">
             <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
           </div>
-          <div className="hero-skills">
-            {skills.map((id) => {
-              const skill = SKILL_MAP.get(id);
-              return skill ? (
-                <HoverInfo
-                  as="div"
-                  key={id}
-                  className={`skill-chip ${skill.lord ? 'lord' : ''}`}
-                  content={<SkillHover skillId={id} />}
-                >
-                  <span className="skill-name">{skill.name}</span>
-                  <span className="skill-desc">{skill.desc}</span>
-                </HoverInfo>
-              ) : null;
-            })}
-          </div>
         </div>
       </div>
-      <div className="hero-equips">
+      <div className="hero-body">
+        <div className="hero-skills">
+          {skills.map((id) => {
+            const skill = SKILL_MAP.get(id);
+            return skill ? (
+              <HoverInfo
+                as="div"
+                key={id}
+                className={`skill-chip ${skill.lord ? 'lord' : ''}`}
+                content={<SkillHover skillId={id} />}
+              >
+                <span className="skill-name">{skill.name}</span>
+                <span className="skill-desc">{skill.desc}</span>
+              </HoverInfo>
+            ) : null;
+          })}
+        </div>
+        <div className="hero-equips">
         {slots.map(({ key, label }) => {
           const card = player.equips[key];
           const body = (
@@ -203,6 +204,7 @@ export function HeroPanel({
             )}
           </div>
         )}
+      </div>
       <div className="hero-foot">
         <span>手牌 {player.hand.length}</span>
         <span>手牌上限 {Math.max(0, player.hp + handLimitModifier)}</span>

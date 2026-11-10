@@ -729,16 +729,6 @@ export const HEROES: HeroData[] = [
     quote: '文臣安邦，武将定国。',
   },
   {
-    id: 'zuoci',
-    name: '左慈',
-    faction: 'qun',
-    gender: 'male',
-    hp: 3,
-    title: '迷之仙人',
-    skillIds: ['huashen', 'xinsheng'],
-    quote: '大道无形，万法归一。',
-  },
-  {
     id: 'yuji',
     name: '于吉',
     faction: 'qun',

@@ -19,17 +19,35 @@ export function useDeviceStatus(): { time: string; battery: number | null } {
 
   useEffect(() => {
     let cancelled = false;
+    let manager: any = null;
     const setLevel = (value: number) => {
       if (!cancelled && Number.isFinite(value) && value >= 0) {
         setBattery(Math.round(value));
       }
+    };
+    const getBattery = (
+      navigator as Navigator & { getBattery?: () => Promise<any> }
+    ).getBattery;
+    const onChange = () => {
+      if (manager) setLevel(manager.level * 100);
+    };
+    const attachWebBattery = () => {
+      if (!getBattery) return;
+      void getBattery
+        .call(navigator)
+        .then((result) => {
+          manager = result;
+          onChange();
+          manager.addEventListener('levelchange', onChange);
+        })
+        .catch(() => undefined);
     };
 
     if (isTauri() && isAndroidApp()) {
       const read = () => {
         void invoke<number>('android_battery')
           .then((level) => setLevel(level))
-          .catch(() => undefined);
+          .catch(attachWebBattery);
       };
       read();
       const onVisible = () => {
@@ -39,27 +57,11 @@ export function useDeviceStatus(): { time: string; battery: number | null } {
       return () => {
         cancelled = true;
         document.removeEventListener('visibilitychange', onVisible);
+        manager?.removeEventListener('levelchange', onChange);
       };
     }
 
-    const getBattery = (
-      navigator as Navigator & { getBattery?: () => Promise<any> }
-    ).getBattery;
-    if (!getBattery) return () => undefined;
-
-    let manager: any = null;
-    const onChange = () => {
-      if (manager) setLevel(manager.level * 100);
-    };
-    void getBattery
-      .call(navigator)
-      .then((result) => {
-        manager = result;
-        onChange();
-        manager.addEventListener('levelchange', onChange);
-      })
-      .catch(() => undefined);
-
+    attachWebBattery();
     return () => {
       cancelled = true;
       manager?.removeEventListener('levelchange', onChange);

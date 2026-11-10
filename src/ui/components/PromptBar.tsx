@@ -78,6 +78,7 @@ export function PromptBar() {
 
     return (
       <div className="prompt-bar active-play">
+        <span className="prompt-dock-badge">出</span>
         <div className="prompt-main">
           <div className="prompt-title">
             <span className="prompt-dot" />
@@ -202,6 +203,7 @@ export function PromptBar() {
     };
     return (
       <div className={`prompt-bar active-respond ${isWuxie ? 'wuxie-prompt' : ''}`}>
+        <span className="prompt-dock-badge respond">应</span>
         {pending.timeout ? (
           <div key={`timer-${pending.id}`} className="response-timer">
             <i style={{ animationDuration: `${pending.timeout}ms` }} />
@@ -301,6 +303,7 @@ export function PromptBar() {
     const canCancel = pending.canCancel || /^[^：]{1,12}：/.test(pending.prompt);
     return (
       <div className="prompt-bar active-choose">
+        <span className="prompt-dock-badge choose">选</span>
         <div className="prompt-main">
           <div className="prompt-title">
             <span className="prompt-dot" />

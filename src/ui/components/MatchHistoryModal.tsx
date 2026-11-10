@@ -23,12 +23,14 @@ export function MatchHistoryModal() {
   const [groupKey, setGroupKey] = useState<string | null>(null);
   const [matchId, setMatchId] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState('');
+  const [replayIndex, setReplayIndex] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = logRef.current;
     if (element) element.scrollTop = element.scrollHeight;
-  }, [matchId, open]);
+  }, [matchId, open, replayIndex]);
 
   useEffect(() => {
     if (!open) return;
@@ -39,9 +41,48 @@ export function MatchHistoryModal() {
     setNameDraft(next[0]?.name ?? '');
   }, [open]);
 
-  if (!open) return null;
   const group = groups.find((item) => item.key === groupKey) ?? groups[0];
   const match = group?.matches.find((item) => item.id === matchId) ?? group?.matches[0];
+  const matchLog = match ? [...match.log].sort((a, b) => a.id - b.id) : [];
+
+  useEffect(() => {
+    setReplayIndex(null);
+    setPlaying(false);
+  }, [matchId]);
+
+  useEffect(() => {
+    if (!playing || replayIndex === null) return;
+    if (replayIndex >= matchLog.length - 1) {
+      setPlaying(false);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setReplayIndex((value) => (value === null ? 0 : Math.min(matchLog.length - 1, value + 1)));
+    }, 720);
+    return () => window.clearTimeout(timer);
+  }, [playing, replayIndex, matchLog.length]);
+
+  if (!open) return null;
+  const maxTurn = matchLog.reduce((max, entry) => {
+    const found = /第\s*(\d+)\s*回合/.exec(entry.text);
+    return found ? Math.max(max, Number(found[1])) : max;
+  }, 0);
+  const replaying = replayIndex !== null;
+  const currentIndex = replayIndex ?? matchLog.length - 1;
+  const visibleLog = replaying ? matchLog.slice(0, replayIndex + 1) : matchLog;
+
+  const beginReplay = () => {
+    if (matchLog.length === 0) return;
+    setReplayIndex(0);
+    setPlaying(true);
+  };
+  const step = (delta: number) => {
+    setPlaying(false);
+    setReplayIndex((value) => {
+      const base = value ?? 0;
+      return Math.max(0, Math.min(matchLog.length - 1, base + delta));
+    });
+  };
 
   const selectGroup = (next: HistoryGroup) => {
     setGroupKey(next.key);
@@ -133,8 +174,11 @@ export function MatchHistoryModal() {
                       <span>{match.playerCount} 人 · {formatHistoryTime(match.playedAt)}</span>
                     </div>
                   </div>
-                  <div className="history-first">
-                    首出：<b>{match.firstPlayerName || '未记录'}</b>
+                  <div className="history-run-stats">
+                    <span><b>{match.playerCount}</b> 人</span>
+                    <span><b>{maxTurn}</b> 回合</span>
+                    <span><b>{matchLog.length}</b> 条记录</span>
+                    <span>首出 <b>{match.firstPlayerName || '未记录'}</b></span>
                   </div>
                   <div className="history-players">
                     {match.players.map((player, index) => (
@@ -149,10 +193,66 @@ export function MatchHistoryModal() {
                       </div>
                     ))}
                   </div>
-                  <div className="history-log-title">战报</div>
-                  <div className="history-log" ref={logRef}>
-                    {[...match.log].sort((a, b) => a.id - b.id).map((entry) => (
-                      <div key={entry.id} className={`log-line log-${entry.kind}`}>
+                  <div className="history-log-title">
+                    <span>战报</span>
+                    <div className="history-replay-actions">
+                      <button
+                        type="button"
+                        className="btn ghost small"
+                        onClick={() => (replaying ? setPlaying((value) => !value) : beginReplay())}
+                        disabled={matchLog.length === 0}
+                      >
+                        {replaying ? (playing ? '暂停' : '继续') : '开始复盘'}
+                      </button>
+                      {replaying && (
+                        <>
+                          <button type="button" className="btn ghost small" onClick={() => step(-1)} disabled={currentIndex <= 0}>
+                            上一条
+                          </button>
+                          <input
+                            type="range"
+                            min={0}
+                            max={Math.max(0, matchLog.length - 1)}
+                            value={currentIndex}
+                            aria-label="复盘进度"
+                            onChange={(event) => {
+                              setPlaying(false);
+                              setReplayIndex(Number(event.target.value));
+                            }}
+                          />
+                          <span className="history-replay-count">
+                            {currentIndex + 1} / {matchLog.length}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn ghost small"
+                            onClick={() => step(1)}
+                            disabled={currentIndex >= matchLog.length - 1}
+                          >
+                            下一条
+                          </button>
+                          <button
+                            type="button"
+                            className="btn ghost small"
+                            onClick={() => {
+                              setReplayIndex(null);
+                              setPlaying(false);
+                            }}
+                          >
+                            退出复盘
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className={`history-log ${replaying ? 'is-replaying' : ''}`} ref={logRef}>
+                    {visibleLog.map((entry, index) => (
+                      <div
+                        key={entry.id}
+                        className={`log-line log-${entry.kind} ${
+                          replaying && index === currentIndex ? 'is-current' : ''
+                        }`}
+                      >
                         {entry.text}
                       </div>
                     ))}

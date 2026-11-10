@@ -5,6 +5,7 @@ const BACKGROUND_KEY = 'sgs-background-v1';
 const HISTORY_KEY = 'sgs-match-history-v1';
 const SESSION_KEY = 'sgk-lan-session';
 const NAME_KEY = 'sgk-name';
+const PROFILE_KEY = 'sgs-profile-v1';
 
 export interface DataDirInfo {
   path: string;
@@ -18,6 +19,7 @@ interface Snapshot {
   history?: string | null;
   lanSession?: string | null;
   playerName?: string | null;
+  profile?: string | null;
 }
 
 let timer: number | null = null;
@@ -75,6 +77,7 @@ export function buildSnapshot(): string {
     history: read(HISTORY_KEY),
     lanSession: read(SESSION_KEY),
     playerName: read(NAME_KEY),
+    profile: read(PROFILE_KEY),
   };
   return JSON.stringify(snapshot);
 }
@@ -121,6 +124,7 @@ export async function initDataStorage(): Promise<boolean> {
     write(HISTORY_KEY, mergeHistory(read(HISTORY_KEY), snapshot.history));
     write(SESSION_KEY, snapshot.lanSession);
     write(NAME_KEY, snapshot.playerName);
+    if (snapshot.profile) write(PROFILE_KEY, snapshot.profile);
     return true;
   } catch {
     return false;

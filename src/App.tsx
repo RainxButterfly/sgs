@@ -4,6 +4,7 @@ import { ChatPanel } from './ui/components/ChatPanel';
 import { AboutModal } from './ui/components/AboutModal';
 import { AoePanel } from './ui/components/AoePanel';
 import { ChangelogModal } from './ui/components/ChangelogModal';
+import { ClickSparkles } from './ui/components/ClickSparkles';
 import { DamageFeedback } from './ui/components/DamageFeedback';
 import { JudgeNotice } from './ui/components/JudgeNotice';
 import { SkillNotice } from './ui/components/SkillNotice';
@@ -14,6 +15,7 @@ import { SettingsModal } from './ui/components/SettingsModal';
 import { initDataStorage } from './ui/dataStorage';
 import { UpdateModal } from './ui/components/UpdateModal';
 import { loadSavedLanSession, useGameStore } from './ui/store';
+import { loadProfile } from './ui/profile';
 import { GameScreen } from './ui/screens/GameScreen';
 import { HeroGallery } from './ui/screens/HeroGallery';
 import { IdentityMarkModal } from './ui/components/IdentityMarkModal';
@@ -23,6 +25,7 @@ import { MainMenu } from './ui/screens/MainMenu';
 import { MatchHistoryModal } from './ui/components/MatchHistoryModal';
 import { MobileGameScreen } from './ui/screens/MobileGameScreen';
 import { PickScreen } from './ui/screens/PickScreen';
+import { ProfileSetupModal, isProfileInitialized } from './ui/components/ProfileSetupModal';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { SetupScreen } from './ui/screens/SetupScreen';
 import { SpectatorScreen } from './ui/screens/SpectatorScreen';
@@ -33,7 +36,14 @@ export default function App() {
   const screen = useGameStore((s) => s.screen);
   const spectate = useGameStore((s) => s.spectate);
   const gameError = useGameStore((s) => s.error);
+  const uiTheme = useGameStore((s) => s.uiTheme);
+  const uiPalette = useGameStore((s) => s.uiPalette);
   const mobile = useIsMobile();
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('theme-magic', uiTheme === 'magic');
+    document.documentElement.dataset.palette = uiPalette;
+  }, [uiTheme, uiPalette]);
 
   useEffect(() => {
     void initDataStorage().then((restored) => {
@@ -43,11 +53,13 @@ export default function App() {
         bgImage: background.image,
         bgDim: background.dim,
         savedLanSession: loadSavedLanSession(),
+        profile: loadProfile(),
       });
     });
   }, []);
 
   useEffect(() => {
+    if (!isProfileInitialized()) return;
     let seen = false;
     try {
       seen = localStorage.getItem('sgk-tutorial-seen') === '1';
@@ -115,6 +127,8 @@ export default function App() {
       <MatchHistoryModal />
       <IdentityMarkModal />
       <UpdateModal />
+      <ProfileSetupModal />
+      <ClickSparkles />
     </div>
   );
 }

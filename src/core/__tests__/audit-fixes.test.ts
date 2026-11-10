@@ -298,3 +298,124 @@ describe('出牌方向', () => {
     expect(game.state.current).toBe(3);
   });
 });
+
+describe('韩当弓骑', () => {
+  it('弃置一张牌后本回合攻击范围无限，弃置装备牌还能拆一名其他角色一张牌', async () => {
+    const equipCard: Card = {
+      ...card('handEquip', '青龙偃月刀', 'spade', 'equip'),
+      equipSlot: 'weapon',
+    };
+    const io = new TestIO();
+    const game = makeGame(
+      [
+        { name: '韩当', heroId: 'handang' },
+        { name: '目标', heroId: 'liubei' },
+        { name: '旁观', heroId: 'caocao' },
+      ],
+      io,
+    );
+    const [handang, target] = game.state.players;
+    handang.hand = [equipCard];
+    target.hand = [card('targetCard', '闪', 'heart')];
+    await game.activateSkill(handang, 'gongqi');
+    expect(handang.hand).toHaveLength(0);
+    expect(handang.flags.gongqi).toBe(game.state.turn);
+    expect(game.attackRange(handang)).toBeGreaterThanOrEqual(99);
+    expect(target.hand).toHaveLength(0);
+  });
+
+  it('只弃置非装备牌时不会额外拆牌', async () => {
+    const io = new TestIO();
+    const game = makeGame(
+      [
+        { name: '韩当', heroId: 'handang' },
+        { name: '目标', heroId: 'liubei' },
+      ],
+      io,
+    );
+    const [handang, target] = game.state.players;
+    handang.hand = [card('h1', '闪', 'heart')];
+    target.hand = [card('t1', '杀', 'spade')];
+    await game.activateSkill(handang, 'gongqi');
+    expect(game.attackRange(handang)).toBeGreaterThanOrEqual(99);
+    expect(target.hand).toHaveLength(1);
+  });
+});
+
+describe('青龙偃月刀', () => {
+  it('追击的杀不计入本回合出杀次数', async () => {
+    const io = new TestIO((req) => {
+      if (req.kind === 'respond' && req.prompt.includes('青龙偃月刀')) {
+        const first = req.cardOptions?.[0];
+        return first ? { type: 'respondCard', cardId: first.cardId, as: first.as } : undefined;
+      }
+      return undefined;
+    });
+    const game = makeGame(
+      [
+        { name: '关羽', heroId: 'guanyu' },
+        { name: '目标', heroId: 'liubei' },
+      ],
+      io,
+    );
+    const [guanyu, target] = game.state.players;
+    guanyu.equips.weapon = {
+      id: 'qinglong',
+      name: '青龙偃月刀',
+      suit: 'spade',
+      rank: 5,
+      type: 'equip',
+      equipSlot: 'weapon',
+      range: 3,
+    };
+    guanyu.hand = [card('sha2', '杀', 'club')];
+    guanyu.usedThisTurn.sha = 1;
+    target.hand = [];
+    await game.trigger('shaDodged', {
+      player: guanyu,
+      source: guanyu,
+      target,
+      card: card('sha1', '杀', 'spade'),
+      data: { forcedHit: false },
+    });
+    expect(guanyu.usedThisTurn.sha).toBe(1);
+    expect(guanyu.hand).toHaveLength(0);
+    expect(target.hp).toBe(target.maxHp - 1);
+  });
+});
+
+describe('谦逊与断肠', () => {
+  it('谦逊不能成为顺手牵羊和乐不思蜀的目标', () => {
+    const game = makeGame(
+      [
+        { name: '使用者', heroId: 'liubei' },
+        { name: '谦逊', heroId: 'luxun' },
+      ],
+      new TestIO(),
+    );
+    const [user, luxun] = game.state.players;
+    expect(game.canBeTargeted(luxun, user, '顺手牵羊')).toBe(false);
+    expect(game.canBeTargeted(luxun, user, '乐不思蜀')).toBe(false);
+    expect(game.canBeTargeted(luxun, user, '杀')).toBe(true);
+  });
+
+  it('断肠让杀死蔡文姬的角色失去所有技能', async () => {
+    const game = makeGame(
+      [
+        { name: '蔡文姬', heroId: 'caiwenji' },
+        { name: '击杀者', heroId: 'guanyu' },
+      ],
+      new TestIO(),
+    );
+    const [caiwenji, killer] = game.state.players;
+    expect(killer.skills.length).toBeGreaterThan(0);
+    await game.trigger('death', {
+      player: caiwenji,
+      source: killer,
+      target: caiwenji,
+      data: {},
+    });
+    expect(killer.skills).toHaveLength(0);
+    expect(killer.extraSkills).toHaveLength(0);
+  });
+});

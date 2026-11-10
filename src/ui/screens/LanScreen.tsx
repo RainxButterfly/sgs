@@ -7,20 +7,21 @@ export function LanScreen() {
   const joinLanRoom = useGameStore((s) => s.joinLanRoom);
   const netError = useGameStore((s) => s.netError);
   const preset = useGameStore((s) => s.joinPreset);
+  const profileName = useGameStore((s) => s.profile.name);
   const desktop = isTauri();
   const canCreate = desktop || import.meta.env.DEV;
   const [createName, setCreateName] = useState(() => {
     try {
-      return localStorage.getItem('sgk-name') || '房主';
+      return profileName || localStorage.getItem('sgk-name') || '房主';
     } catch {
-      return '房主';
+      return profileName || '房主';
     }
   });
   const [joinName, setJoinName] = useState(() => {
     try {
-      return localStorage.getItem('sgk-name') || '玩家';
+      return profileName || localStorage.getItem('sgk-name') || '玩家';
     } catch {
-      return '玩家';
+      return profileName || '玩家';
     }
   });
   const [address, setAddress] = useState(preset?.address ?? (desktop ? '' : '127.0.0.1:8787'));
@@ -63,17 +64,25 @@ export function LanScreen() {
           </button>
         </div>
 
-        <div className={`lan-grid ${canCreate ? '' : 'single'}`}>
-          {canCreate && (
+        <div className="lan-grid">
+          {canCreate ? (
             <section className="lan-card">
               <div className="lan-card-title">创建房间</div>
-              <div className="lan-card-desc">你是房主，负责结算对局。空位由电脑补足。</div>
+              <div className="lan-card-desc">你是房主，负责结算对局。房间码会自动生成，空位由电脑补足。</div>
               <label className="field">
                 <span>你的名字</span>
                 <input value={createName} maxLength={12} onChange={(e) => setCreateName(e.target.value)} />
               </label>
               <button type="button" className="btn primary" disabled={busy} onClick={create}>
                 创建房间
+              </button>
+            </section>
+          ) : (
+            <section className="lan-card lan-card-disabled">
+              <div className="lan-card-title">创建房间</div>
+              <div className="lan-card-desc">创建房间需要桌面版。网页和手机端只能加入房主已经开好的房间。</div>
+              <button type="button" className="btn ghost" disabled>
+                桌面版可创建
               </button>
             </section>
           )}
@@ -88,32 +97,34 @@ export function LanScreen() {
                 {address} · 房间码 {code}
               </div>
             )}
-            <label className="field">
-              <span>房主地址</span>
-              <input
-                value={address}
-                placeholder="192.168.1.5:49721"
-                onChange={(e) => setAddress(e.target.value)}
-              />
-            </label>
-            <label className="field">
-              <span>房间码</span>
-              <input
-                value={code}
-                placeholder="ABC123"
-                maxLength={12}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-              />
-            </label>
-            <label className="field">
-              <span>你的名字</span>
-              <input
-                value={joinName}
-                maxLength={12}
-                autoFocus={Boolean(preset)}
-                onChange={(e) => setJoinName(e.target.value)}
-              />
-            </label>
+            <div className="lan-join-grid">
+              <label className="field lan-field-wide">
+                <span>房主地址</span>
+                <input
+                  value={address}
+                  placeholder="192.168.1.5:49721"
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </label>
+              <label className="field">
+                <span>房间码</span>
+                <input
+                  value={code}
+                  placeholder="ABC123"
+                  maxLength={12}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                />
+              </label>
+              <label className="field">
+                <span>你的名字</span>
+                <input
+                  value={joinName}
+                  maxLength={12}
+                  autoFocus={Boolean(preset)}
+                  onChange={(e) => setJoinName(e.target.value)}
+                />
+              </label>
+            </div>
             <label className="lan-spectate-toggle">
               <input
                 type="checkbox"

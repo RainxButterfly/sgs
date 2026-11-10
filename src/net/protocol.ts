@@ -21,6 +21,7 @@ export interface LobbyPlayer {
   playerId: number;
   connId: number;
   name: string;
+  level?: number;
   isHost: boolean;
   connected: boolean;
   heroId?: string;
@@ -32,6 +33,7 @@ export interface SpectatorInfo {
   connId: number;
   name: string;
   ip: string;
+  level?: number;
 }
 
 export interface LandlordBidState {
@@ -65,7 +67,7 @@ export interface LobbyState {
 
 export type ServerEvent =
   | { server: 'welcome'; id: number; role: 'host' | 'guest' }
-  | { server: 'join'; id: number; name: string; ip?: string; spectate?: boolean }
+  | { server: 'join'; id: number; name: string; ip?: string; level?: number; spectate?: boolean }
   | { server: 'leave'; id: number; name: string }
   | { server: 'host-left' };
 

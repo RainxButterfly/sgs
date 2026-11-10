@@ -80,6 +80,18 @@ export function PlayerSeat({
   const showFlash = flash && flash.playerId === player.id ? flash : null;
   const activeFlashes = (flashes ?? []).filter((item) => item.playerId === player.id);
   const displayFlashes = activeFlashes.length ? activeFlashes : showFlash ? [showFlash] : [];
+  const canMark = !!onMark && !(mode === 'identity' && (player.role === 'lord' || roleVisible));
+  const seatHead = (
+    <>
+      {tableNo && <span className="seat-table-no">{tableNo}</span>}
+      <span className="faction-badge">{showFaction ? FACTION_NAME[player.faction] : '暗'}</span>
+      <span className="seat-hero">{heroLabel}</span>
+      {player.ambition && <span className="ambition-tag">野心家</span>}
+      {roleLabel && <span className={`role-badge role-${player.role}`}>{roleLabel}</span>}
+      {current && <span className="seat-turn-tag">行动中</span>}
+      {player.isBot && <span className="ai-badge">AI</span>}
+    </>
+  );
 
   return (
     <div
@@ -111,43 +123,13 @@ export function PlayerSeat({
           {item.amount}
         </span>
       ))}
-      <div className="seat-head">
-        {tableNo && <span className="seat-table-no">{tableNo}</span>}
-        <span className="faction-badge">{showFaction ? FACTION_NAME[player.faction] : '暗'}</span>
-        <span className="seat-hero">{heroLabel}</span>
-        {player.ambition && <span className="ambition-tag">野心家</span>}
-        {roleLabel && <span className={`role-badge role-${player.role}`}>{roleLabel}</span>}
-        {onMark && (
-          <button
-            type="button"
-            className={`seat-mark ${mark ? `role-${mark}` : ''}`}
-            title="标记你判断的身份（仅自己可见）"
-            onClick={(event) => {
-              event.stopPropagation();
-              onMark();
-            }}
-          >
-            {mark ? ROLE_NAME[mark].slice(0, 1) : '标'}
-          </button>
-        )}
-        {current && <span className="seat-turn-tag">行动中</span>}
-        {player.isBot && <span className="ai-badge">AI</span>}
-        {onDetail && showFaction && (
-          <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} />}>
-            <button
-              type="button"
-              className="seat-info"
-              title="查看武将详情"
-              onClick={(event) => {
-                event.stopPropagation();
-                onDetail();
-              }}
-            >
-              i
-            </button>
-          </HoverInfo>
-        )}
-      </div>
+      {showFaction ? (
+        <HoverInfo as="div" className="seat-head" content={<HeroHover hero={hero} player={player} />}>
+          {seatHead}
+        </HoverInfo>
+      ) : (
+        <div className="seat-head">{seatHead}</div>
+      )}
       <div className="seat-sub">
         <span>{player.name}</span>
         <span className="seat-hand-count">手牌 {player.hand.length}</span>
@@ -222,6 +204,41 @@ export function PlayerSeat({
           ) : null;
         })}
       </div>
+      {(canMark || (onDetail && showFaction)) && (
+        <div className="seat-actions">
+          {canMark && (
+            <button
+              type="button"
+              className={`seat-action seat-mark ${mark ? `role-${mark}` : ''}`}
+              title="标记你判断的身份（仅自己可见）"
+              aria-label="标记身份"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                onMark?.();
+              }}
+            >
+              {mark ? ROLE_NAME[mark].slice(0, 1) : '标'}
+            </button>
+          )}
+          {onDetail && showFaction && (
+            <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} />}>
+              <button
+                type="button"
+                className="seat-action seat-info"
+                title="查看武将详情"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDetail();
+                }}
+              >
+                i
+              </button>
+            </HoverInfo>
+          )}
+        </div>
+      )}
       {!player.alive && <div className="dead-mask">阵亡</div>}
     </div>
   );
