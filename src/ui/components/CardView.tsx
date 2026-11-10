@@ -1,6 +1,15 @@
 import type { Card } from '../../core/types';
+import shaArt from '../../assets/cards/sha-haha.png';
+import shanArt from '../../assets/cards/shan-ji.jpg';
+import taoArt from '../../assets/cards/tao-mi.jpg';
 import { cardEffectText } from '../cardEffects';
 import { cardDisplayName, cardTypeText, isRedCard, rankText, SUIT_CHAR } from '../labels';
+
+const CARD_ART: Record<string, string> = {
+  杀: shaArt,
+  闪: shanArt,
+  桃: taoArt,
+};
 
 interface Props {
   card: Card;
@@ -14,6 +23,7 @@ interface Props {
 
 export function CardView({ card, size = 'md', selected, disabled, dimmed, onClick, className }: Props) {
   const red = isRedCard(card);
+  const art = CARD_ART[card.name];
   return (
     <button
       type="button"
@@ -23,6 +33,7 @@ export function CardView({ card, size = 'md', selected, disabled, dimmed, onClic
         `card-${card.type}`,
         card.element ? `card-${card.element}` : '',
         red ? 'card-red' : 'card-black',
+        art ? 'card-art' : '',
         selected ? 'card-selected' : '',
         disabled ? 'card-disabled' : '',
         dimmed ? 'card-dimmed' : '',
@@ -33,9 +44,10 @@ export function CardView({ card, size = 'md', selected, disabled, dimmed, onClic
       title={`${cardDisplayName(card)} ${SUIT_CHAR[card.suit]}${rankText(card.rank)}${cardEffectText(card) ? `
 ${cardEffectText(card)}` : ''}`}
     >
+      {art && <img className="card-art-img" src={art} alt="" aria-hidden="true" />}
       <span className="card-corner card-corner-tl">
-        {SUIT_CHAR[card.suit]}
-        {rankText(card.rank)}
+        <span className="card-suit">{SUIT_CHAR[card.suit]}</span>
+        <span className="card-rank">{rankText(card.rank)}</span>
       </span>
       <span className="card-body">
         <span className="card-name">{cardDisplayName(card)}</span>
@@ -47,8 +59,8 @@ ${cardEffectText(card)}` : ''}`}
         )}
       </span>
       <span className="card-corner card-corner-br">
-        {SUIT_CHAR[card.suit]}
-        {rankText(card.rank)}
+        <span className="card-suit">{SUIT_CHAR[card.suit]}</span>
+        <span className="card-rank">{rankText(card.rank)}</span>
       </span>
     </button>
   );

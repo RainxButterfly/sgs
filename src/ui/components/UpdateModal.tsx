@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { MANUAL_UPDATE_URL, openUpdateUrl } from '../update';
+import { isAndroidApp } from '../../net/lan';
+import { manualUpdateUrl, openUpdateUrl } from '../update';
 import { useGameStore } from '../store';
 
 function formatBytes(value: number): string {
@@ -25,7 +26,7 @@ export function UpdateModal() {
   if (!open) return null;
 
   const copyUrl = async () => {
-    const url = info?.raw.urls?.[0] ?? info?.raw.url ?? MANUAL_UPDATE_URL;
+    const url = info?.raw.urls?.[0] ?? info?.raw.url ?? manualUpdateUrl();
     const fallback = () => {
       try {
         const area = document.createElement('textarea');
@@ -63,7 +64,7 @@ export function UpdateModal() {
     : Math.min(100, Math.round((progress.downloaded / progress.total) * 100));
   const busy = state === 'downloading' || state === 'installing';
   const openInBrowser = async () => {
-    const url = info?.raw.urls?.[0] ?? info?.raw.url ?? MANUAL_UPDATE_URL;
+    const url = info?.raw.urls?.[0] ?? info?.raw.url ?? manualUpdateUrl();
     setBrowserMessage(null);
     try {
       await openUpdateUrl(url);
@@ -154,17 +155,18 @@ export function UpdateModal() {
           <>
             <div className="update-error">{error ?? '更新失败，请稍后重试。'}</div>
             <div className="update-hint">
-              {info?.android
-                ? '如果系统安装器没有弹出，可以复制下载链接，在手机浏览器里手动下载安装。'
+              {info?.android || isAndroidApp()
+                ? '如果系统安装器没有弹出，可以点“浏览器下载”，或复制下载链接到手机浏览器里手动安装。'
                 : '如果当前网络无法访问镜像，可以稍后再试，或者复制下面的安装包链接手动下载。'}
             </div>
             <input
               className="update-manual-url"
               readOnly
-              value={info?.raw.urls?.[0] ?? info?.raw.url ?? MANUAL_UPDATE_URL}
+              value={info?.raw.urls?.[0] ?? info?.raw.url ?? manualUpdateUrl()}
               onFocus={(event) => event.currentTarget.select()}
               onClick={(event) => event.currentTarget.select()}
             />
+            {browserMessage && <div className="update-inline-hint">{browserMessage}</div>}
           </>
         )}
 
@@ -190,6 +192,11 @@ export function UpdateModal() {
             </>
           ) : state === 'error' ? (
             <>
+              {isAndroidApp() && (
+                <button type="button" className="btn ghost" onClick={() => void openInBrowser()}>
+                  浏览器下载
+                </button>
+              )}
               <button type="button" className="btn ghost" onClick={() => void copyUrl()}>
                 {copied ? '已复制' : '复制下载链接'}
               </button>

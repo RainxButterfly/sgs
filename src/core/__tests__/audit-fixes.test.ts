@@ -163,26 +163,39 @@ describe('激将', () => {
 });
 
 describe('恩怨', () => {
-  it('一次获得其他角色至少两张牌后令其摸一张', async () => {
-    const io = new TestIO((req) => {
-      if (req.kind === 'chooseOption' && req.prompt.includes('恩怨')) {
-        return { type: 'chooseOption', optionId: 'yes' };
-      }
-      return undefined;
-    });
+  it('其他角色令法正回复体力后摸一张牌', () => {
     const game = makeGame(
       [
         { name: '法正', heroId: 'fazheng' },
         { name: '来源', heroId: 'liubei' },
       ],
-      io,
+      new TestIO(),
     );
     const [fazheng, source] = game.state.players;
-    fazheng.hand = [];
-    source.hand = [card('a', '杀', 'spade'), card('b', '闪', 'heart')];
-    await game.gainCards(fazheng, source.hand.slice(), source, true);
-    expect(fazheng.hand).toHaveLength(2);
+    fazheng.hp = fazheng.maxHp - 1;
+    source.hand = [];
+    game.heal(source, fazheng, 1, { reason: '测试' });
     expect(source.hand).toHaveLength(1);
+  });
+
+  it('受到伤害时来源须交出红桃手牌，否则失去体力', async () => {
+    const game = makeGame(
+      [
+        { name: '法正', heroId: 'fazheng' },
+        { name: '来源', heroId: 'liubei' },
+      ],
+      new TestIO(),
+    );
+    const [fazheng, source] = game.state.players;
+    source.hand = [card('heart', '闪', 'heart')];
+    await game.damage(source, fazheng, 1, undefined, '测试');
+    expect(fazheng.hand.some((item) => item.id === 'heart')).toBe(true);
+    expect(source.hand).toHaveLength(0);
+
+    source.hand = [card('club', '杀', 'club')];
+    const hpBefore = source.hp;
+    await game.damage(source, fazheng, 1, undefined, '测试');
+    expect(source.hp).toBe(hpBefore - 1);
   });
 });
 
@@ -417,5 +430,224 @@ describe('谦逊与断肠', () => {
     });
     expect(killer.skills).toHaveLength(0);
     expect(killer.extraSkills).toHaveLength(0);
+  });
+});
+
+describe('集智与无懈', () => {
+  it('黄月英使用无懈可击后触发集智摸一张牌', async () => {
+    const io = new TestIO((req) => {
+      if (req.kind === 'respond' && req.prompt.includes('无懈可击')) {
+        const option = req.cardOptions?.find(
+          (item) => item.as === '无懈可击' || item.cardId === 'wuxie',
+        );
+        return option
+          ? { type: 'respondCard', cardId: option.cardId, as: option.as }
+          : undefined;
+      }
+      return undefined;
+    });
+    const game = makeGame(
+      [
+        { name: '黄月英', heroId: 'huangyueying' },
+        { name: '刘备', heroId: 'liubei' },
+      ],
+      io,
+    );
+    const [yueying, liubei] = game.state.players;
+    yueying.hand = [card('wuxie', '无懈可击', 'spade', 'trick')];
+    liubei.hand = [card('wuzhong', '无中生有', 'heart', 'trick')];
+    await game.useCard(liubei, liubei.hand[0], '无中生有', [liubei.id]);
+    expect(yueying.hand.some((item) => item.name === '无懈可击')).toBe(false);
+    expect(yueying.hand).toHaveLength(1);
+    expect(game.state.log.some((entry) => entry.text.includes('集智'))).toBe(true);
+  });
+});
+
+describe('再起', () => {
+  it('按亮出牌中的红桃数量回复体力，并保留其余牌', async () => {
+    const game = makeGame(
+      [
+        { name: '孟获', heroId: 'menghuo' },
+        { name: '目标', heroId: 'liubei' },
+      ],
+      new TestIO(),
+    );
+    const [menghuo] = game.state.players;
+    menghuo.hp = 1;
+    menghuo.hand = [];
+    game.state.current = menghuo.id;
+    game.state.deck.push(
+      card('club', '杀', 'club'),
+      card('heart1', '闪', 'heart'),
+      card('heart2', '桃', 'heart'),
+    );
+    await game.trigger('drawPhase', { player: menghuo, data: {} });
+    expect(menghuo.hp).toBe(3);
+    expect(menghuo.hand.map((item) => item.id)).toEqual(['club']);
+    expect(game.state.discard.some((item) => item.id === 'heart1')).toBe(true);
+    expect(game.state.discard.some((item) => item.id === 'heart2')).toBe(true);
+  });
+});
+
+describe('公孙瓒趫猛', () => {
+  it('黑色杀造成伤害后可弃置目标坐骑并获得之', async () => {
+    const game = makeGame(
+      [
+        { name: '公孙瓒', heroId: 'gongsunzan' },
+        { name: '目标', heroId: 'liubei' },
+      ],
+      new TestIO(),
+    );
+    const [gongsunzan, target] = game.state.players;
+    gongsunzan.hand = [card('sha', '杀', 'spade')];
+    target.hand = [];
+    const horse: Card = { ...card('horse', '+1 马', 'club', 'equip'), equipSlot: 'horsePlus' };
+    target.equips.horsePlus = horse;
+    await game.useCard(gongsunzan, gongsunzan.hand[0], '杀', [target.id]);
+    expect(target.equips.horsePlus).toBeUndefined();
+    expect(gongsunzan.hand.some((item) => item.id === 'horse')).toBe(true);
+  });
+});
+
+describe('马岱潜袭', () => {
+  it('对距离为1的角色造成杀伤害时，非红桃判定防止伤害并减体力上限', async () => {
+    const game = makeGame(
+      [
+        { name: '马岱', heroId: 'madai' },
+        { name: '目标', heroId: 'liubei' },
+      ],
+      new TestIO(),
+    );
+    const [madai, target] = game.state.players;
+    madai.hand = [card('sha', '杀', 'spade')];
+    target.hand = [];
+    game.state.deck.push(card('judge', '闪', 'club'));
+    await game.useCard(madai, madai.hand[0], '杀', [target.id]);
+    expect(target.maxHp).toBe(3);
+    expect(target.hp).toBe(3);
+  });
+});
+
+describe('凌统旋风', () => {
+  it('弃牌阶段弃置至少两张牌后可以弃置其他角色两张牌', async () => {
+    const game = makeGame(
+      [
+        { name: '凌统', heroId: 'lingtong' },
+        { name: '目标', heroId: 'liubei' },
+      ],
+      new TestIO(),
+    );
+    const [lingtong, target] = game.state.players;
+    target.hand = [card('a', '杀', 'spade'), card('b', '闪', 'heart')];
+    await game.trigger('discardPhaseEnd', {
+      player: lingtong,
+      data: { cards: [card('x', '杀', 'club'), card('y', '闪', 'diamond')] },
+    });
+    expect(target.hand).toHaveLength(0);
+  });
+});
+
+describe('李典恂恂', () => {
+  it('只调整牌堆顶四张，不直接获得牌', async () => {
+    const game = makeGame(
+      [
+        { name: '李典', heroId: 'lidian' },
+        { name: '目标', heroId: 'liubei' },
+      ],
+      new TestIO(),
+    );
+    const [lidian] = game.state.players;
+    lidian.hand = [];
+    game.state.current = lidian.id;
+    game.state.deck = [
+      card('a', '杀', 'spade'),
+      card('b', '闪', 'heart'),
+      card('c', '桃', 'diamond'),
+      card('d', '杀', 'club'),
+    ];
+    await game.trigger('drawPhase', { player: lidian, data: {} });
+    expect(lidian.hand).toHaveLength(0);
+    expect(game.state.deck).toHaveLength(4);
+    expect(game.state.log.some((entry) => entry.text.includes('恂恂'))).toBe(true);
+  });
+});
+
+describe('曹彰将驰', () => {
+  it('选择多摸一张后本回合不能使用杀', async () => {
+    const io = new TestIO((req) => {
+      if (req.kind === 'chooseOption' && req.prompt.includes('将驰')) {
+        const option = req.options?.find((item) => item.id === 'draw');
+        return option ? { type: 'chooseOption', optionId: option.id } : undefined;
+      }
+      return undefined;
+    });
+    const game = makeGame(
+      [
+        { name: '曹彰', heroId: 'caozhang' },
+        { name: '目标', heroId: 'liubei' },
+      ],
+      io,
+    );
+    const [caozhang] = game.state.players;
+    caozhang.hand = [card('sha', '杀', 'spade')];
+    game.state.current = caozhang.id;
+    const data: Record<string, unknown> = { drawCount: 2, skip: false };
+    await game.trigger('drawPhase', { player: caozhang, data });
+    expect(data.drawCount).toBe(3);
+    expect(game.buildPlayOptions(caozhang).some((item) => item.as === '杀')).toBe(false);
+  });
+});
+
+describe('华雄耀武', () => {
+  it('受到红杀伤害后令来源回复体力', async () => {
+    const game = makeGame(
+      [
+        { name: '华雄', heroId: 'huaxiong' },
+        { name: '来源', heroId: 'liubei' },
+      ],
+      new TestIO(),
+    );
+    const [huaxiong, source] = game.state.players;
+    source.hp = source.maxHp - 1;
+    await game.damage(source, huaxiong, 1, card('sha', '杀', 'heart'), '杀');
+    expect(source.hp).toBe(source.maxHp);
+  });
+});
+
+describe('徐庶无言与举荐', () => {
+  it('无言防止锦囊伤害', async () => {
+    const game = makeGame(
+      [
+        { name: '徐庶', heroId: 'xushu' },
+        { name: '来源', heroId: 'liubei' },
+      ],
+      new TestIO(),
+    );
+    const [xushu, source] = game.state.players;
+    await game.damage(source, xushu, 1, card('duel', '决斗', 'spade', 'trick'), '决斗');
+    expect(xushu.hp).toBe(xushu.maxHp);
+  });
+
+  it('举荐弃置非基本牌后令目标摸两张', async () => {
+    const io = new TestIO((req) => {
+      if (req.kind === 'chooseOption' && req.prompt.includes('举荐')) {
+        const option = req.options?.find((item) => item.id === 'draw');
+        return option ? { type: 'chooseOption', optionId: option.id } : undefined;
+      }
+      return undefined;
+    });
+    const game = makeGame(
+      [
+        { name: '徐庶', heroId: 'xushu' },
+        { name: '目标', heroId: 'liubei' },
+      ],
+      io,
+    );
+    const [xushu, target] = game.state.players;
+    const equip: Card = { ...card('equip', '青釭剑', 'spade', 'equip'), equipSlot: 'weapon' };
+    xushu.hand = [equip];
+    target.hand = [];
+    await game.trigger('turnEnd', { player: xushu, data: {} });
+    expect(target.hand).toHaveLength(2);
   });
 });

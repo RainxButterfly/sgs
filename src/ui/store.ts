@@ -3,7 +3,7 @@ import { Game, buildRoles } from '../core/game';
 import { HEROES, PLAYABLE_HEROES } from '../core/deck';
 import { safeBotAction } from '../core/smartBot';
 import { endGameSession, markGameSession, recordDiagnostic } from './diagnostics';
-import { LanClientManager, LanHostManager, createRoomInfo, isAndroidApp, isTauri, parseAddress } from '../net/lan';
+import { LanClientManager, LanHostManager, createRoomInfo, initPlatform, isAndroidApp, isTauri, parseAddress } from '../net/lan';
 import type { ChatMessage, LobbyState, RoomInfo, SpectatorInfo } from '../net/protocol';
 import {
   checkAndroidUpdate,
@@ -187,6 +187,39 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
         reject(error);
       },
     );
+  });
+}
+
+function firstUpdateResult(
+  tasks: Promise<AppUpdateInfo | null>[],
+): Promise<{ info: AppUpdateInfo | null; success: boolean; errors: string[] }> {
+  return new Promise((resolve) => {
+    let remaining = tasks.length;
+    let success = false;
+    let done = false;
+    const errors: string[] = [];
+    const finish = (info: AppUpdateInfo | null) => {
+      if (done) return;
+      done = true;
+      resolve({ info, success, errors });
+    };
+    tasks.forEach((task) => {
+      task.then(
+        (value) => {
+          success = true;
+          if (value) finish(value);
+          else {
+            remaining -= 1;
+            if (remaining === 0) finish(null);
+          }
+        },
+        (error) => {
+          errors.push((error as Error)?.message || String(error));
+          remaining -= 1;
+          if (remaining === 0) finish(null);
+        },
+      );
+    });
   });
 }
 
@@ -1266,30 +1299,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     set({ updateState: 'checking', updateError: null });
     try {
-      let info: AppUpdateInfo | null;
-      try {
-        info = await withTimeout(
-          isAndroidApp() ? checkAndroidUpdateFromWeb() : checkAppUpdateFromWeb(),
-          12000,
-          '网页通道检查超时',
-        );
-      } catch {
-        info = await withTimeout(
-          isAndroidApp() ? checkAndroidUpdate() : checkAppUpdate(),
-          30000,
-          '检查更新超时，请稍后重试',
-        );
-      }
-      if (info) {
+      await initPlatform();
+      const web = isAndroidApp() ? checkAndroidUpdateFromWeb() : checkAppUpdateFromWeb();
+      const native = isAndroidApp() ? checkAndroidUpdate() : checkAppUpdate();
+      const result = await firstUpdateResult([
+        withTimeout(web, 16000, '网页通道检查超时'),
+        withTimeout(native, 16000, '原生通道检查超时'),
+      ]);
+      if (result.info) {
         set({
-          updateInfo: info,
+          updateInfo: result.info,
           updateState: 'available',
           updateModalOpen: manual || get().screen === 'menu',
         });
-      } else {
+      } else if (result.success) {
         set({ updateInfo: null, updateState: 'latest', updateModalOpen: manual });
+      } else {
+        throw new Error(result.errors.join('；') || '所有更新通道均不可用');
       }
     } catch (error) {
+      recordDiagnostic(
+        'error',
+        `检查更新失败：${(error as Error).message}`,
+        (error as Error).stack,
+      );
       set({
         updateState: 'error',
         updateError: `检查更新失败：${(error as Error).message}`,
@@ -1311,7 +1344,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       if (info.android) {
         try {
-          await installAndroidUpdateFromWeb(
+          await installAndroidUpdate(
             info,
             (downloaded, total) => set({ updateProgress: { downloaded, total } }),
             (mirror) => set({ updateMirror: mirror }),
@@ -1321,11 +1354,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         } catch (error) {
           recordDiagnostic(
             'error',
-            `网页通道更新失败：${(error as Error).message}`,
+            `原生通道更新失败：${(error as Error).message}`,
             (error as Error).stack,
           );
         }
-        await installAndroidUpdate(
+        set({ updateProgress: { downloaded: 0, total: 0 }, updateMirror: null });
+        await installAndroidUpdateFromWeb(
           info,
           (downloaded, total) => set({ updateProgress: { downloaded, total } }),
           (mirror) => set({ updateMirror: mirror }),
@@ -2060,6 +2094,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const max = pending.max ?? 1;
     if (cardChoices.includes(cardId)) {
       set({ cardChoices: cardChoices.filter((id) => id !== cardId) });
+    } else if (max <= 1) {
+      set({ cardChoices: [cardId] });
     } else if (cardChoices.length < max) {
       set({ cardChoices: [...cardChoices, cardId] });
     }

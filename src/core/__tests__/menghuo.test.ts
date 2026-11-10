@@ -20,7 +20,7 @@ function card(id: string, suit: Card['suit']): Card {
 }
 
 describe('孟获再起', () => {
-  it('放弃摸牌，亮出已损失体力张数，只保留红桃并回复1点', async () => {
+  it('亮出已损失体力张数，按红桃数量回复体力并保留其余牌', async () => {
     const game = new Game(
       {
         players: [
@@ -47,6 +47,7 @@ describe('孟获再起', () => {
 
     expect(player.hp).toBe(3);
     expect(player.hand).toHaveLength(1);
-    expect(player.hand[0].suit).toBe('heart');
+    expect(player.hand[0].suit).toBe('club');
+    expect(game.state.discard.some((item) => item.id === 'c3')).toBe(true);
   });
 });

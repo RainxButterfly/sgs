@@ -2714,3 +2714,338 @@ html.theme-magic .menu-profile-bar i {
 .click-ripple {
   box-shadow: 0 0 14px var(--ripple-color, #ffd9f5);
 }
+
+html.theme-magic .log-scrim {
+  background: transparent;
+}
+
+/* 鼠标悬停技能说明：与详情卡统一的紫黑玻璃 */
+html.theme-magic .hover-card {
+  border-color: var(--line);
+  background: linear-gradient(165deg, rgba(38, 24, 58, 0.985), rgba(10, 8, 20, 0.995));
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+}
+
+html.theme-magic .hover-hero-head b,
+html.theme-magic .hover-skill-head b {
+  color: var(--gold-bright);
+}
+
+html.theme-magic .hover-hero-meta,
+html.theme-magic .hover-hero-title,
+html.theme-magic .hover-foot {
+  color: var(--muted);
+}
+
+html.theme-magic .hover-skill {
+  border-top-color: var(--line);
+}
+
+html.theme-magic .hover-skill p {
+  color: var(--ink);
+  opacity: 0.9;
+}
+
+html.theme-magic .hover-tag {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+/* 对局右键菜单、移出菜单与错误卡片统一为紫黑玻璃 */
+html.theme-magic .game-context-menu,
+html.theme-magic .kick-menu {
+  border-color: var(--line);
+  background: linear-gradient(165deg, rgba(38, 24, 58, 0.99), rgba(10, 8, 20, 0.995));
+  box-shadow: var(--shadow-lg);
+  color: var(--ink);
+}
+
+html.theme-magic .game-context-menu button,
+html.theme-magic .kick-menu button {
+  color: var(--ink);
+}
+
+html.theme-magic .game-context-menu button:hover,
+html.theme-magic .kick-menu button:hover {
+  background: var(--accent-soft);
+  color: var(--gold-bright);
+}
+
+html.theme-magic .context-sep,
+html.theme-magic .kick-menu-title {
+  border-color: var(--line);
+}
+
+html.theme-magic .fatal-card {
+  border-color: var(--line);
+  background: linear-gradient(160deg, #241436, #0b0814);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ---------- 主界面动态：入场、经验条流光、卡牌呼吸 ---------- */
+html.theme-magic .menu-eyebrow,
+html.theme-magic .menu-blurb,
+html.theme-magic .menu-tags,
+html.theme-magic .menu-actions,
+html.theme-magic .menu-meta,
+html.theme-magic .menu-author,
+html.theme-magic .menu-utility {
+  animation: menuRise 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.theme-magic .menu-eyebrow { animation-delay: 0.04s; }
+html.theme-magic .menu-blurb { animation-delay: 0.18s; }
+html.theme-magic .menu-tags { animation-delay: 0.24s; }
+html.theme-magic .menu-actions { animation-delay: 0.34s; }
+html.theme-magic .menu-meta { animation-delay: 0.4s; }
+html.theme-magic .menu-author { animation-delay: 0.46s; }
+html.theme-magic .menu-utility { animation-delay: 0.5s; }
+
+html.theme-magic .menu-title {
+  animation:
+    menuTitleBreathe 7s ease-in-out infinite alternate,
+    menuRise 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+html.theme-magic .menu-profile {
+  animation:
+    profileBreathe 7s ease-in-out infinite alternate,
+    menuRise 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
+}
+
+html.theme-magic .menu-side-fan {
+  animation:
+    menuPanelGlow 8s ease-in-out infinite alternate,
+    menuRise 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+
+@keyframes menuRise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 经验条：入场生长 + 缓慢扫光 + 末端呼吸 */
+html.theme-magic .menu-profile-bar {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+html.theme-magic .menu-profile-bar i {
+  overflow: hidden;
+  animation:
+    prismDrift 16s ease-in-out infinite alternate,
+    xpFillIn 1.1s cubic-bezier(0.22, 1, 0.36, 1) both,
+    xpGlowPulse 3.6s ease-in-out infinite alternate;
+  transform-origin: left center;
+}
+
+html.theme-magic .menu-profile-bar i::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -70%;
+  width: 55%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  mix-blend-mode: screen;
+  animation: xpSheen 8.5s ease-in-out infinite;
+}
+
+@keyframes xpFillIn {
+  from {
+    transform: scaleX(0.08);
+    filter: saturate(0.6);
+  }
+  to {
+    transform: scaleX(1);
+    filter: none;
+  }
+}
+
+@keyframes xpGlowPulse {
+  from {
+    box-shadow: 0 0 8px rgba(255, 119, 207, 0.35);
+  }
+  to {
+    box-shadow: 0 0 18px rgba(100, 244, 255, 0.55);
+  }
+}
+
+@keyframes xpSheen {
+  0%,
+  58% {
+    left: -70%;
+    opacity: 0;
+  }
+  68% {
+    opacity: 1;
+  }
+  86%,
+  100% {
+    left: 120%;
+    opacity: 0;
+  }
+}
+
+/* 操作按钮：悬停扫光与图标轻动 */
+html.theme-magic .menu-action {
+  position: relative;
+  overflow: hidden;
+}
+
+html.theme-magic .menu-action::after {
+  content: "";
+  position: absolute;
+  top: -45%;
+  bottom: -45%;
+  left: -65%;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.55s ease;
+  pointer-events: none;
+}
+
+html.theme-magic .menu-action:hover::after {
+  left: 125%;
+}
+
+html.theme-magic .menu-action .menu-action-icon {
+  transition: transform 0.24s ease, filter 0.24s ease;
+}
+
+html.theme-magic .menu-action:hover .menu-action-icon {
+  transform: scale(1.09) rotate(-4deg);
+  filter: brightness(1.12);
+}
+
+html.theme-magic .menu-action.primary .menu-action-icon {
+  animation:
+    prismDrift 18s ease-in-out infinite alternate,
+    primaryIconPulse 4.2s ease-in-out infinite alternate;
+}
+
+@keyframes primaryIconPulse {
+  from {
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  to {
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.28);
+  }
+}
+
+/* 武将卡：非循环的呼吸高光，悬停仍由原样式接管 */
+html.theme-magic .menu-fan-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.34), transparent 62%);
+  opacity: 0.18;
+  animation: fanCardBreathe 6.5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+html.theme-magic .menu-fan-card.c2::after { animation-delay: -1.1s; }
+html.theme-magic .menu-fan-card.c3::after { animation-delay: -2.4s; }
+html.theme-magic .menu-fan-card.c4::after { animation-delay: -3.2s; }
+html.theme-magic .menu-fan-card.c5::after { animation-delay: -4.1s; }
+html.theme-magic .menu-fan-card.c6::after { animation-delay: -5.3s; }
+
+html.theme-magic .menu-fan-card:hover::after {
+  opacity: 0.34;
+}
+
+@keyframes fanCardBreathe {
+  from {
+    opacity: 0.12;
+    transform: translateY(4%);
+  }
+  to {
+    opacity: 0.3;
+    transform: translateY(-4%);
+  }
+}
+
+/* 扫描式星尘：在原有漂移上加一层缓慢旋转的极光 */
+html.theme-magic .menu-screen::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(255, 119, 207, 0.09) 70deg,
+    transparent 150deg,
+    rgba(100, 244, 255, 0.08) 230deg,
+    transparent 320deg
+  );
+  opacity: 0.55;
+  animation: menuAurora 42s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes menuAurora {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 弹窗打开时暂停主菜单的持续动画，避免滚动更新日志时背景抢 GPU */
+html.theme-magic .modal-backdrop {
+  backdrop-filter: none;
+}
+
+html.theme-magic .menu-screen::after {
+  will-change: transform;
+}
+
+html.modal-open .menu-screen::after,
+html.modal-open .menu-ambient,
+html.modal-open .menu-ambient *,
+html.modal-open .menu-title,
+html.modal-open .menu-profile,
+html.modal-open .menu-profile-glow,
+html.modal-open .menu-profile-bar i,
+html.modal-open .menu-profile-bar i::after,
+html.modal-open .menu-side-fan,
+html.modal-open .menu-actions .menu-action.primary::before,
+html.modal-open .menu-actions .menu-action.primary .menu-action-icon,
+html.modal-open .menu-fan-card::after {
+  animation-play-state: paused !important;
+}
+
+/* 关于页顶部保持深色，不出现浅色底板 */
+html.theme-magic .about-modal-v2 {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 119, 207, 0.1), transparent 46%),
+    linear-gradient(160deg, #241436, #0b0814) !important;
+}
+
+html.theme-magic .about-hero-v2,
+html.theme-magic .about-stats-v2 {
+  background: transparent !important;
+}
+
+/* 主按钮悬停时仍保持星虹主题，不回退到经典橙红 */
+html.theme-magic .btn:hover:not(:disabled) {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+html.theme-magic .btn.primary:hover:not(:disabled),
+html.theme-magic .btn.primary:focus-visible:not(:disabled) {
+  background: var(--rainbow) !important;
+  background-size: 100% 100%;
+  border-color: transparent;
+  color: #160a1c;
+  filter: brightness(1.08);
+}

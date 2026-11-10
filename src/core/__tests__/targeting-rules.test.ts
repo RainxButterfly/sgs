@@ -27,7 +27,7 @@ function armor(id: string, name: string): Card {
   return { id, name, suit: 'club', rank: 2, type: 'equip', equipSlot: 'armor' };
 }
 
-describe('目标选择与官方限制', () => {
+describe('目标选择与规则限制', () => {
   it('火攻不能选择自己，仁王盾与藤甲会从杀的候选中排除', () => {
     const game = new Game(
       {

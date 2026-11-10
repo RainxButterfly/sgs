@@ -32,8 +32,26 @@ export function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
+let detectedPlatform: string | null = null;
+let platformReady: Promise<void> | null = null;
+
+export function initPlatform(): Promise<void> {
+  if (!isTauri()) return Promise.resolve();
+  if (!platformReady) {
+    platformReady = invoke<string>('app_platform')
+      .then((platform) => {
+        detectedPlatform = platform;
+      })
+      .catch(() => {
+        detectedPlatform = null;
+      });
+  }
+  return platformReady;
+}
+
 export function isAndroidApp(): boolean {
-  return typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+  if (detectedPlatform) return detectedPlatform === 'android';
+  return typeof navigator !== 'undefined' && /Android|HarmonyOS|OpenHarmony/i.test(navigator.userAgent);
 }
 
 export async function createRoomInfo(): Promise<RoomInfo> {

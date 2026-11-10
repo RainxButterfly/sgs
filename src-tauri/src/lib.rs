@@ -54,12 +54,12 @@ fn manifest_urls(name: &str) -> Vec<String> {
         .map(|duration| duration.as_secs())
         .unwrap_or(0);
     vec![
+        format!("https://fastly.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
+        format!("https://jsd.onmicrosoft.cn/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
         format!("https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
         format!("https://testingcf.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
         format!("https://gcore.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
-        format!("https://fastly.jsdelivr.net/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
-        format!("https://jsd.onmicrosoft.cn/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
-        format!("https://jsd.cdn.zzko.cn/gh/{UPDATE_REPO}@main/{name}?t={stamp}"),
+        format!("https://cdn.statically.io/gh/{UPDATE_REPO}/main/{name}?t={stamp}"),
         format!("https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@master/{name}?t={stamp}"),
         format!("https://gcore.jsdelivr.net/gh/{UPDATE_REPO}@master/{name}?t={stamp}"),
         format!(
@@ -94,7 +94,7 @@ fn update_manifest_urls() -> Vec<String> {
 
 async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>, String> {
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(12))
+        .timeout(Duration::from_secs(8))
         .user_agent("sanguosha-xinghe-updater/0.1")
         .build()
         .map_err(|error| error.to_string())?;
@@ -125,11 +125,15 @@ async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>,
             (url, result)
         });
     }
-    let deadline = tokio::time::sleep(Duration::from_secs(25));
+    let deadline = tokio::time::sleep(Duration::from_secs(12));
     tokio::pin!(deadline);
+    let grace = tokio::time::sleep(Duration::from_millis(1500));
+    tokio::pin!(grace);
+    let mut grace_armed = false;
     loop {
         tokio::select! {
             _ = &mut deadline => break,
+            _ = &mut grace, if grace_armed => break,
             item = pending.next() => {
                 let Some((url, result)) = item else { break; };
                 match result {
@@ -142,6 +146,9 @@ async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>,
                                 continue;
                             }
                         };
+                        if !grace_armed {
+                            grace_armed = true;
+                        }
                         if next > current {
                             let replace = best
                                 .as_ref()
@@ -171,6 +178,11 @@ async fn check_manifest(urls: Vec<String>) -> Result<Option<PortableUpdateInfo>,
         "无法连接更新镜像。{}",
         errors.last().cloned().unwrap_or_default()
     ))
+}
+
+#[tauri::command]
+fn app_platform() -> &'static str {
+    std::env::consts::OS
 }
 
 #[tauri::command]
@@ -1051,6 +1063,7 @@ pub fn run() {
             start_room,
             check_portable_update,
             check_android_update,
+            app_platform,
             prepare_portable_update,
             install_android_update,
             append_android_web_update,

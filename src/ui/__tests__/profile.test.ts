@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_LEVEL,
   applyMatchXp,
+  backfillProfileFromHistory,
   levelTitle,
   matchXpBreakdown,
   nameTier,
@@ -81,5 +82,72 @@ describe('等级与经验', () => {
     expect(nameTier(30)).toBe(3);
     expect(nameTier(50)).toBe(5);
     expect(nameTier(60)).toBe(6);
+  });
+});
+
+describe('历史战绩补算', () => {
+  it('把未计入档案的旧对局补进总场次、胜场和经验', () => {
+    const memory = new Map<string, string>();
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: {
+        getItem: (key: string) => memory.get(key) ?? null,
+        setItem: (key: string, value: string) => memory.set(key, String(value)),
+        removeItem: (key: string) => memory.delete(key),
+        clear: () => memory.clear(),
+      },
+    });
+    localStorage.clear();
+    const players = [
+      { name: '我', heroId: 'liubei', heroName: '刘备', faction: 'shu', role: 'lord', isBot: false, alive: true },
+      { name: '电脑', heroId: 'caocao', heroName: '曹操', faction: 'wei', role: 'rebel', isBot: true, alive: false },
+    ];
+    localStorage.setItem(
+      'sgs-match-history-v1',
+      JSON.stringify([
+        {
+          key: '2026-11-09',
+          name: '2026-11-09',
+          matches: [
+            {
+              id: 'old-1',
+              dateKey: '2026-11-09',
+              playedAt: '2026-11-09T10:00:00.000Z',
+              mode: 'identity',
+              modeLabel: '身份场',
+              playerCount: 2,
+              result: 'win',
+              winner: 'lord',
+              humanHeroName: '刘备',
+              firstPlayerName: '我',
+              players,
+              log: [],
+            },
+            {
+              id: 'old-2',
+              dateKey: '2026-11-09',
+              playedAt: '2026-11-09T11:00:00.000Z',
+              mode: 'duel',
+              modeLabel: '1v1 单挑',
+              playerCount: 2,
+              result: 'lose',
+              winner: 'rebel',
+              humanHeroName: '刘备',
+              firstPlayerName: '我',
+              players,
+              log: [],
+            },
+          ],
+        },
+      ]),
+    );
+    const profile = normalizeProfile({ name: '我', totalGames: 0, wins: 0 });
+    const next = backfillProfileFromHistory(profile);
+    expect(next.totalGames).toBe(2);
+    expect(next.wins).toBe(1);
+    expect(next.level).toBeGreaterThan(1);
+    const stored = JSON.parse(localStorage.getItem('sgs-match-history-v1') ?? '[]');
+    expect(stored[0].matches.every((match: { profileCounted?: boolean }) => match.profileCounted)).toBe(true);
+    localStorage.clear();
   });
 });

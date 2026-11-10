@@ -10,20 +10,25 @@ export function LogPanel({ open, onClose }: { open: boolean; onClose: () => void
   }, [lastLogId, open]);
   if (!game) return null;
   return (
-    <aside className={`log-panel ${open ? 'open' : ''}`}>
-      <div className="log-head">
-        <span>战报</span>
-        <button type="button" className="btn ghost small" onClick={onClose}>
-          收起
-        </button>
-      </div>
-      <div className="log-list" ref={ref}>
-        {[...game.state.log].sort((a, b) => a.id - b.id).map((entry) => (
-          <div key={entry.id} className={`log-line log-${entry.kind}`}>
-            {entry.text}
-          </div>
-        ))}
-      </div>
-    </aside>
+    <>
+      {open && (
+        <button type="button" className="log-scrim" aria-label="关闭战报" onClick={onClose} />
+      )}
+      <aside className={`log-panel ${open ? 'open' : ''}`}>
+        <div className="log-head">
+          <span>战报</span>
+          <button type="button" className="btn ghost small" onClick={onClose}>
+            收起
+          </button>
+        </div>
+        <div className="log-list" ref={ref}>
+          {[...game.state.log].sort((a, b) => a.id - b.id).map((entry) => (
+            <div key={entry.id} className={`log-line log-${entry.kind}`}>
+              {entry.text}
+            </div>
+          ))}
+        </div>
+      </aside>
+    </>
   );
 }

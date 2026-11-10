@@ -575,14 +575,14 @@ export class Game {
     if (player.alive) await this.notifyHandLost(player);
   }
 
-  gainFromDiscard(player: PlayerState, card: Card, isPublic = true): void {
+  gainFromDiscard(player: PlayerState, card: Card, isPublic = true, reason = '固政'): void {
     const index = this.state.discard.findIndex((item) => item.id === card.id);
     if (index < 0) return;
     this.state.discard.splice(index, 1);
     player.hand.push(card);
     this.emit({ type: 'gain', playerId: player.id, cards: [card], public: isPublic });
     this.log(
-      `【${player.name}】${isPublic ? `获得了 ${cardLabel(card)}` : '获得了一张牌'}（固政）`,
+      `【${player.name}】${isPublic ? `获得了 ${cardLabel(card)}` : '获得了一张牌'}（${reason}）`,
       'skill',
     );
   }
@@ -1008,10 +1008,12 @@ ${skill.desc}` : ''}`
     if (name === '酒') return (player.usedThisTurn.jiu ?? 0) < 1;
     if (name === '杀') {
       if (player.flags.tianyiFail || player.flags.xianzhenFail) return false;
+      if (Number(player.flags.jiangchiNoSha ?? -1) === this.state.turn) return false;
       const unlimited = this.skillsOf(player).some((s) => s.unlimitedSha);
       const limit =
         1 +
         (player.flags.tianyi ? 1 : 0) +
+        (Number(player.flags.jiangchiSha ?? -1) === this.state.turn ? 1 : 0) +
         (this.state.rules.mode === 'landlord' && player.role === 'lord' ? 1 : 0);
       return unlimited || (player.usedThisTurn.sha ?? 0) < limit;
     }
@@ -1033,7 +1035,8 @@ ${skill.desc}` : ''}`
     isLastHand: boolean,
   ): { ids: number[]; min: number; max: number } {
     if (name === '杀') {
-      const ignoreDistance = !!user.flags.tianyi;
+      const ignoreDistance =
+        !!user.flags.tianyi || Number(user.flags.jiangchiSha ?? -1) === this.state.turn;
       const xianzhenTarget = Number(user.flags.xianzhenWin ?? -1);
       const ids = this.players
         .filter(
@@ -1048,7 +1051,10 @@ ${skill.desc}` : ''}`
         .map((p) => p.id);
       const baseMax =
         isLastHand && !!user.equips.weapon && user.equips.weapon.name === '方天画戟' ? 3 : 1;
-      const max = baseMax + (user.flags.tianyi ? 1 : 0);
+      const max =
+        baseMax +
+        (user.flags.tianyi ? 1 : 0) +
+        (Number(user.flags.jiangchiSha ?? -1) === this.state.turn ? 1 : 0);
       return { ids, min: ids.length ? 1 : 0, max };
     }
     if (name === '决斗') {
@@ -1066,13 +1072,14 @@ ${skill.desc}` : ''}`
     }
     if (name === '顺手牵羊') {
       const ignoreDist = this.hasSkill(user, 'qicai');
+      const xianzhenTarget = Number(user.flags.xianzhenWin ?? -1);
       const ids = this.players
         .filter(
           (p) =>
             p.alive &&
             p.id !== user.id &&
             this.hasCards(p) &&
-            (ignoreDist || this.distance(user, p) <= 1) &&
+            (ignoreDist || p.id === xianzhenTarget || this.distance(user, p) <= 1) &&
             this.canBeTargeted(p, user, name) &&
             !p.judgeZone.some((c) => c.name === name),
         )
@@ -1101,13 +1108,14 @@ ${skill.desc}` : ''}`
     }
     if (name === '兵粮寸断') {
       const ignoreDist = this.hasSkill(user, 'qicai');
+      const xianzhenTarget = Number(user.flags.xianzhenWin ?? -1);
       const maxDistance = ignoreDist ? Infinity : this.hasSkill(user, 'duanliang') ? 2 : 1;
       const ids = this.players
         .filter(
           (p) =>
             p.alive &&
             p.id !== user.id &&
-            this.distance(user, p) <= maxDistance &&
+            (p.id === xianzhenTarget || this.distance(user, p) <= maxDistance) &&
             this.canBeTargeted(p, user, name) &&
             !p.judgeZone.some((c) => c.name === name),
         )
@@ -2071,6 +2079,7 @@ ${skill.desc}` : ''}`
 
   private buildRespondOptions(player: PlayerState, name: string, ignoreArmor = false): CardOption[] {
     const out: CardOption[] = [];
+    if (name === '杀' && Number(player.flags.jiangchiNoSha ?? -1) === this.state.turn) return out;
     const seen = new Set<string>();
     for (const card of player.hand) {
       if (this.qianxiBlocked(player, card)) continue;
@@ -2473,6 +2482,11 @@ ${skill.desc}` : ''}`
         if (resp) {
           nullified = !nullified;
           played = true;
+          await this.trigger('cardUsed', {
+            player: p,
+            card: resp.card ?? undefined,
+            data: { as: '无懈可击' },
+          });
           this.log(`【${p.name}】使用了无懈可击${nullified ? '，效果被抵消' : '，抵消了无懈可击'}`, 'skill');
           break;
         }
@@ -2613,6 +2627,10 @@ ${skill.desc}` : ''}`
       `${source && source.id !== target.id ? `【${source.name}】令` : ''}【${target.name}】回复 ${target.hp - before} 点体力（${opts?.reason ?? '回复'}），体力 ${target.hp}/${target.maxHp}`,
       'heal',
     );
+    const healed = target.hp - before;
+    if (source && source.id !== target.id && healed > 0 && this.hasSkill(target, 'enyuan')) {
+      for (let i = 0; i < healed; i += 1) this.drawCards(source, 1, '恩怨');
+    }
   }
 
   async loseHp(

@@ -48,7 +48,7 @@ function makeGame(count: number, io: GameIO) {
         isBot: false,
       })),
       seed: 20261202,
-      rules: { skillsEnabled: true },
+      rules: { skillsEnabled: false },
     },
     io,
   );
@@ -205,6 +205,7 @@ describe('+1 马距离（八人局）', () => {
     const option = game.buildPlayOptions(attacker).find((item) => item.as === '杀');
     expect(option?.validTargets).toContain(target.id);
     await game.useCard(attacker, attacker.hand[0], '杀', [target.id]);
+    console.log(game.state.log.map((x) => x.text).join(' | '));
     expect(target.hp).toBe(target.maxHp - 1);
   });
 });

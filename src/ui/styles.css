@@ -2138,6 +2138,9 @@ button {
 
 .card-corner {
   position: absolute;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
@@ -8353,6 +8356,9 @@ button {
 .changelog-modal {
   width: min(920px, 94vw);
   max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .changelog-layout {
@@ -8361,13 +8367,15 @@ button {
   gap: 14px;
   min-height: 0;
   margin: 8px 0 4px;
+  flex: 1 1 auto;
 }
 
 .changelog-versions {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  max-height: 62vh;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -8435,7 +8443,8 @@ button {
 
 .changelog-detail {
   min-width: 0;
-  max-height: 62vh;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   padding: 2px 6px 8px 2px;
 }
@@ -18188,7 +18197,6 @@ button {
   padding: 12px 0 6px;
   border-top: 1px solid rgba(201, 163, 90, 0.18);
   background: linear-gradient(180deg, rgba(42, 34, 24, 0), rgba(42, 34, 24, 0.97) 44%);
-  backdrop-filter: blur(8px);
 }
 
 /* 主界面右下角退出游戏 */
@@ -18476,4 +18484,343 @@ button {
 /* 个人信息卡固定高度，保证技能、装备和手牌栏同时可见 */
 .own-area > .hero-panel {
   min-height: 204px;
+}
+
+.log-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+/* 联机大厅：玩家昵称与等级胶囊可读性 */
+.name-chip.name-sm {
+  padding: 2px 10px 2px 4px;
+  gap: 5px;
+}
+
+.name-chip.name-sm .name-level {
+  height: 18px;
+  padding: 0 6px;
+  font-size: 9px;
+}
+
+.name-chip.name-sm b {
+  font-size: 13.5px;
+}
+
+.lobby-grid-v2 .lobby-name {
+  font-size: 14.5px;
+}
+
+.lobby-grid-v2 .lobby-player {
+  padding: 6px 9px;
+}
+
+/* 关于页：两栏紧凑布局 */
+.about-modal-v2 {
+  width: min(840px, 95vw);
+}
+
+.about-grid-v2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: start;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.about-column {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-modal-v2 .about-tier-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.about-modal-v2 .about-testers {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.about-modal-v2 .about-tester {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 7px 9px;
+  text-align: left;
+}
+
+.about-modal-v2 .about-tester span {
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+}
+
+.about-modal-v2 .about-tester b {
+  font-size: 11.5px;
+}
+
+@media (max-width: 720px) {
+  .about-grid-v2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .about-modal-v2 .about-tier-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 杀/闪/桃卡面：使用图片素材，只保留左上角花色与点数 */
+.card-art {
+  padding: 0;
+  border-color: #c7a76a;
+  background: #171018;
+}
+
+.card-art .card-art-img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-art .card-body,
+.card-art .card-corner-br {
+  display: none;
+}
+
+.card-art .card-corner-tl {
+  z-index: 2;
+  left: 5px;
+  top: 5px;
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  background: rgba(12, 9, 7, 0.68);
+  color: #fff !important;
+  font-size: 12px;
+}
+
+.card-art::before {
+  z-index: 2;
+  inset: 2px;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.card-art::after {
+  display: none;
+}
+
+.card-sm.card-art .card-corner-tl {
+  left: 4px;
+  top: 4px;
+  padding: 0 4px;
+  font-size: 9.5px;
+}
+
+.card-lg.card-art .card-corner-tl {
+  left: 7px;
+  top: 7px;
+  font-size: 15px;
+}
+
+.lobby-xp-tip {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+html.theme-magic .lobby-xp-tip {
+  color: rgba(232, 218, 255, 0.62);
+}
+
+/* ---------- 手牌选中：位置只由选中态决定 ---------- */
+.hand-card:hover:not(:disabled) {
+  transform: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+  filter: brightness(1.04);
+  z-index: 5;
+}
+
+/* ---------- 移动端独立卡牌牌面 ---------- */
+.mobile-game .m-hand .hand-card {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-game .m-hand .card {
+  width: clamp(54px, 15dvh, 76px);
+  border-radius: 6px;
+}
+
+.mobile-game .m-hand .hand-card:hover:not(:disabled) {
+  transform: none;
+  filter: none;
+}
+
+.mobile-game .m-hand .card-selected {
+  transform: translateY(-5px) !important;
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 0 2px rgba(238, 212, 154, 0.55), 0 10px 18px rgba(0, 0, 0, 0.55) !important;
+}
+
+.mobile-game .m-hand .card-corner {
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 2px 3px;
+  border-radius: 4px;
+  z-index: 3;
+}
+
+.mobile-game .m-hand .card-corner-tl {
+  left: 3px;
+  top: 3px;
+}
+
+.mobile-game .m-hand .card-corner-br {
+  display: none;
+}
+
+.mobile-game .m-hand .card-suit {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.mobile-game .m-hand .card-rank {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.mobile-game .m-hand .card:not(.card-art) .card-corner {
+  border: 1px solid rgba(90, 65, 35, 0.28);
+  background: rgba(255, 250, 238, 0.82);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.mobile-game .m-hand .card-art .card-corner {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(10, 7, 10, 0.76);
+}
+
+.mobile-game .m-hand .card-art .card-corner-tl {
+  top: auto;
+  bottom: 4px;
+  left: 3px;
+  padding: 1px 3px;
+}
+
+.mobile-game .m-hand .card-art .card-corner-tl .card-suit {
+  font-size: 9px;
+}
+
+.mobile-game .m-hand .card-art .card-corner-tl .card-rank {
+  font-size: 11px;
+}
+
+.mobile-game .m-hand .card-art .card-corner .card-suit,
+.mobile-game .m-hand .card-art .card-corner .card-rank {
+  color: #fff;
+}
+
+.mobile-game .m-hand .card-art.card-red .card-corner .card-suit,
+.mobile-game .m-hand .card-art.card-red .card-corner .card-rank {
+  color: #ffb3a4;
+}
+
+/* 图片牌保留压底牌名，保证小屏也能认出牌 */
+.mobile-game .m-hand .card-art .card-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 14px 2px 7px 24px;
+  background: linear-gradient(180deg, transparent 0%, transparent 30%, rgba(6, 4, 8, 0.96) 52%, rgba(6, 4, 8, 0.99));
+  z-index: 2;
+}
+
+.mobile-game .m-hand .card-art .card-name {
+  max-width: 100%;
+  color: #fff;
+  font-size: clamp(12px, 3.6dvh, 14px);
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  word-break: keep-all;
+}
+
+.mobile-game .m-hand .card:not(.card-art) .card-body {
+  padding: 18px 2px 4px;
+}
+
+.mobile-game .m-hand .card:not(.card-art) .card-name {
+  max-width: 100%;
+  font-size: clamp(12px, 3.6dvh, 15px);
+  line-height: 1.05;
+}
+
+.mobile-game .m-hand .card-kind {
+  display: none;
+}
+
+html.theme-magic .mobile-game .m-hand .card.card-selected {
+  transform: translateY(-8px) !important;
+}
+
+.hand-card.card-dimmed:hover:not(:disabled) {
+  filter: grayscale(0.4) brightness(0.86);
+}
+
+/* 关于页：两栏等高、标签与等级文字放大 */
+.about-grid-v2 {
+  align-items: stretch;
+}
+
+.about-column {
+  height: auto;
+}
+
+.about-column .about-card-v2:last-child {
+  flex: 1 1 auto;
+}
+
+.about-card-label {
+  font-size: 12px;
+}
+
+.about-tier-item {
+  gap: 7px;
+  padding: 7px 9px;
+}
+
+.about-tier-item b {
+  font-size: 12px;
+}
+
+.about-tier-item span {
+  font-size: 10.5px;
+}
+
+.about-author-body-v2 p {
+  font-size: 11.5px;
+}
+
+.about-tag-v2 {
+  font-size: 10px;
+}
+
+.about-card-note {
+  font-size: 11.5px;
+  line-height: 1.7;
 }

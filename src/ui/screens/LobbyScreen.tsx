@@ -632,9 +632,12 @@ export function LobbyScreen() {
                 )}
               </div>
               <div className="lobby-xp-chips">
-                <span>基础 {xpPreview.base}</span>
+                <span>模式基础 {xpPreview.base}</span>
                 <span>胜利 +{xpPreview.winBonus}</span>
-                {xpPreview.realBonus > 0 && <span>真人 +{xpPreview.realBonus}</span>}
+                <span>真人 +{xpPreview.realBonus}</span>
+              </div>
+              <div className="lobby-xp-tip">
+                真人玩家越多经验越高；身份场、国战、斗地主和 1v1 的基础经验不同。
               </div>
             </div>
             <div className="lobby-side-summary">

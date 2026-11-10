@@ -1,4 +1,5 @@
 import { scheduleDataSnapshot } from './dataStorage';
+import { loadHistory, markHistoryProfileCounted } from './history';
 
 export type MatchMode = 'identity' | 'duel' | 'landlord' | 'guozhan' | 'custom';
 export type MatchResult = 'win' | 'lose' | 'draw';
@@ -199,4 +200,32 @@ export function profileProgress(profile: PlayerProfile): number {
   const need = xpForLevel(profile.level);
   if (!Number.isFinite(need)) return 100;
   return Math.max(0, Math.min(100, Math.round((profile.xp / need) * 100)));
+}
+
+const HISTORY_BACKFILL_KEY = 'sgs-history-backfill-v1';
+
+export function backfillProfileFromHistory(profile: PlayerProfile): PlayerProfile {
+  try {
+    if (localStorage.getItem(HISTORY_BACKFILL_KEY) === '1') return profile;
+  } catch {
+    return profile;
+  }
+  const records = loadHistory()
+    .flatMap((group) => group.matches)
+    .sort((left, right) => left.playedAt.localeCompare(right.playedAt));
+  const missingCount = Math.max(0, records.length - profile.totalGames);
+  const missing = records.slice(0, missingCount);
+  let next = profile;
+  for (const record of missing) {
+    const realPlayers = record.players.filter((player) => !player.isBot).length;
+    next = applyMatchXp(next, record.mode, record.result, realPlayers).profile;
+  }
+  saveProfile(next);
+  markHistoryProfileCounted();
+  try {
+    localStorage.setItem(HISTORY_BACKFILL_KEY, '1');
+  } catch {
+    // ignore storage failures
+  }
+  return next;
 }

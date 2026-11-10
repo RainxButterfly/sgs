@@ -6,11 +6,12 @@ interface Props {
   pending: AskRequest | null;
   selectedCardId?: string;
   onSelect: (cardId: string) => void;
+  onClearSelection?: () => void;
 }
 
 const TYPE_ORDER: Record<string, number> = { basic: 0, trick: 1, delayed: 2, equip: 3 };
 
-export function Hand({ player, pending, selectedCardId, onSelect }: Props) {
+export function Hand({ player, pending, selectedCardId, onSelect, onClearSelection }: Props) {
   const playable = new Set(
     pending?.kind === 'play' || pending?.kind === 'respond'
       ? (pending.cardOptions ?? []).map((o) => o.cardId)
@@ -39,9 +40,12 @@ export function Hand({ player, pending, selectedCardId, onSelect }: Props) {
               key={card.id}
               card={card}
               selected={selectedCardId === card.id}
-              disabled={interactive ? !canUse : true}
               dimmed={interactive && !canUse}
-              onClick={canUse ? () => onSelect(card.id) : undefined}
+              onClick={
+                interactive
+                  ? () => (canUse ? onSelect(card.id) : onClearSelection?.())
+                  : undefined
+              }
               className="hand-card"
             />
           );

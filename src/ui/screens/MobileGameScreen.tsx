@@ -465,6 +465,7 @@ export function MobileGameScreen() {
           pending={pending}
           selectedCardId={selected?.cardId}
           onSelect={(id) => useGameStore.getState().selectCard(id)}
+          onClearSelection={() => useGameStore.getState().clearSelection()}
         />
       </div>
 

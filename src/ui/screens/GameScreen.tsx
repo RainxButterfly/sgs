@@ -205,6 +205,7 @@ export function GameScreen() {
             pending={pending}
             selectedCardId={selectedCardId}
             onSelect={(id) => useGameStore.getState().selectCard(id)}
+            onClearSelection={() => useGameStore.getState().clearSelection()}
           />
         </div>
       </div>

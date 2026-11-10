@@ -56,7 +56,7 @@ export function LanScreen() {
             <div className="setup-kicker">局域网联机</div>
             <h2 className="setup-title">風 雲 會</h2>
             <p className="setup-desc">
-              房主创建房间后，把地址和房间码告诉朋友。同一局域网内直连，不需要登录，也不需要官方服务器。
+              房主创建房间后，把地址和房间码告诉朋友。同一局域网内直连，不需要登录，也不需要远程服务器。
             </p>
           </div>
           <button type="button" className="btn ghost" onClick={() => useGameStore.setState({ screen: 'menu' })}>

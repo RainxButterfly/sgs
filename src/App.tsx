@@ -15,7 +15,7 @@ import { SettingsModal } from './ui/components/SettingsModal';
 import { initDataStorage } from './ui/dataStorage';
 import { UpdateModal } from './ui/components/UpdateModal';
 import { loadSavedLanSession, useGameStore } from './ui/store';
-import { loadProfile } from './ui/profile';
+import { backfillProfileFromHistory, loadProfile } from './ui/profile';
 import { GameScreen } from './ui/screens/GameScreen';
 import { HeroGallery } from './ui/screens/HeroGallery';
 import { IdentityMarkModal } from './ui/components/IdentityMarkModal';
@@ -38,6 +38,15 @@ export default function App() {
   const gameError = useGameStore((s) => s.error);
   const uiTheme = useGameStore((s) => s.uiTheme);
   const uiPalette = useGameStore((s) => s.uiPalette);
+  const modalOpen = useGameStore(
+    (s) =>
+      s.settingsOpen ||
+      s.historyOpen ||
+      s.changelogOpen ||
+      s.aboutOpen ||
+      s.tutorialOpen ||
+      s.updateModalOpen,
+  );
   const mobile = useIsMobile();
 
   useEffect(() => {
@@ -46,15 +55,20 @@ export default function App() {
   }, [uiTheme, uiPalette]);
 
   useEffect(() => {
+    document.documentElement.classList.toggle('modal-open', modalOpen);
+  }, [modalOpen]);
+
+  useEffect(() => {
     void initDataStorage().then((restored) => {
-      if (!restored) return;
-      const background = loadBackgroundSettings();
-      useGameStore.setState({
-        bgImage: background.image,
-        bgDim: background.dim,
-        savedLanSession: loadSavedLanSession(),
-        profile: loadProfile(),
-      });
+      if (restored) {
+        const background = loadBackgroundSettings();
+        useGameStore.setState({
+          bgImage: background.image,
+          bgDim: background.dim,
+          savedLanSession: loadSavedLanSession(),
+        });
+      }
+      useGameStore.setState({ profile: backfillProfileFromHistory(loadProfile()) });
     });
   }, []);
 

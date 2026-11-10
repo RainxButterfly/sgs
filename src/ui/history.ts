@@ -24,6 +24,7 @@ export interface MatchRecord {
   firstPlayerName: string;
   players: MatchPlayerRecord[];
   log: LogEntry[];
+  profileCounted?: boolean;
 }
 
 export interface HistoryGroup {
@@ -94,9 +95,17 @@ export function addMatchRecord(record: MatchRecord): HistoryGroup[] {
     group = { key: record.dateKey, name: record.dateKey, matches: [] };
     groups.unshift(group);
   }
-  group.matches.unshift({ ...record, log: record.log.slice(-400) });
+  group.matches.unshift({ ...record, profileCounted: true, log: record.log.slice(-400) });
   saveHistory(groups);
   return loadHistory();
+}
+
+export function markHistoryProfileCounted(): void {
+  const groups = loadHistory();
+  for (const group of groups) {
+    for (const match of group.matches) match.profileCounted = true;
+  }
+  saveHistory(groups);
 }
 
 export function renameHistoryGroup(key: string, name: string): HistoryGroup[] {

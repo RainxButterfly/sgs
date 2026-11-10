@@ -2,9 +2,11 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { isAndroidApp, isTauri } from '../net/lan';
 
-export const MANUAL_UPDATE_URL = isAndroidApp()
-  ? 'https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-arm64.apk'
-  : 'https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-setup.exe';
+export function manualUpdateUrl(): string {
+  return isAndroidApp()
+    ? 'https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/updates/siguoshan-xinghe-arm64.apk'
+    : 'https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/updates/siguoshan-xinghe-setup.exe';
+}
 
 export interface PortableUpdateInfo {
   version: string;
@@ -25,7 +27,7 @@ export interface AppUpdateInfo {
 
 const APP_VERSION = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : '0.1.0';
 
-function compareVersion(a: string, b: string): number {
+export function compareVersion(a: string, b: string): number {
   const left = a.split('.').map(Number);
   const right = b.split('.').map(Number);
   for (let i = 0; i < Math.max(left.length, right.length); i += 1) {
@@ -35,79 +37,46 @@ function compareVersion(a: string, b: string): number {
   return 0;
 }
 
-async function fetchLatestTag(): Promise<string | null> {
-  const urls = [
-    'https://api.github.com/repos/RainxButterfly/sgs/tags?per_page=20',
-    'https://ghfast.top/https://api.github.com/repos/RainxButterfly/sgs/tags?per_page=20',
-    'https://ghproxy.net/https://api.github.com/repos/RainxButterfly/sgs/tags?per_page=20',
+function manifestMirrors(name: string): string[] {
+  const stamp = Date.now();
+  const bases = [
+    `https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@main/${name}`,
+    `https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@main/${name}`,
+    `https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/${name}`,
+    `https://testingcf.jsdelivr.net/gh/RainxButterfly/sgs@main/${name}`,
+    `https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@main/${name}`,
+    `https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}`,
+    `https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}`,
+    `https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}`,
+    `https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}`,
+    `https://cdn.statically.io/gh/RainxButterfly/sgs/main/${name}`,
   ];
-  for (const url of urls) {
-    try {
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 7000);
-      const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
-      window.clearTimeout(timer);
-      if (!response.ok) continue;
-      const tags = (await response.json()) as { name?: string }[];
-      const versions = tags
-        .map((tag) => tag.name?.replace(/^v/i, ''))
-        .filter((version): version is string => !!version && /^\d+(\.\d+)+$/.test(version))
-        .sort((a, b) => compareVersion(b, a));
-      if (versions.length) return versions[0];
-    } catch {
-      // try the next tag source
-    }
+  return bases.map((url) => `${url}${url.includes('?') ? '&' : '?'}t=${stamp}`);
+}
+
+async function fetchManifest(url: string): Promise<PortableUpdateInfo | null> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 7000);
+  try {
+    const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+    if (!response.ok) return null;
+    const info = (await response.json()) as PortableUpdateInfo;
+    return info?.version ? info : null;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
   }
-  return null;
 }
 
 async function fetchManifestFromWeb(name: string): Promise<PortableUpdateInfo | null> {
-  const stamp = Date.now();
-  const tag = await fetchLatestTag();
-  if (tag) {
-    for (const base of [
-      `https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v${tag}/${name}`,
-      `https://raw.githubusercontent.com/RainxButterfly/sgs/v${tag}/${name}`,
-    ]) {
-      try {
-        const controller = new AbortController();
-        const timer = window.setTimeout(() => controller.abort(), 9000);
-        const response = await fetch(base, { cache: 'no-store', signal: controller.signal });
-        window.clearTimeout(timer);
-        if (!response.ok) continue;
-        const info = (await response.json()) as PortableUpdateInfo;
-        if (info?.version && compareVersion(info.version, APP_VERSION) > 0) return info;
-      } catch {
-        // try the next tag mirror
-      }
-    }
-  }
-  const urls = [
-    `https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}?t=${stamp}`,
-    `https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}?t=${stamp}`,
-    `https://raw.githubusercontent.com/RainxButterfly/sgs/main/${name}?t=${stamp}`,
-    `https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@main/${name}?t=${stamp}`,
-  ];
-  let success = false;
-  let best: PortableUpdateInfo | null = null;
-  for (const url of urls) {
-    try {
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 9000);
-      const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
-      window.clearTimeout(timer);
-      if (!response.ok) continue;
-      const info = (await response.json()) as PortableUpdateInfo;
-      success = true;
-      if (info?.version && compareVersion(info.version, APP_VERSION) > 0) {
-        if (!best || compareVersion(info.version, best.version) > 0) best = info;
-      }
-    } catch {
-      // try the next mirror
-    }
-  }
-  if (!success) throw new Error('网页通道无法连接更新镜像');
-  return null;
+  const results = await Promise.all(manifestMirrors(name).map((url) => fetchManifest(url)));
+  const valid = results.filter((info): info is PortableUpdateInfo => !!info);
+  if (!valid.length) throw new Error('网页通道无法连接更新镜像');
+  const newer = valid
+    .filter((info) => compareVersion(info.version, APP_VERSION) > 0)
+    .sort((a, b) => compareVersion(b.version, a.version));
+  return newer[0] ?? null;
 }
 
 export async function checkAndroidUpdateFromWeb(): Promise<AppUpdateInfo | null> {
