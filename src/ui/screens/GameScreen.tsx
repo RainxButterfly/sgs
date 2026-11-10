@@ -93,6 +93,7 @@ export function GameScreen() {
 
   const opponents = game.state.players.filter((p) => p.id !== humanId);
   const m = Math.max(1, n - 1);
+  const targeting = pending?.kind === 'play' && !!selectedOption && selectedOption.targetMax > 0;
 
   const exit = () => {
     const state = useGameStore.getState();
@@ -138,6 +139,7 @@ export function GameScreen() {
                 speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
                 style={{ left: `${x}%`, top: `${y}%` }}
                 tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, player.id, n)}
+                unavailableHint={targeting && !targetable.has(player.id) ? '距离不足' : undefined}
                 onDetail={() => setDetailPlayer(player.id)}
                 onClick={() => useGameStore.getState().seatClick(player.id)}
               />

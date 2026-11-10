@@ -250,7 +250,7 @@ export function MobileGameScreen() {
           );
           const seatTimer =
             wuxieWindow && wuxieDeadline
-              ? { deadline: wuxieDeadline, totalMs: 4000 }
+              ? { deadline: wuxieDeadline, totalMs: 3000 }
               : pending?.playerId === player.id && pending.timeout && promptDeadline
                 ? { deadline: promptDeadline, totalMs: pending.timeout }
                 : null;
@@ -521,7 +521,7 @@ export function MobileGameScreen() {
           (pending?.playerId === human.id && pending.timeout && promptDeadline)) && (
           <CountdownRing
             deadline={(wuxieWindow && wuxieDeadline ? wuxieDeadline : promptDeadline) as number}
-            totalMs={wuxieWindow ? 4000 : pending?.timeout ?? 1}
+            totalMs={wuxieWindow ? 3000 : pending?.timeout ?? 1}
             size={20}
             className="m-self-timer"
           />

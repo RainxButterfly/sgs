@@ -22,6 +22,7 @@ interface Props {
   revealRoles?: boolean;
   mark?: Role | null;
   tableNo?: string;
+  unavailableHint?: string;
   onMark?: () => void;
   flash?: Flash | null;
   flashes?: Flash[];
@@ -42,6 +43,7 @@ export function PlayerSeat({
   revealRoles,
   mark,
   tableNo,
+  unavailableHint,
   onMark,
   flash,
   flashes,
@@ -98,6 +100,7 @@ export function PlayerSeat({
       role={clickable ? 'button' : undefined}
     >
       {speech && <div className="seat-speech">{speech.text}</div>}
+      {unavailableHint && <span className="seat-unavailable">{unavailableHint}</span>}
       {displayFlashes.map((item, index) => (
         <span
           key={item.id}

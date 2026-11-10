@@ -7,7 +7,7 @@ export function WuxieWindowNotice() {
   return (
     <div className="wuxie-window-notice">
       <span className="wuxie-window-dot" />
-      无懈可击窗口 · 4 秒
+      无懈可击窗口 · 3 秒
     </div>
   );
 }

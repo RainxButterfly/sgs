@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { SKILL_MAP } from '../../core/skills';
 import { cardDisplayName } from '../labels';
 import { useGameStore } from '../store';
@@ -8,7 +9,11 @@ export function AoePanel() {
   const screen = useGameStore((s) => s.screen);
   const dismiss = useGameStore((s) => s.dismissAoe);
 
-
+  useEffect(() => {
+    if (!aoe?.done) return;
+    const timer = window.setTimeout(() => useGameStore.getState().dismissAoe(), 3000);
+    return () => window.clearTimeout(timer);
+  }, [aoe?.done, aoe?.cardName, aoe?.sourceId]);
 
   if (!aoe || !game || screen !== 'game') return null;
   const source = game.state.players[aoe.sourceId];
@@ -69,7 +74,15 @@ export function AoePanel() {
           );
         })}
       </ol>
-      <div className="aoe-foot">{aoe.done ? '结算完毕' : '正在依次结算…'}</div>
+      <div className="aoe-foot">
+        <span>{aoe.done ? '结算完毕' : '正在依次结算…'}</span>
+        {aoe.done && <span className="aoe-auto-hint">3 秒后自动关闭</span>}
+      </div>
+      {aoe.done && (
+        <div className="aoe-auto-bar" aria-hidden="true">
+          <i />
+        </div>
+      )}
     </aside>
   );
 }

@@ -25,6 +25,22 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.2',
+    date: '2026-11-10',
+    title: '无懈 3 秒与 AOE 自动收起',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '无懈可击响应窗口从 4 秒缩短为 3 秒，提示条、座位倒计时环和手机端计时统一。',
+          '南蛮入侵、万箭齐发、桃园结义、五谷丰登等 AOE 结算完成后，面板底部显示 3 秒自动关闭进度条，并自动收起。',
+          '电脑端选目标时，距离不足或其他不可选角色显示「距离不足」提示，和参考布局一致。',
+          '更新日志组日期修正：0.1.0~0.4.x 为 11 月 6 日，0.5.x 为 11 月 7 日，0.6.x 为 11 月 8 日，0.7.x 为 11 月 9 日，0.8.x 为 11 月 9–10 日；组内版本从高到低排列。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.1',
     date: '2026-11-10',
     title: '布局遮挡与更新下载修复',
@@ -41,7 +57,7 @@ const VERSIONS: ChangelogEntry[] = [
       {
         kind: 'polish',
         items: [
-          '更新日志按大版本合并：0.1.0~0.5.9、0.6.0~0.7.12、0.8.0~0.8.16 各自成组，组内仍按每个小版本分段显示日期、标题和内容；0.9.x 暂不合并，到 0.10 再并入。',
+          '更新日志按大版本合并：0.1.0~0.4.x、0.5.0~0.5.9、0.6.0~0.6.9、0.7.0~0.7.12、0.8.0~0.8.16 各自成组，组内仍按每个小版本分段显示日期、标题和内容；0.9.x 暂不合并，到 0.10 再并入。',
         ],
       },
     ],
@@ -1048,15 +1064,18 @@ const group = (version: string, date: string, title: string, versions: Changelog
 
 const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.1')!;
 const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.0')!;
+const dated = (entries: ChangelogEntry[], date: string): ChangelogEntry[] =>
+  entries.map((entry) => ({ ...entry, date }));
 const eight = [
   ...EARLY_08,
   ...VERSIONS.filter((entry) => entry.version.startsWith('0.8.') && !entry.version.includes('~')),
 ];
-const sixSeven = VERSIONS.filter((entry) => /^0\.[67]\./.test(entry.version));
-const earlyFive: ChangelogEntry = {
-  version: '0.1.0~0.5.4',
-  date: '2026-09-01 ~ 2026-10-15',
-  title: '基础联机与移动端起步',
+const seven = dated(VERSIONS.filter((entry) => entry.version.startsWith('0.7.')), '2026-11-09');
+const six = dated(VERSIONS.filter((entry) => entry.version.startsWith('0.6.')), '2026-11-08');
+const earlyFour: ChangelogEntry = {
+  version: '0.1.0~0.4.x',
+  date: '2026-11-06',
+  title: '最早版本',
   sections: [
     {
       kind: 'feature',
@@ -1066,12 +1085,28 @@ const earlyFive: ChangelogEntry = {
     },
   ],
 };
-const five = [earlyFive, ...VERSIONS.filter((entry) => /^0\.5\./.test(entry.version))];
+const earlyFive: ChangelogEntry = {
+  version: '0.5.0~0.5.4',
+  date: '2026-11-07',
+  title: '移动端与联机基础',
+  sections: [
+    {
+      kind: 'feature',
+      items: ['移动端加入、扫码联机、基础牌桌与更新流程。'],
+    },
+  ],
+};
+const five = [
+  earlyFive,
+  ...dated(VERSIONS.filter((entry) => entry.version.startsWith('0.5.')), '2026-11-07'),
+];
 
 export const CHANGELOG: ChangelogEntry[] = [
   currentPatch,
   currentMinor,
   group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
-  group('0.6.0~0.7.12', '2026-11-01 ~ 2026-11-09', '联机、观战与规则完善', sixSeven),
-  group('0.1.0~0.5.9', '2026-09-01 ~ 2026-10-24', '基础联机与移动端', five),
+  group('0.7.0~0.7.12', '2026-11-09', '联机、观战与规则完善', seven),
+  group('0.6.0~0.6.9', '2026-11-08', '移动端、联机与规则完善', six),
+  group('0.5.0~0.5.9', '2026-11-07', '移动端与联机基础', five),
+  group('0.1.0~0.4.x', '2026-11-06', '最早版本', [earlyFour]),
 ];

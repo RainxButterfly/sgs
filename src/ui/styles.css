@@ -12810,3 +12810,81 @@ button {
     grid-column: 1 / -1;
   }
 }
+
+.aoe-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.aoe-auto-hint {
+  color: rgba(219, 181, 108, 0.78);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.aoe-auto-bar {
+  flex: 0 0 3px;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.aoe-auto-bar i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #d9b46c, #f5d99a);
+  transform-origin: left center;
+  animation: aoeAutoClose 3s linear forwards;
+}
+
+@keyframes aoeAutoClose {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.seat-unavailable {
+  position: absolute;
+  inset: auto 8px 8px 8px;
+  z-index: 5;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgba(15, 12, 9, 0.82);
+  color: rgba(255, 226, 190, 0.72);
+  font-size: 10px;
+  text-align: center;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
+  .seat-unavailable {
+    font-size: 8px;
+    inset: auto 4px 4px 4px;
+    padding: 1px 3px;
+  }
+}
+
+@media (min-width: 1101px) and (pointer: fine) {
+  .menu-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: min(560px, 100%);
+  }
+
+  .menu-actions .btn.big {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .menu-actions .btn.primary.big {
+    grid-column: 1 / -1;
+  }
+}

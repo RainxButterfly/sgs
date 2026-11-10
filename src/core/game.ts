@@ -2440,7 +2440,7 @@ ${skill.desc}` : ''}`
   private async askWuxie(cardName: string, target: PlayerState, user: PlayerState, desc: string): Promise<boolean> {
     if (this.wuxieWindowPending) {
       this.wuxieWindowPending = false;
-      const ms = 4000;
+      const ms = 3000;
       this.emit({ type: 'wuxieWindow', ms, until: Date.now() + ms });
       await this.io.delay(ms);
     }
