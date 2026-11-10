@@ -5,11 +5,16 @@ export interface ChangeSection {
   items: string[];
 }
 
-export interface ChangelogEntry {
+export interface ChangelogVersion {
   version: string;
   date: string;
   title: string;
   sections: ChangeSection[];
+}
+
+export interface ChangelogEntry extends ChangelogVersion {
+  /** 合并版本的内部明细；有值时右侧按版本分段显示 */
+  versions?: ChangelogVersion[];
 }
 
 export const CHANGE_LABEL: Record<ChangeKind, string> = {
@@ -18,7 +23,29 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
   polish: '体验优化',
 };
 
-export const CHANGELOG: ChangelogEntry[] = [
+const VERSIONS: ChangelogEntry[] = [
+  {
+    version: '0.9.1',
+    date: '2026-11-10',
+    title: '布局遮挡与更新下载修复',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '手机横屏座位宽度按屏幕收缩，七名对手不再被右侧裁掉；自己的双将长名改为可换行，不再只显示“袁绍·公…”。',
+          '手机出牌记录最多保留最近六条，减少中央牌桌文字和卡牌互相挤压。',
+          '安卓网页下载通道增加首包/读取停滞超时、无流式响应时的整包兜底和镜像错误原因；镜像卡住会自动切换。',
+          '更新失败时保留“在浏览器中下载”和复制链接兜底，不再只停在 0%。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '更新日志按大版本合并：0.1.0~0.5.9、0.6.0~0.7.12、0.8.0~0.8.16 各自成组，组内仍按每个小版本分段显示日期、标题和内容；0.9.x 暂不合并，到 0.10 再并入。',
+        ],
+      },
+    ],
+  },
   {
     version: '0.9.0',
     date: '2026-11-10',
@@ -899,4 +926,152 @@ export const CHANGELOG: ChangelogEntry[] = [
       },
     ],
   },
+
+  // 已合并进 0.8 组，下面用独立版本对象重建
+];
+
+const EARLY_08: ChangelogEntry[] = [
+  {
+    version: '0.8.16',
+    date: '2026-11-10',
+    title: '乱武与好施细节',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '贾诩【乱武】现在可选武圣、龙胆等转化杀，并校验距离最近目标的合法性；没有合法杀则失去体力。',
+          '鲁肃【好施】在手牌数并列最少时，由鲁肃选择交给谁，不再随机。',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.8.15',
+    date: '2026-11-10',
+    title: '屯田时机与蛊惑声明',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '新增失去牌事件：邓艾【屯田】在回合外弃牌、弃装备、弃判定牌或响应打出牌后触发判定。',
+          '于吉【蛊惑】可声明铁索连环。',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.8.14',
+    date: '2026-11-10',
+    title: '神速两段结算',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '夏侯渊【神速】拆成两个独立时机：判定阶段跳过判定与摸牌并视为出杀；出牌阶段弃一张装备牌跳过出牌并视为出杀，各自每回合限一次。',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.8.13',
+    date: '2026-11-10',
+    title: 'AI补位开关与技能续修',
+    sections: [
+      {
+        kind: 'feature',
+        items: ['联机房主新增「空位电脑补足」开关：关闭后只用真实玩家开局，人数不足时不能开始。'],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '颜良文丑【双雄】改为摸牌阶段放弃摸牌、判定并获得判定牌，再按判定牌颜色转化决斗。',
+          '小乔【红颜】的武圣、奇袭、倾国、火计、看破、双雄等花色判断统一按黑桃视为红桃处理。',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.8.12',
+    date: '2026-11-10',
+    title: '巧变、雌雄与丈八',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '张郃【巧变】改为阶段开始时弃一张手牌跳过判定/摸牌/出牌/弃牌阶段；跳过摸牌拿至多两人各一张手牌，跳过出牌移动场上一张装备。',
+          '雌雄双股剑补上异性目标触发；丈八蛇矛可以在南蛮、决斗、借刀等响应中把两张手牌当【杀】打出。',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.8.11',
+    date: '2026-11-10',
+    title: '国战暗将与野心家',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '国战双将开局暗置：未明置的武将不提供技能、势力对其他人隐藏；自己可点击「明置主将/副将」亮出武将，电脑角色每回合开始自动明置一名武将。',
+          '同一势力明置人数超过全场一半后，该势力角色成为野心家并显示标记；野心家需要成为最后生还者，击杀角色时摸三张牌。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: ['国战顶部人数只统计已明置势力和暗置人数，不再提前泄露暗将阵营。'],
+      },
+    ],
+  },
+  {
+    version: '0.8.10',
+    date: '2026-11-10',
+    title: '手机更新网页通道',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '手机下载 APK 改为优先走 WebView 网页通道：直接读取安装包流，按 256KB 分块写入缓存，Rust 校验 SHA-256 后调用系统安装器。',
+          '网页通道会依次尝试清单里的所有镜像，绕过原生请求卡在 0MB 的问题；网页通道全部失败才回退原生下载和浏览器下载。',
+        ],
+      },
+    ],
+  },
+];
+
+const group = (version: string, date: string, title: string, versions: ChangelogEntry[]): ChangelogEntry => ({
+  version,
+  date,
+  title,
+  sections: [],
+  versions,
+});
+
+const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.1')!;
+const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.0')!;
+const eight = [
+  ...EARLY_08,
+  ...VERSIONS.filter((entry) => entry.version.startsWith('0.8.') && !entry.version.includes('~')),
+];
+const sixSeven = VERSIONS.filter((entry) => /^0\.[67]\./.test(entry.version));
+const earlyFive: ChangelogEntry = {
+  version: '0.1.0~0.5.4',
+  date: '2026-09-01 ~ 2026-10-15',
+  title: '基础联机与移动端起步',
+  sections: [
+    {
+      kind: 'feature',
+      items: [
+        '从最早的本地对局、身份场/1v1/国战雏形，到局域网联机、手机网页加入、桌游界面和更新器的基础版本。',
+      ],
+    },
+  ],
+};
+const five = [earlyFive, ...VERSIONS.filter((entry) => /^0\.5\./.test(entry.version))];
+
+export const CHANGELOG: ChangelogEntry[] = [
+  currentPatch,
+  currentMinor,
+  group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
+  group('0.6.0~0.7.12', '2026-11-01 ~ 2026-11-09', '联机、观战与规则完善', sixSeven),
+  group('0.1.0~0.5.9', '2026-09-01 ~ 2026-10-24', '基础联机与移动端', five),
 ];

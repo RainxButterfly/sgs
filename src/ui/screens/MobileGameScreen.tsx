@@ -156,7 +156,7 @@ export function MobileGameScreen() {
   const humanSkills = visibleSkillIds(human, mode, true)
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
-  const feed = cardHistory.slice(-8);
+  const feed = cardHistory.slice(-6);
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
     const card = entry.cards[0];

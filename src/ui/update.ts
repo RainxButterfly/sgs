@@ -179,37 +179,69 @@ export async function installAndroidUpdateFromWeb(
   onMirror?: (mirror: UpdateMirrorInfo) => void,
 ): Promise<void> {
   const urls = info.raw.urls?.length ? info.raw.urls : [info.raw.url];
+  let lastError = '';
   for (let index = 0; index < urls.length; index += 1) {
     onMirror?.({ index: index + 1, total: urls.length });
+    const controller = new AbortController();
+    let hardTimer = window.setTimeout(() => controller.abort(), 180000);
     try {
-      const response = await fetch(urls[index], { cache: 'no-store' });
-      if (!response.ok || !response.body) continue;
+      const response = await fetch(urls[index], {
+        cache: 'no-store',
+        redirect: 'follow',
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        lastError = `HTTP ${response.status}`;
+        continue;
+      }
       const total = Number(response.headers.get('content-length') ?? 0);
-      const reader = response.body.getReader();
       let downloaded = 0;
       let reset = true;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (!value || value.length === 0) continue;
-        for (let offset = 0; offset < value.length; offset += CHUNK_SIZE) {
-          const slice = value.subarray(offset, offset + CHUNK_SIZE);
+      onProgress(0, total);
+      const write = async (bytes: Uint8Array) => {
+        for (let offset = 0; offset < bytes.length; offset += CHUNK_SIZE) {
+          const slice = bytes.subarray(offset, offset + CHUNK_SIZE);
           await invoke('append_android_web_update', {
             data: bytesToBase64(slice),
             reset,
           });
           reset = false;
         }
-        downloaded += value.length;
+        downloaded += bytes.length;
         onProgress(downloaded, total);
+      };
+      if (response.body) {
+        const reader = response.body.getReader();
+        let lastPacket = Date.now();
+        const stallTimer = window.setInterval(() => {
+          if (Date.now() - lastPacket > 25000) controller.abort();
+        }, 5000);
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (!value || value.length === 0) continue;
+            lastPacket = Date.now();
+            await write(value);
+          }
+        } finally {
+          window.clearInterval(stallTimer);
+        }
+      } else {
+        const buffer = new Uint8Array(await response.arrayBuffer());
+        await write(buffer);
       }
+      window.clearTimeout(hardTimer);
       await invoke('finish_android_web_update', { sha256: info.raw.sha256 });
       return;
-    } catch {
+    } catch (error) {
+      lastError = (error as Error).message || '下载中断';
       // 换下一个镜像，下一次写入会 truncate
+    } finally {
+      window.clearTimeout(hardTimer);
     }
   }
-  throw new Error('网页通道下载失败，请改用浏览器下载');
+  throw new Error(`网页通道下载失败（${lastError || '所有镜像不可用'}），请改用浏览器下载`);
 }
 
 export interface UpdateMirrorInfo {

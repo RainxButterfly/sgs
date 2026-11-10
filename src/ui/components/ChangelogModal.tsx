@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CHANGE_LABEL, CHANGELOG, type ChangelogEntry } from '../changelog';
+import { CHANGE_LABEL, CHANGELOG, type ChangelogEntry, type ChangelogVersion } from '../changelog';
 import { useGameStore } from '../store';
 
 function compareVersion(left: string, right: string): number {
@@ -21,7 +21,11 @@ function coversVersion(entry: ChangelogEntry, version: string): boolean {
 }
 
 function entryLabel(entry: ChangelogEntry): string {
-  return entry.version.includes('~') ? entry.version : `v${entry.version}`;
+  return versionLabel(entry.version);
+}
+
+function versionLabel(version: string): string {
+  return version.includes('~') ? version : `v${version}`;
 }
 
 export function ChangelogModal() {
@@ -40,6 +44,17 @@ export function ChangelogModal() {
   const entry = CHANGELOG.find((item) => item.version === selected) ?? CHANGELOG[0];
   if (!entry) return null;
   const isCurrent = coversVersion(entry, appVersion);
+  const renderSections = (version: ChangelogVersion) =>
+    version.sections.map((section) => (
+      <section key={`${version.version}-${section.kind}`} className={`changelog-section ${section.kind}`}>
+        <div className="changelog-section-title">{CHANGE_LABEL[section.kind]}</div>
+        <ul>
+          {section.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+    ));
 
   return (
     <div className="modal-backdrop changelog-backdrop" onClick={close}>
@@ -80,16 +95,31 @@ export function ChangelogModal() {
               <h3>{entry.title}</h3>
               <span className="changelog-range">{entryLabel(entry)}</span>
             </header>
-            {entry.sections.map((section) => (
-              <section key={section.kind} className={`changelog-section ${section.kind}`}>
-                <div className="changelog-section-title">{CHANGE_LABEL[section.kind]}</div>
-                <ul>
-                  {section.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </section>
-            ))}
+            {entry.versions?.length ? (
+              <div className="changelog-version-blocks">
+                {entry.versions.map((version) => (
+                  <section key={version.version} className="changelog-version-block">
+                    <header className="changelog-version-block-head">
+                      <span className="changelog-date">{version.date}</span>
+                      <b>{versionLabel(version.version)}</b>
+                      <h4>{version.title}</h4>
+                    </header>
+                    {renderSections(version)}
+                  </section>
+                ))}
+              </div>
+            ) : (
+              entry.sections.map((section) => (
+                <section key={section.kind} className={`changelog-section ${section.kind}`}>
+                  <div className="changelog-section-title">{CHANGE_LABEL[section.kind]}</div>
+                  <ul>
+                    {section.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+            )}
           </article>
         </div>
         <div className="modal-actions">

@@ -12739,3 +12739,74 @@ button {
     grid-row: 1;
   }
 }
+
+@media (orientation: landscape) and (max-height: 900px) and (max-width: 1100px), (orientation: landscape) and (max-height: 900px) and (max-width: 1500px) and (pointer: coarse) {
+  .m-seats {
+    gap: 5px;
+  }
+
+  .m-seat {
+    flex-basis: clamp(82px, 12vw, 108px);
+    width: clamp(82px, 12vw, 108px);
+  }
+
+  .m-self-head {
+    align-items: flex-start;
+  }
+
+  .m-self-head b {
+    font-size: 13px;
+    line-height: 1.1;
+    white-space: normal;
+    max-height: 24px;
+    overflow: hidden;
+  }
+}
+
+/* 合并版本内部按小版本分段 */
+.changelog-version-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.changelog-version-block {
+  padding-top: 10px;
+  border-top: 1px dashed rgba(219, 181, 108, 0.18);
+}
+
+.changelog-version-block-head {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+}
+
+.changelog-version-block-head b {
+  color: var(--gold-bright);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.changelog-version-block-head h4 {
+  margin: 0;
+  min-width: 0;
+  color: var(--text);
+  font-family: var(--font-calligraphy);
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .changelog-version-block-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .changelog-version-block-head h4 {
+    grid-column: 1 / -1;
+  }
+}

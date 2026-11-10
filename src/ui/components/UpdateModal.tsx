@@ -176,6 +176,11 @@ export function UpdateModal() {
                   {copied ? '已复制' : '复制链接'}
                 </button>
               )}
+              {info?.android && (
+                <button type="button" className="btn ghost" onClick={() => void openInBrowser()}>
+                  浏览器下载
+                </button>
+              )}
               <button type="button" className="btn ghost" onClick={close}>
                 稍后
               </button>
