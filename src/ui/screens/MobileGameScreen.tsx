@@ -66,7 +66,6 @@ export function MobileGameScreen() {
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
   const lastJudge = useGameStore((s) => s.lastJudge);
-  const lastDiscard = useGameStore((s) => s.lastDiscard);
   const lastPlay = useGameStore((s) => s.lastPlay);
   const flashes = useGameStore((s) => s.flashes);
   const speechBubbles = useGameStore((s) => s.speechBubbles);
@@ -150,7 +149,10 @@ export function MobileGameScreen() {
   const humanSkills = visibleSkillIds(human, mode, true)
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
-  const latest = [...cardHistory].reverse().find((entry) => entry.kind !== 'gain');
+  const actionHistory = cardHistory.filter((entry) => entry.kind !== 'gain');
+  const latest = actionHistory[actionHistory.length - 1];
+  const earlier = actionHistory.slice(-4, -1);
+  const recentDiscard = game.state.discard.slice(-3);
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
     const card = entry.cards[0];
@@ -169,6 +171,19 @@ export function MobileGameScreen() {
       return `获得${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
     }
     return `${entry.label} ${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
+  };
+  const shortActionText = (entry: (typeof cardHistory)[number]) => {
+    const card = entry.cards[0];
+    if (entry.kind === 'play' || entry.kind === 'respond') {
+      const as = entry.as ?? (card ? cardDisplayName(card) : '');
+      return `${entry.kind === 'respond' ? '打出' : '使用'}【${as}】`;
+    }
+    if (entry.kind === 'discard') {
+      return `弃置${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
+    }
+    if (entry.kind === 'judge') return `判定【${card ? cardDisplayName(card) : ''}】`;
+    if (entry.kind === 'gain') return '获得牌';
+    return actionText(entry);
   };
 
   const exit = () => {
@@ -384,11 +399,10 @@ export function MobileGameScreen() {
           </button>
           {composition && <span className="m-table-composition">{composition}</span>}
         </div>
-        {lastDiscard && (
-          <div className="m-discard-strip">
-            <b>{targetName(lastDiscard.playerId)}</b>
-            <span>{lastDiscard.reason ?? '弃置'}</span>
-            {lastDiscard.cards.map((card) => (
+        {recentDiscard.length > 0 && (
+          <div className="m-discard-line">
+            <b>弃牌堆</b>
+            {recentDiscard.map((card) => (
               <span key={card.id} className="discard-chip">
                 <em>
                   {SUIT_CHAR[card.suit]}
@@ -397,20 +411,37 @@ export function MobileGameScreen() {
                 {shortCardName(cardDisplayName(card))}
               </span>
             ))}
+            <button type="button" className="m-discard-all" onClick={() => setDiscardOpen(true)}>
+              查看全部
+            </button>
           </div>
         )}
         {latest ? (
           <div className={`m-last-play${latest.kind === 'respond' ? ' is-response' : ''}`}>
-            {latest.kind !== 'gain' && latest.cards[0] && (
-              <CardView card={latest.cards[0]} size="sm" />
-            )}
+            {latest.cards[0] && <CardView card={latest.cards[0]} size="sm" />}
             <div className="m-last-play-copy">
               <b>{latest.playerId !== undefined ? targetName(latest.playerId) : '牌堆'}</b>
-              <span>{actionText(latest)}</span>
+              <span title={actionText(latest)}>{actionText(latest)}</span>
               {latest.targets && latest.targets.length > 0 && (
                 <i>→ {latest.targets.map(targetName).join('、')}</i>
               )}
-              <em>第 {latest.turn ?? 0} 回合</em>
+            </div>
+            <div className="m-recent-actions">
+              <b>出牌顺序</b>
+              {earlier.length > 0 ? (
+                earlier.map((entry, index) => {
+                  const line = `${shortActionText(entry)}${entry.targets?.length ? ` → ${entry.targets.map(targetName).join('、')}` : ''}`;
+                  return (
+                    <span key={entry.id} title={`${targetName(entry.playerId ?? -1)} ${line}`}>
+                      <em>{index + 1}</em>
+                      <strong>{entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'}</strong>
+                      <i>{line}</i>
+                    </span>
+                  );
+                })
+              ) : (
+                <span className="m-recent-empty">暂无更多动向</span>
+              )}
             </div>
           </div>
         ) : (

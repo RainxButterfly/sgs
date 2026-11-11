@@ -1344,7 +1344,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       if (info.android) {
         try {
-          await installAndroidUpdate(
+          await installAndroidUpdateFromWeb(
             info,
             (downloaded, total) => set({ updateProgress: { downloaded, total } }),
             (mirror) => set({ updateMirror: mirror }),
@@ -1354,12 +1354,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         } catch (error) {
           recordDiagnostic(
             'error',
-            `原生通道更新失败：${(error as Error).message}`,
+            `网页通道更新失败：${(error as Error).message}`,
             (error as Error).stack,
           );
         }
         set({ updateProgress: { downloaded: 0, total: 0 }, updateMirror: null });
-        await installAndroidUpdateFromWeb(
+        await installAndroidUpdate(
           info,
           (downloaded, total) => set({ updateProgress: { downloaded, total } }),
           (mirror) => set({ updateMirror: mirror }),

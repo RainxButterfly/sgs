@@ -18853,7 +18853,7 @@ html.theme-magic .mobile-game .m-hand .card.card-selected {
   flex: 1;
   min-width: 0;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .m-last-play-copy b {
@@ -18962,4 +18962,133 @@ html.theme-magic .mobile-game .m-hand .card.card-selected {
   .menu-screen {
     overflow: hidden;
   }
+}
+
+.m-last-play {
+  padding: 4px 8px;
+  gap: 8px;
+}
+
+.m-last-play .card {
+  width: 42px;
+  height: 56px;
+}
+
+.m-last-play-copy {
+  flex: 0 1 auto;
+  max-width: 44%;
+}
+
+.m-last-play-copy b {
+  font-size: 10.5px;
+}
+
+.m-last-play-copy span {
+  font-size: 12px;
+}
+
+.m-last-play-copy i {
+  font-size: 10px;
+}
+
+.m-last-play-copy em {
+  font-size: 8.5px;
+}
+
+.m-recent-actions {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  max-height: 100%;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(219, 181, 108, 0.18);
+  overflow: hidden;
+}
+
+.m-recent-actions > b {
+  color: var(--muted);
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.m-recent-actions span {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 0;
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.m-recent-actions span em {
+  flex: 0 0 auto;
+  color: var(--gold);
+  font-style: normal;
+}
+
+.m-recent-actions span strong {
+  flex: 0 1 auto;
+  max-width: 62px;
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.m-recent-actions span i {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-style: normal;
+  text-overflow: ellipsis;
+}
+
+.m-recent-empty {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.m-discard-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 13px;
+  font-size: 9px;
+  color: var(--muted);
+  overflow: hidden;
+}
+
+.m-discard-line > b {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 8.5px;
+  font-weight: 500;
+}
+
+.m-discard-line .discard-chip {
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 0 4px;
+  font-size: 9px;
+}
+
+.m-discard-line .discard-chip em {
+  font-size: 8px;
+}
+
+.m-discard-all {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 0 4px;
+  border: 1px solid rgba(219, 181, 108, 0.22);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 8px;
+  cursor: pointer;
 }

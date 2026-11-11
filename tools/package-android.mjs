@@ -361,14 +361,14 @@ const tag = process.env.UPDATE_TAG || `v${version}`;
 const assetBase = `https://cdn.jsdelivr.net/gh/${repo}@${tag}/updates/${updateName}`;
 const rawBase = `https://raw.githubusercontent.com/${repo}/${tag}/updates/${updateName}`;
 const urls = [
-  `https://ghfast.top/${rawBase}`,
-  `https://ghproxy.net/${rawBase}`,
-  rawBase,
+  `https://fastly.jsdelivr.net/gh/${repo}@${tag}/updates/${updateName}`,
+  `https://jsd.onmicrosoft.cn/gh/${repo}@${tag}/updates/${updateName}`,
   assetBase,
   `https://testingcf.jsdelivr.net/gh/${repo}@${tag}/updates/${updateName}`,
   `https://gcore.jsdelivr.net/gh/${repo}@${tag}/updates/${updateName}`,
-  `https://fastly.jsdelivr.net/gh/${repo}@${tag}/updates/${updateName}`,
-  `https://jsd.onmicrosoft.cn/gh/${repo}@${tag}/updates/${updateName}`,
+  `https://ghfast.top/${rawBase}`,
+  `https://ghproxy.net/${rawBase}`,
+  rawBase,
   `https://gh-proxy.com/${rawBase}`,
 ];
 fs.writeFileSync(

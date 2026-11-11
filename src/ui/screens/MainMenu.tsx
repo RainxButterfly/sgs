@@ -51,8 +51,21 @@ export function MainMenu() {
       <div className="ink-bg" />
       <div className="menu-ambient" aria-hidden="true">
         <span className="ambient-stardust" />
+        <span className="ambient-sigil">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="ambient-comet comet-a" />
+        <span className="ambient-comet comet-b" />
         <span className="ambient-orb orb-a" />
         <span className="ambient-orb orb-b" />
+        <span className="ambient-runes">
+          <b>星</b>
+          <b>虹</b>
+          <b>魔</b>
+          <b>法</b>
+        </span>
         <i className="ambient-note note-a">♪</i>
         <i className="ambient-note note-b">✦</i>
         <i className="ambient-note note-c">✧</i>
@@ -72,7 +85,7 @@ export function MainMenu() {
       <div className="menu-content">
         <section className="menu-left">
           <div className="menu-eyebrow">RAINBOW · MAGIC · FRIENDS</div>
-          <h1 className="menu-title">
+          <h1 className="menu-title" data-text="四国闪">
             四国闪
             <small>星 虹 魔 法 篇</small>
           </h1>

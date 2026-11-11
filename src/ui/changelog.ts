@@ -25,6 +25,28 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.6',
+    date: '2026-11-11',
+    title: '响应杀、出牌顺序与安卓下载',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '修复【禁酒】视为【杀】的【酒】无法响应【南蛮入侵】、【决斗】和【借刀杀人】；火杀、雷杀、武圣、龙胆的【杀】响应补充回归测试。',
+          '手机牌桌补回出牌顺序和弃牌堆：中央保留最近一次出牌，同时用一行文字显示前三次动向，顶部显示最近三张弃牌，可点“查看全部”。',
+          '安卓下载改回网页流式通道优先，镜像顺序调整为 fastly、jsd、jsDelivr，再回退其他代理；卡住 30 秒才切换镜像，失败后再走原生下载和浏览器下载。',
+          '窄座位上的主公/身份徽章改回座位内部显示，避免在七人一行时被上边缘裁掉。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '电脑端和手机端主界面加入旋转法阵、缓慢流星、漂浮星虹文字、标题扫光、档案卡光泽和操作图标轻浮；武将卡继续保留呼吸高光，动态更明显但不循环换色。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.5',
     date: '2026-11-11',
     title: '手机牌桌、详情关闭与页面锁定',
@@ -1226,12 +1248,13 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
-const currentDev = VERSIONS.find((entry) => entry.version === '0.9.5')!;
-const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.4')!;
-const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.3')!;
-const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.2')!;
-const minorBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
-const olderBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
+const currentDev = VERSIONS.find((entry) => entry.version === '0.9.6')!;
+const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.5')!;
+const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.4')!;
+const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.3')!;
+const minorBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
+const olderBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
+const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
 const dated = (entries: ChangelogEntry[], date: string): ChangelogEntry[] =>
   entries.map((entry) => ({ ...entry, date }));
 const eight = [
@@ -1276,6 +1299,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   currentMinor,
   minorBase,
   olderBase,
+  oldestBase,
   group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
   group('0.7.0~0.7.12', '2026-11-09', '联机、观战与规则完善', seven),
   group('0.6.0~0.6.9', '2026-11-08', '移动端、联机与规则完善', six),

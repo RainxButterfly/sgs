@@ -2960,7 +2960,7 @@ const SKILLS: SkillDef[] = [
     viewAs: [
       {
         as: '杀',
-        usage: 'play',
+        usage: 'both',
         filter: (_game, _owner, card) => card.name === '酒',
       },
     ],

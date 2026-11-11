@@ -3058,3 +3058,289 @@ html.theme-magic .m-last-play {
 html.theme-magic .m-last-play-copy b {
   color: var(--accent);
 }
+
+/* ---------- 主界面华丽层：法阵、流星、浮字与卡片呼吸 ---------- */
+html.theme-magic .ambient-sigil {
+  position: absolute;
+  left: 4%;
+  top: 12%;
+  width: clamp(340px, 34vw, 520px);
+  height: clamp(340px, 34vw, 520px);
+  border: 1px solid rgba(255, 119, 207, 0.22);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 70px rgba(177, 140, 255, 0.12),
+    0 0 70px rgba(255, 119, 207, 0.08);
+  opacity: 0.55;
+  animation: ambientSigilSpin 70s linear infinite;
+  will-change: transform;
+  pointer-events: none;
+}
+
+html.theme-magic .ambient-sigil::before {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border: 1px dashed rgba(100, 244, 255, 0.24);
+  border-radius: 50%;
+}
+
+html.theme-magic .ambient-sigil::after {
+  content: "";
+  position: absolute;
+  inset: 27%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 30deg,
+    transparent 0deg,
+    rgba(255, 119, 207, 0.16) 70deg,
+    transparent 140deg,
+    rgba(100, 244, 255, 0.14) 230deg,
+    transparent 320deg
+  );
+  opacity: 0.8;
+}
+
+html.theme-magic .ambient-sigil i {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(255, 211, 110, 0.7);
+  background: rgba(255, 211, 110, 0.16);
+  transform: rotate(45deg);
+  box-shadow: 0 0 12px rgba(255, 211, 110, 0.35);
+}
+
+html.theme-magic .ambient-sigil i:nth-child(1) {
+  left: 19%;
+  top: 12%;
+}
+html.theme-magic .ambient-sigil i:nth-child(2) {
+  right: 14%;
+  top: 42%;
+}
+html.theme-magic .ambient-sigil i:nth-child(3) {
+  left: 36%;
+  bottom: 8%;
+}
+
+@keyframes ambientSigilSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+html.theme-magic .ambient-comet {
+  position: absolute;
+  width: 180px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  filter: drop-shadow(0 0 6px rgba(100, 244, 255, 0.6));
+  opacity: 0;
+  transform: rotate(-24deg);
+  animation: ambientComet 13s ease-in infinite;
+  pointer-events: none;
+}
+
+html.theme-magic .ambient-comet.comet-a {
+  right: 8%;
+  top: 16%;
+}
+
+html.theme-magic .ambient-comet.comet-b {
+  right: 38%;
+  top: 6%;
+  width: 130px;
+  animation-delay: 7s;
+  animation-duration: 17s;
+}
+
+@keyframes ambientComet {
+  0%, 68% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(-24deg);
+  }
+  72% {
+    opacity: 0.9;
+  }
+  86% {
+    opacity: 0;
+    transform: translate3d(-420px, 190px, 0) rotate(-24deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-420px, 190px, 0) rotate(-24deg);
+  }
+}
+
+html.theme-magic .ambient-runes b {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.055);
+  font-family: var(--font-calligraphy);
+  font-weight: 500;
+  line-height: 1;
+  animation: ambientRuneFloat 13s ease-in-out infinite;
+  pointer-events: none;
+}
+
+html.theme-magic .ambient-runes b:nth-child(1) {
+  left: 51%;
+  top: 12%;
+  font-size: clamp(58px, 8vw, 120px);
+  animation-delay: -2s;
+}
+html.theme-magic .ambient-runes b:nth-child(2) {
+  right: 8%;
+  top: 36%;
+  font-size: clamp(44px, 6vw, 86px);
+  animation-delay: -6s;
+}
+html.theme-magic .ambient-runes b:nth-child(3) {
+  left: 42%;
+  bottom: 9%;
+  font-size: clamp(48px, 7vw, 96px);
+  animation-delay: -9s;
+}
+html.theme-magic .ambient-runes b:nth-child(4) {
+  right: 24%;
+  bottom: 16%;
+  font-size: clamp(34px, 4.5vw, 64px);
+  animation-delay: -4s;
+}
+
+@keyframes ambientRuneFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(-5deg);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translateY(-14px) rotate(4deg);
+    opacity: 0.8;
+  }
+}
+
+/* 档案卡与操作卡的常驻光泽 */
+html.theme-magic .menu-profile::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  bottom: -50%;
+  left: -35%;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  transform: skewX(-18deg);
+  animation: profileSheen 9.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes profileSheen {
+  0%, 60% { left: -40%; opacity: 0; }
+  70% { opacity: 1; }
+  88%, 100% { left: 130%; opacity: 0; }
+}
+
+html.theme-magic .menu-action:not(.primary) .menu-action-icon {
+  animation: menuIconFloat 4.8s ease-in-out infinite alternate;
+}
+
+html.theme-magic .menu-action:nth-child(2) .menu-action-icon { animation-delay: -1.2s; }
+html.theme-magic .menu-action:nth-child(3) .menu-action-icon { animation-delay: -2.4s; }
+html.theme-magic .menu-action:nth-child(4) .menu-action-icon { animation-delay: -3.1s; }
+html.theme-magic .menu-action:nth-child(5) .menu-action-icon { animation-delay: -1.8s; }
+
+@keyframes menuIconFloat {
+  from { transform: translateY(1px) rotate(-1deg); }
+  to { transform: translateY(-3px) rotate(2deg); }
+}
+
+html.theme-magic .menu-action.primary::before {
+  animation:
+    prismDrift 20s ease-in-out infinite alternate,
+    primaryAura 4.8s ease-in-out infinite alternate;
+}
+
+@keyframes primaryAura {
+  from { opacity: 0.18; filter: blur(8px); }
+  to { opacity: 0.4; filter: blur(13px); }
+}
+
+html.theme-magic .menu-fan-card .fan-art {
+  animation: fanArtGlow 5.2s ease-in-out infinite alternate;
+}
+
+html.theme-magic .menu-fan-card .fan-stars {
+  animation: fanStarsTwinkle 3.4s ease-in-out infinite alternate;
+}
+
+@keyframes fanArtGlow {
+  from { text-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+  to { text-shadow: 0 0 18px rgba(255, 214, 142, 0.5); }
+}
+
+@keyframes fanStarsTwinkle {
+  from { opacity: 0.38; }
+  to { opacity: 0.85; }
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (pointer: coarse) {
+  html.theme-magic .ambient-sigil {
+    left: -8%;
+    top: 0;
+    width: 320px;
+    height: 320px;
+    opacity: 0.4;
+  }
+
+  html.theme-magic .ambient-runes b {
+    font-size: 44px;
+    color: rgba(255, 255, 255, 0.045);
+  }
+
+  html.theme-magic .ambient-runes b:nth-child(1) { left: 43%; top: 16%; }
+  html.theme-magic .ambient-runes b:nth-child(2) { right: 3%; top: 28%; }
+  html.theme-magic .ambient-runes b:nth-child(3) { left: 34%; bottom: 6%; }
+  html.theme-magic .ambient-runes b:nth-child(4) { right: 17%; bottom: 10%; }
+
+  html.theme-magic .ambient-comet.comet-b {
+    display: none;
+  }
+}
+
+/* 标题扫光：不是循环换色，只让一道高光缓慢掠过 */
+html.theme-magic .menu-title {
+  position: relative;
+}
+
+html.theme-magic .menu-title::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  color: transparent;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.78) 48%,
+    transparent 58%
+  );
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: titleGlint 7.5s ease-in-out infinite;
+}
+
+@keyframes titleGlint {
+  0%, 55% { background-position: 160% 0; opacity: 0; }
+  64% { opacity: 1; }
+  82%, 100% { background-position: -60% 0; opacity: 0; }
+}
+
+html.modal-open .menu-profile::after,
+html.modal-open .menu-actions .menu-action .menu-action-icon,
+html.modal-open .menu-actions .menu-action.primary::before,
+html.modal-open .menu-fan-card .fan-art,
+html.modal-open .menu-fan-card .fan-stars,
+html.modal-open .menu-title::after {
+  animation-play-state: paused !important;
+}

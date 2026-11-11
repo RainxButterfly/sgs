@@ -147,7 +147,10 @@ export async function installAndroidUpdateFromWeb(
   onProgress: (downloaded: number, total: number) => void,
   onMirror?: (mirror: UpdateMirrorInfo) => void,
 ): Promise<void> {
-  const urls = info.raw.urls?.length ? info.raw.urls : [info.raw.url];
+  const source = info.raw.urls?.length ? info.raw.urls : [info.raw.url];
+  const preferred = (url: string) =>
+    /fastly\.jsdelivr|jsd\.onmicrosoft|cdn\.jsdelivr/.test(url) ? 0 : 1;
+  const urls = [...source].sort((a, b) => preferred(a) - preferred(b));
   let lastError = '';
   for (let index = 0; index < urls.length; index += 1) {
     onMirror?.({ index: index + 1, total: urls.length });
@@ -183,7 +186,7 @@ export async function installAndroidUpdateFromWeb(
         const reader = response.body.getReader();
         let lastPacket = Date.now();
         const stallTimer = window.setInterval(() => {
-          if (Date.now() - lastPacket > 25000) controller.abort();
+          if (Date.now() - lastPacket > 30000) controller.abort();
         }, 5000);
         try {
           while (true) {
