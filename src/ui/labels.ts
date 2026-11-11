@@ -1,4 +1,5 @@
 import { HERO_MAP } from '../core/deck';
+import { equipSkillId } from '../core/equipment';
 import type { Card, EquipSlot, GameMode, PlayerState, Suit } from '../core/types';
 
 export const SUIT_CHAR: Record<Suit, string> = {
@@ -45,6 +46,10 @@ export function shortCardName(name: string): string {
   return name;
 }
 
+export function cardSuitText(card: Card): string {
+  return `${SUIT_CHAR[card.suit]}${rankText(card.rank)}`;
+}
+
 export function factionKnown(player: PlayerState, mode: GameMode, self = false): boolean {
   if (mode !== 'guozhan' || self) return true;
   return !!player.generalRevealed?.some(Boolean);
@@ -60,8 +65,18 @@ export function visibleHeroNames(player: PlayerState, mode: GameMode, self = fal
 }
 
 export function visibleSkillIds(player: PlayerState, mode: GameMode, self = false): string[] {
+  const ids = generalSkillIds(player, mode, self);
+  for (const card of Object.values(player.equips)) {
+    if (!card) continue;
+    const id = equipSkillId(card.name);
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+
+function generalSkillIds(player: PlayerState, mode: GameMode, self = false): Set<string> {
   if (mode !== 'guozhan' || !player.generalSkills) {
-    return [...new Set([...player.skills, ...player.extraSkills])];
+    return new Set([...player.skills, ...player.extraSkills]);
   }
   const ids = new Set<string>();
   player.generalSkills.forEach((skills, index) => {
@@ -72,7 +87,31 @@ export function visibleSkillIds(player: PlayerState, mode: GameMode, self = fals
   if (self || player.generalRevealed?.some(Boolean)) {
     for (const id of player.extraSkills) ids.add(id);
   }
-  return [...ids];
+  return ids;
+}
+
+export interface HeroSkillGroup {
+  heroId: string;
+  name: string;
+  title?: string;
+  label: string | null;
+  skillIds: string[];
+  revealed: boolean;
+}
+
+export function heroSkillGroups(player: PlayerState, mode: GameMode, self = false): HeroSkillGroup[] {
+  const ids = player.heroIds?.length ? player.heroIds : [player.heroId];
+  return ids.map((id, index) => {
+    const hero = HERO_MAP.get(id);
+    return {
+      heroId: id,
+      name: hero?.name ?? '',
+      title: hero?.title,
+      label: ids.length > 1 ? (index === 0 ? '主将' : '副将') : null,
+      skillIds: player.generalSkills?.[index] ?? hero?.skillIds ?? [],
+      revealed: mode !== 'guozhan' || self || !!player.generalRevealed?.[index],
+    };
+  });
 }
 
 export function playerHeroNames(player: PlayerState): string {

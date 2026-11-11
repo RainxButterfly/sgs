@@ -1349,15 +1349,26 @@ html.theme-magic .rail-feed-list {
   overflow-y: auto;
 }
 
-/* 五谷丰登收起后放在手牌上方中央，避开右下角武将卡 */
+/* 五谷丰登收起后固定悬浮在出牌区上方，始终可展开 */
 html.theme-magic .harvest-mini {
   left: 50%;
   right: auto;
   bottom: 190px;
   transform: translateX(-50%);
+  z-index: 92;
   border-color: var(--accent-soft);
-  background: linear-gradient(180deg, rgba(38, 24, 58, 0.98), rgba(12, 9, 22, 0.99));
-  color: var(--gold-bright);
+  background: linear-gradient(180deg, rgba(46, 28, 70, 0.99), rgba(12, 9, 22, 0.99));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 22px rgba(180, 120, 255, 0.22);
+}
+
+html.theme-magic .harvest-mini:hover {
+  transform: translateX(-50%) translateY(-2px);
+  border-color: var(--gold-bright);
+}
+
+html.theme-magic .harvest-mini-icon {
+  border-color: rgba(255, 240, 210, 0.85);
+  box-shadow: 0 0 12px rgba(255, 220, 150, 0.45);
 }
 
 /* AOE 结算面板移到左上，避免右下角武将卡遮挡 */
@@ -2750,6 +2761,43 @@ html.theme-magic .hover-skill p {
 html.theme-magic .hover-tag {
   border-color: var(--line);
   color: var(--muted);
+}
+
+html.theme-magic .hover-card {
+  scrollbar-color: var(--line) rgba(0, 0, 0, 0.3);
+}
+
+html.theme-magic .hover-card::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+html.theme-magic .hover-card::-webkit-scrollbar-thumb {
+  background: var(--line);
+}
+
+html.theme-magic .hover-card::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-bright);
+}
+
+html.theme-magic .hover-general,
+html.theme-magic .detail-general {
+  border-top-color: var(--line);
+}
+
+html.theme-magic .hover-general-head b,
+html.theme-magic .detail-general-head b {
+  color: var(--gold-bright);
+}
+
+html.theme-magic .hover-dark-note,
+html.theme-magic .detail-dark-note {
+  color: var(--muted);
+}
+
+html.theme-magic .result-dev-note {
+  border-color: var(--line);
+  background: rgba(255, 196, 87, 0.1);
+  color: #ffd98a;
 }
 
 /* 对局右键菜单、移出菜单与错误卡片统一为紫黑玻璃 */

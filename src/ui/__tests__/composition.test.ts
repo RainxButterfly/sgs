@@ -58,6 +58,7 @@ function state(players: PlayerState[]): GameState {
       allowNullification: true,
       allowEquipment: true,
       military: true,
+      turnDirection: -1,
     },
   };
 }

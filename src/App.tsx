@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { loadBackgroundSettings } from './ui/background';
+import { initDevBridge } from './dev/bridge';
+import { openDevtoolPage } from './dev/toolWindow';
 import { ChatPanel } from './ui/components/ChatPanel';
 import { AboutModal } from './ui/components/AboutModal';
 import { AoePanel } from './ui/components/AoePanel';
 import { ChangelogModal } from './ui/components/ChangelogModal';
 import { ClickSparkles } from './ui/components/ClickSparkles';
 import { DamageFeedback } from './ui/components/DamageFeedback';
+import { DevNotice } from './ui/components/DevNotice';
 import { JudgeNotice } from './ui/components/JudgeNotice';
 import { SkillNotice } from './ui/components/SkillNotice';
 import { WuxieWindowNotice } from './ui/components/WuxieWindowNotice';
@@ -61,6 +64,19 @@ export default function App() {
   }, [modalOpen]);
 
   useEffect(() => installClickSound(), []);
+
+  useEffect(() => initDevBridge(), []);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'd') {
+        event.preventDefault();
+        void openDevtoolPage();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     void initDataStorage().then((restored) => {
@@ -147,6 +163,7 @@ export default function App() {
       <IdentityMarkModal />
       <UpdateModal />
       <ProfileSetupModal />
+      <DevNotice />
       <ClickSparkles />
     </div>
   );

@@ -9,7 +9,7 @@ function fakeCard(name: string, suit: Card['suit'] = 'spade', rank = 1): Card {
   return { id: `test-${name}-${suit}-${rank}`, name, suit, rank, type: 'trick' };
 }
 
-function makeGame(io: SimIO, count = 5) {
+function makeGame(io: SimIO, count = 5, direction: 1 | -1 = 1) {
   return new Game(
     {
       players: Array.from({ length: count }, (_, index) => ({
@@ -18,6 +18,7 @@ function makeGame(io: SimIO, count = 5) {
         isBot: true,
       })),
       seed: 20261110,
+      direction,
       rules: { skillsEnabled: false },
     },
     io,
@@ -53,6 +54,29 @@ describe('群体锦囊规则', () => {
     expect(byPlayer.get(0)?.result).toBe('answered');
     expect(byPlayer.get(4)?.result).toBe('damage');
     expect(byPlayer.get(1)?.result).toBe('damage');
+  });
+
+  it('逆时针时南蛮入侵按反方向座次结算', async () => {
+    const io = new SimIO();
+    const game = makeGame(io, 5, -1);
+    const testGame = game as unknown as TestGame;
+    game.state.current = 2;
+    for (const player of game.state.players) player.hand = [];
+    game.state.players[1].hand.push(fakeCard('杀', 'club', 7));
+    game.state.players[3].hand.push(fakeCard('杀', 'spade', 8));
+    await testGame.resolveAoe(game.state.players[2], fakeCard('南蛮入侵', 'spade', 7), '杀');
+
+    const events = io.events.filter(
+      (event): event is Extract<GameEvent, { type: 'aoe' }> => event.type === 'aoe',
+    );
+    const done = events[events.length - 1];
+    expect(done.done).toBe(true);
+    expect(done.entries.map((entry) => entry.playerId)).toEqual([1, 0, 4, 3]);
+    const byPlayer = new Map(done.entries.map((entry) => [entry.playerId, entry] as [number, AoeEntry]));
+    expect(byPlayer.get(1)?.result).toBe('answered');
+    expect(byPlayer.get(3)?.result).toBe('answered');
+    expect(byPlayer.get(0)?.result).toBe('damage');
+    expect(byPlayer.get(4)?.result).toBe('damage');
   });
 });
 

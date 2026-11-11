@@ -3,7 +3,7 @@ import defaultBg from '../../assets/bg-default.jpg';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
-import { cardDisplayName, factionKnown, playerHeroNames, rankText, shortCardName, visibleHeroNames, visibleSkillIds, SUIT_CHAR } from '../labels';
+import { cardDisplayName, cardSuitText, factionKnown, isRedCard, playerHeroNames, rankText, shortCardName, visibleHeroNames, visibleSkillIds, SUIT_CHAR } from '../labels';
 import { compositionText } from '../composition';
 import { tableSeatLabel } from '../labels';
 import { CardView } from '../components/CardView';
@@ -17,6 +17,7 @@ import { GameModals } from '../components/Modals';
 import { PromptBar } from '../components/PromptBar';
 import { SpectatorBadge } from '../components/SpectatorBadge';
 import { useGameSnapshot, useGameStore } from '../store';
+import { PlayArrowLayer } from '../components/PlayArrowLayer';
 import { useDeviceStatus } from '../useDeviceStatus';
 
 function roleText(player: PlayerState, mode: string, self = false): string {
@@ -50,7 +51,8 @@ function equipTokens(player: PlayerState) {
     if (!card) return null;
     const prefix = slot === 'horsePlus' ? '+1 ' : slot === 'horseMinus' ? '-1 ' : '';
     return (
-      <span key={slot} className={`m-gear-token equip-${slot}`} title={`${EQUIP_ICON[slot]} ${card.name}`}>
+      <span key={slot} className={`m-gear-token equip-${slot}`} title={`${EQUIP_ICON[slot]} ${cardSuitText(card)} ${card.name}`}>
+        <i className={`equip-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>{cardSuitText(card)}</i>
         {prefix}
         {card.name}
       </span>
@@ -80,6 +82,8 @@ export function MobileGameScreen() {
   const bgDim = useGameStore((s) => s.bgDim);
   const openChat = useGameStore((s) => s.openChat);
   const chatUnread = useGameStore((s) => s.chatUnread);
+  const autoPlay = useGameStore((s) => s.autoPlay);
+  const setAutoPlay = useGameStore((s) => s.setAutoPlay);
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -144,7 +148,19 @@ export function MobileGameScreen() {
       if (selectedOption.targetAfter) selectedTargets.forEach((id) => targetable.add(id));
     }
   }
-  const opponents = game.state.players.filter((p) => p.id !== humanId);
+  const targeting = pending?.kind === 'play' && !!selectedOption && selectedOption.targetMax > 0;
+  const unavailableHint = (id: number) =>
+    targeting && !targetable.has(id)
+      ? selectedOption?.invalidTargets?.[id] ?? '不可选择'
+      : undefined;
+  const opponents = game.state.players
+    .filter((p) => p.id !== humanId)
+    .sort((a, b) => {
+      const n = game.state.players.length;
+      const ra = ((a.seat - human.seat) * game.state.direction + n) % n;
+      const rb = ((b.seat - human.seat) * game.state.direction + n) % n;
+      return ((n - ra) % n) - ((n - rb) % n);
+    });
   const handLimit = Math.max(0, human.hp + (game.state.rules?.handLimitModifier ?? 0));
   const humanSkills = visibleSkillIds(human, mode, true)
     .map((id) => SKILL_MAP.get(id)?.name)
@@ -226,6 +242,13 @@ export function MobileGameScreen() {
         </span>
         <div className="m-top-actions">
           <SpectatorBadge compact />
+          <button
+            type="button"
+            className={`m-top-auto auto-play-btn ${autoPlay ? 'on' : ''}`}
+            onClick={() => setAutoPlay()}
+          >
+            {autoPlay ? '托管中' : '托管'}
+          </button>
           <button type="button" className="m-top-chat" onClick={openChat}>
             聊天{chatUnread > 0 && <span className="chat-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
           </button>
@@ -293,6 +316,7 @@ export function MobileGameScreen() {
                 `faction-${player.faction}`,
                 mode === 'guozhan' && !factionKnown(player, mode) ? 'is-dark' : '',
                 player.id === currentId ? 'is-current' : '',
+                lastPlay?.playerId === player.id ? 'is-acting' : '',
                 canTarget ? 'is-target' : '',
                 lastPlay?.targets.includes(player.id) ? 'is-targeted' : '',
                 selectedTarget ? 'is-selected' : '',
@@ -305,6 +329,9 @@ export function MobileGameScreen() {
                 const bubble = speechBubbles.find((item) => item.playerId === player.id);
                 return bubble ? <div className="m-seat-speech">{bubble.text}</div> : null;
               })()}
+              {unavailableHint(player.id) && (
+                <span className="m-seat-unavailable">{unavailableHint(player.id)}</span>
+              )}
               {flashes
                 .filter((item) => item.playerId === player.id)
                 .map((item, index) => (
@@ -318,7 +345,7 @@ export function MobileGameScreen() {
                   </span>
                 ))}
               {factionKnown(player, mode) ? (
-                <HoverInfo as="div" className="m-seat-head" content={<HeroHover hero={hero} player={player} />}>
+                <HoverInfo as="div" className="m-seat-head" content={<HeroHover hero={hero} player={player} mode={mode} />}>
                   {seatHead}
                 </HoverInfo>
               ) : (
@@ -455,6 +482,13 @@ export function MobileGameScreen() {
 
       <div className="m-bottom">
         <aside className="m-quick-actions">
+          <button
+            type="button"
+            className={`auto-play-btn ${autoPlay ? 'on' : ''}`}
+            onClick={() => setAutoPlay()}
+          >
+            {autoPlay ? '托管中' : '托管'}
+          </button>
           <button type="button" onClick={() => setLogOpen(true)}>
             战报
           </button>
@@ -475,7 +509,7 @@ export function MobileGameScreen() {
         />
       </div>
 
-      <div className={`m-self ${human.alive ? '' : 'is-dead'}`}>
+      <div className={`m-self ${human.alive ? '' : 'is-dead'}`} data-player-id={human.id}>
         {!human.alive && <span className="m-self-dead">阵亡</span>}
         {(() => {
           const bubble = speechBubbles.find((item) => item.playerId === human.id);
@@ -560,6 +594,7 @@ export function MobileGameScreen() {
 
       </div>
 
+      <PlayArrowLayer />
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />
       {discardOpen && (
         <DiscardModal cards={game.state.discard} onClose={() => setDiscardOpen(false)} />
@@ -570,6 +605,7 @@ export function MobileGameScreen() {
           heroId={game.state.players[detailPlayer].heroId}
           player={game.state.players[detailPlayer]}
           mode={mode}
+          selfView={detailPlayer === humanId}
           showRole={
             detailPlayer === humanId ||
             game.state.players[detailPlayer].roleRevealed ||

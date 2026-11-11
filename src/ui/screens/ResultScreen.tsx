@@ -16,6 +16,7 @@ export function ResultScreen() {
   const result = useGameStore((s) => s.result);
   const profile = useGameStore((s) => s.profile);
   const xpGain = useGameStore((s) => s.xpGain);
+  const devTainted = useGameStore((s) => s.devTainted);
   const restart = useGameStore((s) => s.restart);
   const back = useGameStore((s) => s.backToMenu);
   if (!game || !result) return null;
@@ -82,6 +83,9 @@ export function ResultScreen() {
               </div>
             </div>
           </div>
+        )}
+        {!xpGain && devTainted && (
+          <div className="result-dev-note">测试对局 · 使用过测试工具，本局不获得经验与等级</div>
         )}
         <div className="result-table">
           {game.state.players.map((p) => {

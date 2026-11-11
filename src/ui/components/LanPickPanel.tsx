@@ -4,7 +4,7 @@ import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type Role } from '../../core/types';
 import type { LobbyPlayer } from '../../net/protocol';
 import { HeroDetailModal } from './HeroDetail';
-import { HeroDataHover, HoverInfo } from './HoverInfo';
+import { HeroDataHover, HeroPairHover, HoverInfo } from './HoverInfo';
 
 interface Props {
   players: LobbyPlayer[];
@@ -173,7 +173,12 @@ export function LanPickPanel({
                 me.heroIds?.length === ids.length &&
                 ids.every((id) => me.heroIds?.includes(id));
               return (
-                <HoverInfo key={choice} as="div" className="lobby-hero-wrap" content={<HeroDataHover hero={first} />}>
+                <HoverInfo
+                  key={choice}
+                  as="div"
+                  className="lobby-hero-wrap"
+                  content={heroes.length > 1 ? <HeroPairHover heroes={heroes} /> : <HeroDataHover hero={first} />}
+                >
                 <button
                   type="button"
                   className={`lobby-hero-card ${guozhan ? 'pair-lobby-hero' : ''} faction-${first.faction} ${picked || selectedChoice === choice ? 'picked' : ''} ${taken ? 'taken' : ''}`}
@@ -183,6 +188,7 @@ export function LanPickPanel({
                   <div className="lobby-hero-top">
                     <span className="faction-badge">{FACTION_NAME[first.faction]}</span>
                     <span className="lobby-hero-name">{heroes.map((hero) => hero.name).join(' / ')}</span>
+                    {!guozhan && first.lordSkillId && <span className="lord-general-badge">主公将</span>}
                     <span className="lobby-hero-hp">♥ {heroes.reduce((sum, hero) => sum + hero.hp, 0)}</span>
                   </div>
                   <div className="lobby-hero-title">{heroes.map((hero) => hero.title).join(' · ')}</div>

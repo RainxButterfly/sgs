@@ -9,9 +9,9 @@ function Overlay({ children, title }: { children: React.ReactNode; title: string
     return (
       <div className="modal-minimized">
         <b>{title}</b>
-        <span>牌桌查看中</span>
+        <span>面板已收起</span>
         <button type="button" className="btn primary small" onClick={toggle}>
-          展开
+          展开面板
         </button>
       </div>
     );
@@ -122,23 +122,31 @@ export function ReorderModal() {
   const confirm = useGameStore((s) => s.confirmReorder);
   if (!pending || pending.kind !== 'reorder') return null;
   const cards = pending.cards ?? [];
+  const bottom = cards.filter((card) => !top.includes(card.id));
+  const nameOf = (id: string) => cards.find((c) => c.id === id)?.name;
   return (
     <Overlay title={pending.prompt}>
       {pending.detail && <div className="modal-desc">{pending.detail}</div>}
-      <div className="reorder-tip">点击卡牌加入牌堆顶顺序，再次点击移回牌堆底</div>
+      <div className="reorder-tip">
+        点击卡牌加入牌堆顶顺序，再次点击移回牌堆底；每张牌左上角标注最终位置。
+      </div>
       <div className="modal-cards">
         {cards.map((card) => {
           const idx = top.indexOf(card.id);
+          const bottomIdx = bottom.findIndex((item) => item.id === card.id);
           return (
             <div key={card.id} className="reorder-item">
               <CardView card={card} selected={idx >= 0} onClick={() => toggle(card.id)} />
-              {idx >= 0 && <span className="reorder-badge">顶 {idx + 1}</span>}
+              <span className={`reorder-badge ${idx >= 0 ? 'top' : 'bottom'}`}>
+                {idx >= 0 ? `顶 ${idx + 1}` : `底 ${bottomIdx + 1}`}
+              </span>
             </div>
           );
         })}
       </div>
-      <div className="modal-hint">
-        牌堆顶顺序：{top.map((id) => cards.find((c) => c.id === id)?.name).filter(Boolean).join(' → ') || '（空）'}
+      <div className="modal-hint reorder-summary">
+        <span>牌堆顶：{top.map(nameOf).filter(Boolean).join(' → ') || '（空）'}</span>
+        <span>牌堆底：{bottom.map((card) => card.name).join(' → ') || '（空）'}</span>
       </div>
       <div className="modal-actions">
         <button type="button" className="btn primary" onClick={confirm}>

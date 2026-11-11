@@ -16,6 +16,8 @@ export function TopBar({ logOpen, onToggleLog, onExit }: Props) {
   const spectate = useGameStore((s) => s.spectate);
   const openChat = useGameStore((s) => s.openChat);
   const chatUnread = useGameStore((s) => s.chatUnread);
+  const autoPlay = useGameStore((s) => s.autoPlay);
+  const setAutoPlay = useGameStore((s) => s.setAutoPlay);
   if (!game) return null;
   const current = game.state.players[game.state.current];
   const mine = !spectate && current?.id === humanId;
@@ -42,6 +44,16 @@ export function TopBar({ logOpen, onToggleLog, onExit }: Props) {
       </div>
       <div className="top-actions">
         <SpectatorBadge />
+        {!spectate && (
+          <button
+            type="button"
+            className={`btn ghost small auto-play-btn ${autoPlay ? 'on' : ''}`}
+            title="开启后由电脑替你出牌和响应，随时可以取消"
+            onClick={() => setAutoPlay()}
+          >
+            {autoPlay ? '托管中' : '托管'}
+          </button>
+        )}
         <button type="button" className="btn ghost small" onClick={openChat}>
           聊天{chatUnread > 0 && <span className="chat-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
         </button>

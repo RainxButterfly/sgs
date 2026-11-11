@@ -1,0 +1,357 @@
+:root {
+  color-scheme: dark;
+  --dt-bg: #12100e;
+  --dt-panel: #1c1815;
+  --dt-panel-edge: #2c251d;
+  --dt-line: rgba(219, 181, 108, 0.28);
+  --dt-gold: #dbb56c;
+  --dt-gold-soft: rgba(219, 181, 108, 0.14);
+  --dt-text: #efe6d6;
+  --dt-muted: #a89a83;
+  --dt-ok: #8fd08a;
+  --dt-bad: #e08a7a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background:
+    radial-gradient(1200px 500px at 80% -10%, rgba(219, 181, 108, 0.08), transparent 60%),
+    radial-gradient(900px 420px at -10% 110%, rgba(120, 90, 200, 0.07), transparent 60%),
+    var(--dt-bg);
+  color: var(--dt-text);
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+.dt-app {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dt-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--dt-line);
+}
+
+.dt-head h1 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: 2px;
+  color: var(--dt-gold);
+  font-weight: 700;
+}
+
+.dt-head p {
+  margin: 4px 0 0;
+  color: var(--dt-muted);
+  font-size: 12px;
+}
+
+.dt-state {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--dt-line);
+  color: var(--dt-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.dt-state.ok {
+  color: var(--dt-ok);
+  border-color: rgba(143, 208, 138, 0.5);
+  background: rgba(143, 208, 138, 0.1);
+}
+
+.dt-state.bad {
+  color: var(--dt-bad);
+  border-color: rgba(224, 138, 122, 0.5);
+  background: rgba(224, 138, 122, 0.1);
+}
+
+.dt-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%), var(--dt-panel);
+  border: 1px solid var(--dt-panel-edge);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dt-panel h2 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--dt-gold);
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.dt-unlock {
+  display: flex;
+  gap: 8px;
+}
+
+.dt-unlock input {
+  flex: 1;
+  min-width: 0;
+}
+
+input,
+select {
+  background: #14110e;
+  border: 1px solid var(--dt-panel-edge);
+  color: var(--dt-text);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--dt-gold);
+}
+
+input::placeholder {
+  color: rgba(168, 154, 131, 0.6);
+}
+
+input[type='number'] {
+  width: 84px;
+}
+
+button {
+  font-family: inherit;
+  font-size: 13px;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: filter 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+
+.dt-primary {
+  background: linear-gradient(180deg, #e8c887, #c9a254);
+  color: #241b0e;
+  font-weight: 600;
+  border-color: rgba(255, 235, 190, 0.5);
+}
+
+.dt-primary:hover {
+  filter: brightness(1.08);
+}
+
+.dt-primary:active {
+  filter: brightness(0.94);
+}
+
+.dt-ghost {
+  background: transparent;
+  border-color: var(--dt-line);
+  color: var(--dt-gold);
+}
+
+.dt-ghost:hover {
+  background: var(--dt-gold-soft);
+}
+
+.dt-error {
+  margin: 0;
+  color: var(--dt-bad);
+  font-size: 13px;
+}
+
+.dt-send-error {
+  padding: 10px 14px;
+  border: 1px solid rgba(224, 138, 122, 0.4);
+  border-radius: 10px;
+  background: rgba(224, 138, 122, 0.08);
+}
+
+.dt-summary {
+  margin: 0;
+  color: var(--dt-ok);
+  font-size: 13px;
+}
+
+.dt-note {
+  margin: 0;
+  color: var(--dt-muted);
+  font-size: 12px;
+}
+
+.dt-hero-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dt-hero-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(219, 181, 108, 0.4) transparent;
+}
+
+.dt-hero-list label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--dt-panel-edge);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 13px;
+  user-select: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.dt-hero-list label:hover {
+  border-color: var(--dt-line);
+}
+
+.dt-hero-list label.on {
+  border-color: var(--dt-gold);
+  background: var(--dt-gold-soft);
+  color: var(--dt-gold);
+}
+
+.dt-hero-list input {
+  accent-color: var(--dt-gold);
+  margin: 0;
+}
+
+.dt-hero-list em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--dt-bad);
+  border: 1px solid rgba(224, 138, 122, 0.4);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.dt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.dt-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dt-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dt-row select:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.dt-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(219, 181, 108, 0.4) transparent;
+}
+
+.dt-log li {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--dt-panel-edge);
+  background: #171310;
+  font-size: 13px;
+}
+
+.dt-log li b {
+  color: var(--dt-text);
+  font-weight: 600;
+}
+
+.dt-log li span {
+  font-size: 12px;
+}
+
+.dt-log li.pending span {
+  color: var(--dt-muted);
+}
+
+.dt-log li.applied {
+  border-color: rgba(143, 208, 138, 0.35);
+}
+
+.dt-log li.applied span {
+  color: var(--dt-ok);
+}
+
+.dt-log li.rejected {
+  border-color: rgba(224, 138, 122, 0.35);
+}
+
+.dt-log li.rejected span {
+  color: var(--dt-bad);
+}
+
+.dt-log li em {
+  font-style: normal;
+  color: var(--dt-muted);
+  font-size: 12px;
+  flex-basis: 100%;
+}
+
+@media (max-width: 560px) {
+  .dt-app {
+    padding: 18px 12px 48px;
+  }
+
+  .dt-unlock {
+    flex-direction: column;
+  }
+
+  .dt-row {
+    flex-wrap: wrap;
+  }
+}

@@ -1,8 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Game, buildRoles } from '../core/game';
-import { HEROES, PLAYABLE_HEROES } from '../core/deck';
+import { HEROES, HERO_MAP, PLAYABLE_HEROES } from '../core/deck';
+import { planBotFactions, takeFactionPair } from '../core/guozhan';
 import { safeBotAction } from '../core/smartBot';
-import type { AskRequest, GameAction, GameEvent, GameIO, GameState, Role } from '../core/types';
+import type { AskRequest, Faction, GameAction, GameEvent, GameIO, GameState, Role } from '../core/types';
 import { recordDiagnostic } from '../ui/diagnostics';
 import { DEFAULT_RULES, type CustomRules } from '../core/types';import type { LandlordBidState } from './protocol';
 import {
@@ -235,6 +236,7 @@ export class LanHostManager {
     for (const heroId of this.lastGameHeroes) taken.add(heroId);
     if (this.rules.mode === 'guozhan') {
       const available = new Set(PLAYABLE_HEROES.map((hero) => hero.id).filter((id) => !taken.has(id)));
+      const picked = new Set(this.pickedFactions());
       const choices: string[] = [];
       for (let guard = 0; guard < 20 && choices.length < 5; guard += 1) {
         const factions = ['wei', 'shu', 'wu', 'qun'] as const;
@@ -242,7 +244,10 @@ export class LanHostManager {
           .map((faction) => PLAYABLE_HEROES.filter((hero) => available.has(hero.id) && hero.faction === faction))
           .filter((group) => group.length >= 2);
         if (!groups.length) break;
-        const group = groups[Math.floor(Math.random() * groups.length)];
+        const weighted = groups.flatMap((group) =>
+          picked.has(group[0].faction) ? [group, group, group] : [group],
+        );
+        const group = weighted[Math.floor(Math.random() * weighted.length)];
         const first = group[Math.floor(Math.random() * group.length)];
         const secondPool = group.filter((hero) => hero.id !== first.id);
         const second = secondPool[Math.floor(Math.random() * secondPool.length)];
@@ -339,6 +344,54 @@ export class LanHostManager {
   setFillBots(value: boolean): void {
     if (this.started || this.picking) return;
     this.fillBots = value;
+    this.refreshLobby();
+  }
+
+  private maxSeats(): number {
+    return this.rules.mode === 'duel' ? 2 : this.rules.mode === 'landlord' ? 3 : 8;
+  }
+
+  private refreshGuestIds(): void {
+    this.guests.forEach((guest, index) => {
+      guest.playerId = index + 1;
+    });
+  }
+
+  seatSpectator(connId: number): void {
+    if (this.started || this.picking) return;
+    const index = this.spectators.findIndex((item) => item.connId === connId);
+    if (index < 0 || this.guests.length + 1 >= this.maxSeats()) return;
+    const [spectator] = this.spectators.splice(index, 1);
+    this.guests.push({
+      connId,
+      name: spectator.name,
+      level: spectator.level ?? 1,
+      playerId: 0,
+      connected: true,
+      choices: this.rollChoices(),
+      heroId: null,
+      heroIds: [],
+    });
+    this.refreshGuestIds();
+    this.sendTo(connId, { t: 'seat' } satisfies HostPayload);
+    this.broadcastSpectators();
+    this.refreshLobby();
+  }
+
+  spectateGuest(connId: number): void {
+    if (this.started || this.picking) return;
+    const index = this.guests.findIndex((item) => item.connId === connId);
+    if (index < 0) return;
+    const [guest] = this.guests.splice(index, 1);
+    this.spectators.push({
+      connId,
+      name: guest.name,
+      ip: '',
+      level: guest.level,
+    });
+    this.refreshGuestIds();
+    this.sendTo(connId, { t: 'spectate' } satisfies HostPayload);
+    this.broadcastSpectators();
     this.refreshLobby();
   }
 
@@ -443,13 +496,34 @@ export class LanHostManager {
     } else if (lordIndex < humans) {
       this.lordPlayerId = lordIndex;
       this.lordBotHero = null;
+      if (gameMode === 'identity') {
+        const used = new Set<string>();
+        for (const choice of this.hostChoices) for (const id of choiceHeroIds(choice)) used.add(id);
+        for (const guest of this.guests) {
+          for (const choice of guest.choices) for (const id of choiceHeroIds(choice)) used.add(id);
+        }
+        const lordChoice = PLAYABLE_HEROES.find(
+          (hero) => hero.lordSkillId && !used.has(hero.id),
+        )?.id;
+        if (lordChoice) {
+          if (lordIndex === 0) {
+            this.hostChoices = [...this.hostChoices, lordChoice];
+          } else {
+            const guest = this.guests.find((item) => item.playerId === lordIndex);
+            if (guest) guest.choices = [...guest.choices, lordChoice];
+          }
+        }
+      }
     } else {
       const taken = new Set<string>();
       if (this.hostHeroId) taken.add(this.hostHeroId);
       for (const guest of this.guests) if (guest.heroId) taken.add(guest.heroId);
-      const pool = PLAYABLE_HEROES.filter((hero) => !taken.has(hero.id));
+      const reserved = this.reservedChoiceIds();
+      const pool = PLAYABLE_HEROES.filter((hero) => !taken.has(hero.id) && !reserved.has(hero.id));
+      const lordPool = pool.filter((hero) => hero.lordSkillId);
+      const choices = lordPool.length ? lordPool : pool.length ? pool : PLAYABLE_HEROES;
       this.lordPlayerId = null;
-      this.lordBotHero = pool[Math.floor(Math.random() * pool.length)]?.id ?? PLAYABLE_HEROES[0].id;
+      this.lordBotHero = choices[Math.floor(Math.random() * choices.length)]?.id ?? PLAYABLE_HEROES[0].id;
     }
     this.picking = true;
     this.targetCount = total;
@@ -500,6 +574,12 @@ export class LanHostManager {
     this.lobby = { ...this.lobby, spectators: list };
     this.hooks.onSpectators(list);
     this.broadcast({ t: 'spectators', spectators: list } satisfies HostPayload);
+  }
+
+  private broadcastSpectateAsk(request: AskRequest | null): void {
+    for (const spectator of this.spectators) {
+      this.sendTo(spectator.connId, { t: 'spectateAsk', request } satisfies HostPayload);
+    }
   }
 
   private handleServer(event: ServerEvent): void {
@@ -764,6 +844,14 @@ export class LanHostManager {
       if (guest) this.submitBid(guest.playerId, Number(message.score));
       return;
     }
+    if (message.t === 'takeSeat') {
+      this.seatSpectator(from);
+      return;
+    }
+    if (message.t === 'toSpectate') {
+      if (guest) this.spectateGuest(from);
+      return;
+    }
     if (message.t === 'reveal') {
       if (guest && this.game) {
         const player = this.game.state.players[guest.playerId];
@@ -817,6 +905,34 @@ export class LanHostManager {
     }
   }
 
+  private pickedFactions(): Faction[] {
+    const out: Faction[] = [];
+    for (const id of [...this.hostHeroIds, ...this.guests.flatMap((guest) => guest.heroIds)]) {
+      const faction = HERO_MAP.get(id)?.faction;
+      if (faction) out.push(faction);
+    }
+    return out;
+  }
+
+  private refreshUnpickedChoices(): void {
+    if (this.rules.mode !== 'guozhan' || this.started) return;
+    const picked = new Set(this.pickedFactions());
+    if (!picked.size) return;
+    const hasTeammateChoice = (choices: string[]) =>
+      choices.some((choice) => {
+        const faction = HERO_MAP.get(choiceHeroIds(choice)[0])?.faction;
+        return !!faction && picked.has(faction);
+      });
+    if (!this.hostHeroIds.length && !hasTeammateChoice(this.hostChoices)) {
+      this.hostChoices = this.rollChoices();
+    }
+    for (const guest of this.guests) {
+      if (!guest.heroIds.length && guest.connected && !hasTeammateChoice(guest.choices)) {
+        guest.choices = this.rollChoices();
+      }
+    }
+  }
+
   pickHostHero(choice: string): void {
     if (this.started || this.hostHeroIds.length || !this.hostChoices.includes(choice)) return;
     const heroIds = choiceHeroIds(choice);
@@ -826,6 +942,7 @@ export class LanHostManager {
     if (heroIds.some((id) => taken.has(id) || id === this.lordBotHero)) return;
     this.hostHeroIds = heroIds;
     this.hostHeroId = heroIds[0];
+    this.refreshUnpickedChoices();
     this.refreshLobby();
   }
 
@@ -843,6 +960,7 @@ export class LanHostManager {
     if (heroIds.some((id) => taken.has(id) || id === this.lordBotHero)) return;
     guest.heroIds = heroIds;
     guest.heroId = heroIds[0];
+    this.refreshUnpickedChoices();
     this.refreshLobby();
   }
 
@@ -914,26 +1032,37 @@ export class LanHostManager {
       ask: async (request) => {
         const game = getGame();
         if (!game || this.game !== game || !this.started) return decideBot(undefined, request);
-        if (request.playerId === 0) return this.hooks.askHost(request);
+        this.broadcastSpectateAsk(request);
+        if (request.playerId === 0) {
+          try {
+            return await this.hooks.askHost(request);
+          } finally {
+            this.broadcastSpectateAsk(null);
+          }
+        }
         const player = game.state.players[request.playerId];
         if (!player || player.isBot) {
           const botDelay = this.aiSpeed <= 0 ? 0 : this.aiSpeed + Math.random() * this.aiSpeed * 0.6;
           await new Promise((resolve) => setTimeout(resolve, botDelay));
-          return decideBot(game.state, request);
+          const action = decideBot(game.state, request);
+          this.broadcastSpectateAsk(null);
+          return action;
         }
         const guest = this.guests.find((g) => g.playerId === request.playerId && g.connected);
         if (!guest) {
           game.log(`【${player.name}】已断线，由电脑代打`, 'system');
           const botDelay = this.aiSpeed <= 0 ? 0 : this.aiSpeed + Math.random() * this.aiSpeed * 0.6;
           await new Promise((resolve) => setTimeout(resolve, botDelay));
-          return decideBot(game.state, request);
+          const action = decideBot(game.state, request);
+          this.broadcastSpectateAsk(null);
+          return action;
         }
         this.sendTo(guest.connId, {
           t: 'ask',
           request,
           state: redactState(game.state, guest.playerId),
         });
-        return await new Promise<GameAction>((resolve) => {
+        const action = await new Promise<GameAction>((resolve) => {
           const timer = setTimeout(() => {
             this.pending.delete(player.id);
             game.log(`【${player.name}】响应超时，由电脑代打`, 'system');
@@ -941,6 +1070,8 @@ export class LanHostManager {
           }, 180000);
           this.pending.set(player.id, { request, resolve, timer });
         });
+        this.broadcastSpectateAsk(null);
+        return action;
       },
       delay: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     };
@@ -983,20 +1114,19 @@ export class LanHostManager {
       })),
     ];
     const usedByHumans = new Set(players.flatMap((player) => player.heroIds ?? []));
+    const available = new Set(
+      PLAYABLE_HEROES.map((hero) => hero.id).filter((id) => !usedByHumans.has(id)),
+    );
+    const humanFactions = players
+      .map((player) => HERO_MAP.get(player.heroIds?.[0] ?? player.heroId)?.faction)
+      .filter((faction): faction is Faction => !!faction);
+    const botFactions = gameMode === 'guozhan' ? planBotFactions(total, humanFactions) : [];
+    let botFactionIndex = 0;
     const takeBotPair = (): string[] => {
-      const factions = ['wei', 'shu', 'wu', 'qun'] as const;
-      const groups = factions
-        .map((faction) =>
-          PLAYABLE_HEROES.filter((hero) => hero.faction === faction && !usedByHumans.has(hero.id)),
-        )
-        .filter((group) => group.length >= 2);
-      if (!groups.length) return [];
-      const group = groups[Math.floor(Math.random() * groups.length)];
-      const first = group.splice(Math.floor(Math.random() * group.length), 1)[0];
-      const second = group[Math.floor(Math.random() * group.length)];
-      usedByHumans.add(first.id);
-      usedByHumans.add(second.id);
-      return [first.id, second.id];
+      const pair = takeFactionPair(available, botFactions[botFactionIndex]);
+      botFactionIndex += 1;
+      if (!pair) return [];
+      return [pair.primary, pair.secondary];
     };
     for (let i = players.length; i < total; i += 1) {
       if (gameMode === 'guozhan') {
@@ -1029,7 +1159,7 @@ export class LanHostManager {
       {
         players,
         seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
-      direction: Math.random() < 0.5 ? 1 : -1,
+        direction: this.rules?.turnDirection ?? -1,
         roles,
         rules: this.mode === 'custom' || gameMode !== 'identity' ? this.rules : { military: this.rules.military },
       },
@@ -1102,12 +1232,14 @@ interface ClientHooks {
   onLobby: (lobby: LobbyState) => void;
   onStart: (playerId: number) => void;
   onRole: (role: Role) => void;
+  onSeat?: () => void;
   onSpectate: () => void;
   onSpectators: (spectators: SpectatorInfo[]) => void;
   onState: (state: Game['state']) => void;
   onAsk: (request: AskRequest, state: Game['state']) => void;
   onEvent: (event: GameEvent) => void;
   onEnd: (text: string, winner: string) => void;
+  onSpectateAsk?: (request: AskRequest | null) => void;
   onChat: (message: ChatMessage) => void;
   onError: (message: string) => void;
   onKicked?: (reason: string) => void;
@@ -1179,6 +1311,9 @@ export class LanClientManager {
       case 'role':
         this.hooks.onRole(message.role);
         break;
+      case 'seat':
+        this.hooks.onSeat?.();
+        break;
       case 'spectate':
         this.hooks.onSpectate();
         break;
@@ -1190,6 +1325,9 @@ export class LanClientManager {
         break;
       case 'ask':
         this.hooks.onAsk(message.request, message.state);
+        break;
+      case 'spectateAsk':
+        this.hooks.onSpectateAsk?.(message.request);
         break;
       case 'event':
         this.hooks.onEvent(message.ev);
@@ -1237,6 +1375,14 @@ export class LanClientManager {
     const value = text.trim().slice(0, 200);
     if (!value) return;
     this.relay.send({ t: 'chat', text: value } satisfies GuestPayload);
+  }
+
+  requestSeat(): void {
+    this.relay.send({ t: 'takeSeat' } satisfies GuestPayload);
+  }
+
+  requestSpectate(): void {
+    this.relay.send({ t: 'toSpectate' } satisfies GuestPayload);
   }
 
   leave(): void {

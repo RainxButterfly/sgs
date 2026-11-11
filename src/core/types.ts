@@ -105,7 +105,7 @@ export interface GameState {
   /** 本局第一位行动者，用于计算一、二、三号桌位 */
   startPlayer: number;
   turn: number;
-  /** 1 顺时针，-1 逆时针；每局开始时随机 */
+  /** 1 顺时针，-1 逆时针；房主可选，默认逆时针 */
   direction: 1 | -1;
   phase: Phase;
   over: boolean;
@@ -130,6 +130,7 @@ export interface CustomRules {
   allowNullification: boolean;
   allowEquipment: boolean;
   military: boolean;
+  turnDirection: 1 | -1;
 }
 
 export const DEFAULT_RULES: CustomRules = {
@@ -144,6 +145,7 @@ export const DEFAULT_RULES: CustomRules = {
   allowNullification: true,
   allowEquipment: true,
   military: true,
+  turnDirection: -1,
 };
 
 export interface CardOption {
@@ -154,6 +156,8 @@ export interface CardOption {
   extraCardIds?: string[];
   element?: Element;
   validTargets: number[];
+  /** 不可选目标的具体原因，用于座次提示 */
+  invalidTargets?: Record<number, string>;
   targetMin: number;
   targetMax: number;
   /** 此选项不受距离限制（如弓骑） */

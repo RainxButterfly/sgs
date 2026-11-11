@@ -20,7 +20,7 @@ if (fs.existsSync('src-tauri/target/release/WebView2Loader.dll')) {
 fs.copyFileSync('src-tauri/icons/icon.ico', path.join(stage, 'icon.ico'));
 fs.writeFileSync(
   path.join(stage, 'README.txt'),
-  `四国闪 · 星河 v${version}\n\n作者：星河一叶Roxy\n维护邮箱：ck_xuv@vip.qq.com\n\n安装后从桌面或开始菜单启动。\n首次创建房间若出现 Windows 防火墙提示，请允许专用网络访问。\n程序安装在当前用户目录，可直接使用内置自动更新。\n`,
+  `四国闪 · 星河 v${version}\n\n作者：星河一叶Roxy\n\n安装后从桌面或开始菜单启动。\n首次创建房间若出现 Windows 防火墙提示，请允许专用网络访问。\n程序安装在当前用户目录，可直接使用内置自动更新。\n`,
   'utf8',
 );
 

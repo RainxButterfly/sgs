@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { Game, buildRoles } from '../core/game';
-import { HEROES, PLAYABLE_HEROES } from '../core/deck';
+import { HEROES, HERO_MAP, PLAYABLE_HEROES } from '../core/deck';
+import { planBotFactions, takeFactionPair } from '../core/guozhan';
+import { getDevPickPool } from '../dev/bridge';
 import { safeBotAction } from '../core/smartBot';
 import { endGameSession, markGameSession, recordDiagnostic } from './diagnostics';
 import { LanClientManager, LanHostManager, createRoomInfo, initPlatform, isAndroidApp, isTauri, parseAddress } from '../net/lan';
@@ -344,6 +346,7 @@ interface GameStore {
   version: number;
   pending: AskRequest | null;
   skipWuxie: boolean;
+  autoPlay: boolean;
   chatMessages: ChatMessage[];
   chatOpen: boolean;
   chatUnread: number;
@@ -352,6 +355,7 @@ interface GameStore {
   lastJudge: JudgeEvent | null;
   lastDiscard: DiscardEvent | null;
   cardHistory: CardHistoryEntry[];
+  discardOrigins: Record<string, { playerId: number; reason?: string }>;
   harvest: HarvestState | null;
   aoe: AoeState | null;
   flash: FlashEvent | null;
@@ -374,11 +378,16 @@ interface GameStore {
   lanPlayerId: number;
   lanConnId: number;
   spectate: boolean;
+  spectateAsk: AskRequest | null;
   spectators: SpectatorInfo[];
   joinPreset: { address: string; code: string } | null;
   suspended: boolean;
   savedLanSession: SavedLanSession | null;
   appVersion: string;
+  devStatus: 'off' | 'active' | 'blocked';
+  devMessage: string;
+  devBatch: string;
+  devTainted: boolean;
   updateInfo: AppUpdateInfo | null;
   updateState: UpdateState;
   updateProgress: { downloaded: number; total: number };
@@ -431,12 +440,15 @@ interface GameStore {
   pickLanHero: (heroId: string) => void;
   bidLan: (score: number) => void;
   revealGeneral: (index: number) => void;
+  requestSeat: () => void;
+  requestToSpectate: () => void;
   leaveLan: () => void;
   suspendGame: () => void;
   resumeGame: () => void;
   quitSuspendedGame: () => void;
   resumeSavedLanSession: () => Promise<void>;
   dismissSavedLanSession: () => void;
+  returnToLobby: () => void;
   checkUpdate: (manual?: boolean) => Promise<void>;
   installUpdate: () => Promise<void>;
   openUpdateModal: () => void;
@@ -486,6 +498,7 @@ interface GameStore {
   chooseOption: (optionId: string) => void;
   closeAsChooser: () => void;
   toggleModalMinimized: () => void;
+  setAutoPlay: (value?: boolean) => void;
 }
 
 let resolveAsk: ((action: GameAction) => void) | null = null;
@@ -495,6 +508,30 @@ function clearAskTimer(): void {
     window.clearTimeout(askTimer);
     askTimer = null;
   }
+}
+let autoPlayTimer: number | null = null;
+function clearAutoPlayTimer(): void {
+  if (autoPlayTimer !== null) {
+    window.clearTimeout(autoPlayTimer);
+    autoPlayTimer = null;
+  }
+}
+function scheduleAutoPlay(): void {
+  clearAutoPlayTimer();
+  const state = useGameStore.getState();
+  if (!state.autoPlay) return;
+  const pending = state.pending;
+  if (!pending || pending.playerId !== state.humanId) return;
+  const delay = Math.max(600, state.aiSpeed);
+  autoPlayTimer = window.setTimeout(() => {
+    autoPlayTimer = null;
+    const now = useGameStore.getState();
+    if (!now.autoPlay || !now.pending || now.pending.id !== pending.id) return;
+    const action = safeBotAction(now.game?.state, now.pending, (error) => {
+      recordDiagnostic('error', `托管决策失败：${(error as Error)?.message ?? error}`, (error as Error)?.stack);
+    });
+    now.submit(action);
+  }, delay);
 }
 let eventSeq = 0;
 let recordedGame: GameLike | null = null;
@@ -506,7 +543,11 @@ const io: GameIO = {
   emit: (ev) => useGameStore.getState().event(ev),
   ask: (req) => {
     const state = useGameStore.getState();
-    if (req.playerId === state.humanId) return state.ask(req);
+    if (req.playerId === state.humanId) {
+      const waiting = state.ask(req);
+      if (state.autoPlay) scheduleAutoPlay();
+      return waiting;
+    }
     return new Promise((resolve) => {
       const speed = useGameStore.getState().aiSpeed;
       const wait = speed <= 0 ? 0 : speed + Math.random() * speed * 0.6;
@@ -535,6 +576,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   version: 0,
   pending: null,
   skipWuxie: false,
+  autoPlay: false,
   chatMessages: [],
   chatOpen: false,
   chatUnread: 0,
@@ -543,6 +585,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lastJudge: null,
   lastDiscard: null,
   cardHistory: [],
+  discardOrigins: {},
   harvest: null,
   aoe: null,
   flash: null,
@@ -565,11 +608,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lanPlayerId: 0,
   lanConnId: -1,
   spectate: false,
+  spectateAsk: null,
   spectators: [],
   joinPreset: null,
   suspended: false,
   savedLanSession: loadSavedLanSession(),
   appVersion: APP_VERSION,
+  devStatus: 'off',
+  devMessage: '',
+  devBatch: '',
+  devTainted: false,
   updateInfo: null,
   updateState: 'idle',
   updateProgress: { downloaded: 0, total: 0 },
@@ -617,8 +665,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })),
     ];
     const game = new Game(
-      { players, seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
-      direction: Math.random() < 0.5 ? 1 : -1, rules },
+      {
+        players,
+        seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
+        direction: rules?.turnDirection ?? -1,
+        rules,
+      },
       io,
     );
     set({
@@ -628,6 +680,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       suspended: false,
       humanId: 0,
       firstPlayerId: null,
+      devTainted: false,
       lanRole: null,
       lanHost: null,
       lanClient: null,
@@ -643,6 +696,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastJudge: null,
       lastDiscard: null,
       cardHistory: [],
+      discardOrigins: {},
       flash: null,
       flashes: [],
       damageNotice: null,
@@ -687,6 +741,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     let bots: { name: string; heroId: string; heroIds?: string[] }[];
     let candidates: string[];
     let candidatePairs: { primary: string; secondary: string }[] | undefined;
+    const visibleLordIndex = count > 2 && mode === 'identity' ? roles.indexOf('lord') : -1;
+    const humanIsLord = visibleLordIndex === 0;
+    const lordHeroIds = new Set(
+      PLAYABLE_HEROES.filter((hero) => hero.lordSkillId).map((hero) => hero.id),
+    );
     if (mode === 'guozhan') {
       const available = new Set(pool);
       bots = Array.from({ length: Math.max(0, count - 1) }, (_, i) => {
@@ -700,13 +759,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
       candidatePairs = randomHeroPairs(5, available);
       candidates = candidatePairs.map((pair) => pair.primary);
     } else {
-      bots = Array.from({ length: Math.max(0, count - 1) }, (_, i) => ({
-        name: botNames[i % botNames.length],
-        heroId: pool.pop()!,
-      }));
-      candidates = pool.slice(0, 5);
+      bots = Array.from({ length: Math.max(0, count - 1) }, (_, i) => {
+        if (visibleLordIndex === i + 1) {
+          const lordIndex = pool.findIndex((id) => lordHeroIds.has(id));
+          if (lordIndex >= 0) {
+            const [lordHero] = pool.splice(lordIndex, 1);
+            return { name: botNames[i % botNames.length], heroId: lordHero };
+          }
+        }
+        return { name: botNames[i % botNames.length], heroId: pool.pop()! };
+      });
+      if (humanIsLord) {
+        const picks: string[] = [];
+        for (const id of pool) {
+          if (picks.length >= 2) break;
+          if (lordHeroIds.has(id)) picks.push(id);
+        }
+        for (const id of pool) {
+          if (picks.length >= 6) break;
+          if (!picks.includes(id)) picks.push(id);
+        }
+        candidates = picks.slice(0, 6);
+      } else {
+        candidates = pool.slice(0, 5);
+      }
+      const devPool = getDevPickPool();
+      if (devPool?.length) {
+        const forced = devPool.filter((id) => HERO_MAP.has(id) && !bots.some((bot) => bot.heroId === id));
+        if (forced.length) candidates = forced;
+      }
     }
-    const visibleLordIndex = count > 2 && mode === 'identity' ? roles.indexOf('lord') : -1;
     const lordIndex = visibleLordIndex;
     const lordHeroId = lordIndex > 0 ? bots[lordIndex - 1].heroId : null;
     const bid =
@@ -720,6 +802,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       preGame: { count, rules, candidates, candidatePairs, bots, roles, lordIndex, lordHeroId, bid },
       humanId: 0,
       firstPlayerId: null,
+      devTainted: false,
       lanRole: null,
       lanHost: null,
       lanClient: null,
@@ -735,6 +818,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastJudge: null,
       lastDiscard: null,
       cardHistory: [],
+      discardOrigins: {},
       flash: null,
       flashes: [],
       damageNotice: null,
@@ -800,11 +884,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
       },
       ...preGame.bots.map((bot) => ({ ...bot, isBot: true })),
     ];
+    if (preGame.rules?.mode === 'guozhan' && pair) {
+      const humanFaction = HERO_MAP.get(pair.primary)?.faction;
+      if (humanFaction) {
+        const botFactions = planBotFactions(players.length, [humanFaction]);
+        const available = new Set(
+          PLAYABLE_HEROES.map((hero) => hero.id).filter(
+            (id) => id !== pair.primary && id !== pair.secondary,
+          ),
+        );
+        players.forEach((player, index) => {
+          if (index === 0) return;
+          const picked = takeFactionPair(available, botFactions[index - 1]);
+          if (picked) {
+            player.heroId = picked.primary;
+            player.heroIds = [picked.primary, picked.secondary];
+          }
+        });
+      }
+    }
     const game = new Game(
       {
         players,
         seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
-      direction: Math.random() < 0.5 ? 1 : -1,
+        direction: preGame.rules?.turnDirection ?? -1,
         roles: preGame.roles,
         rules: preGame.rules,
       },
@@ -819,10 +922,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       firstPlayerId: null,
       pending: null,
       result: null,
+      devTainted: !!getDevPickPool()?.length,
       lastPlay: null,
       lastJudge: null,
       lastDiscard: null,
       cardHistory: [],
+      discardOrigins: {},
       flash: null,
       flashes: [],
       damageNotice: null,
@@ -850,8 +955,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     get().lanClient?.leave();
     clearSavedLanSession();
     resolveAsk = null;
+    clearAutoPlayTimer();
     set({
       savedLanSession: null,
+      autoPlay: false,
       chatMessages: [],
       chatOpen: false,
       chatUnread: 0,
@@ -878,6 +985,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastJudge: null,
       lastDiscard: null,
       cardHistory: [],
+      discardOrigins: {},
       harvest: null,
       aoe: null,
       flash: null,
@@ -889,6 +997,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   restart: () => {
     const { lanRole, lanHost, lanClient, game } = get();
+    clearAutoPlayTimer();
+    set({ autoPlay: false });
     if (lanRole === 'host') {
       lanHost?.returnToLobby();
       set({
@@ -900,6 +1010,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastJudge: null,
         lastDiscard: null,
         cardHistory: [],
+        discardOrigins: {},
         flash: null,
         flashes: [],
         damageNotice: null,
@@ -922,6 +1033,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         lastJudge: null,
         lastDiscard: null,
         cardHistory: [],
+        discardOrigins: {},
         flash: null,
         flashes: [],
         damageNotice: null,
@@ -970,12 +1082,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
             humanId: 0,
             firstPlayerId: null,
             lanPlayerId: 0,
+            devTainted: false,
             pending: null,
             result: null,
             lastPlay: null,
             lastJudge: null,
             lastDiscard: null,
             cardHistory: [],
+            discardOrigins: {},
             flash: null,
             flashes: [],
             damageNotice: null,
@@ -1046,6 +1160,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           lastJudge: null,
           lastDiscard: null,
           cardHistory: [],
+          discardOrigins: {},
           flash: null,
           flashes: [],
           damageNotice: null,
@@ -1057,6 +1172,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           lanPlayerId: playerId,
           spectate: false,
           screen: 'game',
+          devTainted: false,
           pending: null,
           result: null,
           game: null,
@@ -1064,6 +1180,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           lastJudge: null,
           lastDiscard: null,
           cardHistory: [],
+          discardOrigins: {},
           flash: null,
           flashes: [],
           damageNotice: null,
@@ -1082,6 +1199,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           lastJudge: null,
           lastDiscard: null,
           cardHistory: [],
+          discardOrigins: {},
           flash: null,
           flashes: [],
           damageNotice: null,
@@ -1090,6 +1208,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
           asChooser: null,
           cardChoices: [],
           reorderTop: [],
+          version: get().version + 1,
+        }),
+      onSeat: () =>
+        set({
+          spectate: false,
+          screen: 'lobby',
           version: get().version + 1,
         }),
       onSpectators: (spectators) =>
@@ -1127,13 +1251,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
             get().submit({ type: 'cancel' });
           }, request.timeout);
         }
+        if (get().autoPlay) scheduleAutoPlay();
       },
+      onSpectateAsk: (request) => set({ spectateAsk: request, version: get().version + 1 }),
       onEvent: (event) => get().event(event),
       onChat: (message) => get().receiveChat(message),
       onEnd: (text, winner) => {
         if (get().result) return;
         clearSavedLanSession();
-        set({ result: { text, winner }, savedLanSession: null });
+        set({ result: { text, winner }, savedLanSession: null, spectateAsk: null });
         setTimeout(() => {
           if (get().result && !get().spectate) set({ screen: 'result' });
         }, 1400);
@@ -1298,6 +1424,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { lanRole, lanHost, lanClient } = get();
     if (lanRole === 'host') lanHost?.submitBid(0, score);
     else if (lanRole === 'client') lanClient?.submitBid(score);
+  },
+  requestSeat: () => {
+    const { lanRole, lanHost, lanClient, lanConnId } = get();
+    if (lanRole === 'host') lanHost?.seatSpectator(lanConnId);
+    else if (lanRole === 'client') lanClient?.requestSeat();
+  },
+
+  requestToSpectate: () => {
+    const { lanRole, lanClient } = get();
+    if (lanRole === 'client') lanClient?.requestSpectate();
   },
 
   pickLanHero: (heroId) => {
@@ -1509,6 +1645,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastJudge: null,
       lastDiscard: null,
       cardHistory: [],
+      discardOrigins: {},
       harvest: null,
       aoe: null,
       flash: null,
@@ -1562,6 +1699,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
     clearSavedLanSession();
     set({ savedLanSession: null });
   },
+  returnToLobby: () => {
+    const { lanRole, lobby } = get();
+    if (!lobby || lanRole !== 'client') {
+      get().leaveLan();
+      return;
+    }
+    get().game?.stop?.();
+    clearAutoPlayTimer();
+    set({
+      screen: 'lobby',
+      autoPlay: false,
+      game: null,
+      result: null,
+      pending: null,
+      promptDeadline: null,
+      selected: null,
+      selectedTargets: [],
+      asChooser: null,
+      cardChoices: [],
+      reorderTop: [],
+      lastPlay: null,
+      lastJudge: null,
+      lastDiscard: null,
+      cardHistory: [],
+      flash: null,
+      flashes: [],
+      damageNotice: null,
+      revealNotice: null,
+      lastSkill: null,
+      responseWindow: null,
+      spectateAsk: null,
+      version: get().version + 1,
+    });
+  },
 
   quitSuspendedGame: () => {
     get().lanClient?.leave();
@@ -1590,6 +1761,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastJudge: null,
       lastDiscard: null,
       cardHistory: [],
+      discardOrigins: {},
       flash: null,
       flashes: [],
       damageNotice: null,
@@ -1717,6 +1889,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
           turn,
         },
       ].slice(-40);
+      const discardOrigins = { ...state.discardOrigins };
+      for (const card of ev.cards) {
+        discardOrigins[card.id] = { playerId: ev.playerId, reason: ev.reason };
+      }
+      patch.discardOrigins = discardOrigins;
     } else if (ev.type === 'gain' && ev.cards.length > 0) {
       eventSeq += 1;
       patch.cardHistory = [
@@ -1876,9 +2053,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
           });
           if (xpRecordedGame !== finished) {
             xpRecordedGame = finished;
-            const realPlayers = finishedState.players.filter((player) => !player.isBot).length;
-            const awarded = applyMatchXp(current.profile, mode, result, realPlayers);
-            set({ profile: awarded.profile, xpGain: awarded.gain });
+            if (current.devTainted) {
+              set({ xpGain: null });
+            } else {
+              const realPlayers = finishedState.players.filter((player) => !player.isBot).length;
+              const awarded = applyMatchXp(current.profile, mode, result, realPlayers);
+              set({ profile: awarded.profile, xpGain: awarded.gain });
+            }
           }
         }, delay);
       }
@@ -1946,6 +2127,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   submit: (action) => {
     clearAskTimer();
+    clearAutoPlayTimer();
     const { lanRole, lanClient } = get();
     if (lanRole === 'client') {
       lanClient?.sendAction(action);
@@ -2176,6 +2358,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   chooseOption: (optionId) => get().submit({ type: 'chooseOption', optionId }),
 
   toggleModalMinimized: () => set({ modalMinimized: !get().modalMinimized }),
+
+  setAutoPlay: (value) => {
+    const next = value ?? !get().autoPlay;
+    clearAutoPlayTimer();
+    set({ autoPlay: next, version: get().version + 1 });
+    if (next) scheduleAutoPlay();
+  },
 }));
 
 export function randomHeroChoices(n: number): string[] {
@@ -2189,17 +2378,7 @@ export function randomHeroChoices(n: number): string[] {
 }
 
 export function takeHeroPair(available: Set<string>): { primary: string; secondary: string } | null {
-  const factions = ['wei', 'shu', 'wu', 'qun'] as const;
-  const groups = factions
-    .map((faction) => PLAYABLE_HEROES.filter((hero) => available.has(hero.id) && hero.faction === faction))
-    .filter((group) => group.length >= 2);
-  if (!groups.length) return null;
-  const group = [...groups[Math.floor(Math.random() * groups.length)]];
-  const primary = group.splice(Math.floor(Math.random() * group.length), 1)[0].id;
-  const secondary = group.splice(Math.floor(Math.random() * group.length), 1)[0].id;
-  available.delete(primary);
-  available.delete(secondary);
-  return { primary, secondary };
+  return takeFactionPair(available);
 }
 
 export function randomHeroPairs(n: number, available: Set<string>): { primary: string; secondary: string }[] {

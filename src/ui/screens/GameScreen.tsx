@@ -12,30 +12,10 @@ import { PlayerSeat } from '../components/PlayerSeat';
 import { PromptBar } from '../components/PromptBar';
 import { TableCenter } from '../components/TableCenter';
 import { TablePiles } from '../components/TablePiles';
+import { PlayArrowLayer } from '../components/PlayArrowLayer';
 import { TopBar } from '../components/TopBar';
 import { tableSeatLabel } from '../labels';
-
-type SeatLayout = [number, number][];
-
-const WIDE_SEAT_LAYOUT: Record<number, SeatLayout> = {
-  1: [[50, 20]],
-  2: [[35, 24], [65, 24]],
-  3: [[10, 56], [50, 20], [90, 56]],
-  4: [[10, 68], [32, 24], [68, 24], [90, 68]],
-  5: [[10, 68], [18, 32], [50, 20], [82, 32], [90, 68]],
-  6: [[10, 68], [12, 34], [34, 24], [66, 24], [88, 34], [90, 68]],
-  7: [[10, 68], [10, 34], [30, 24], [50, 20], [70, 24], [90, 34], [90, 68]],
-};
-
-const COMPACT_SEAT_LAYOUT: Record<number, SeatLayout> = {
-  1: [[50, 22]],
-  2: [[35, 24], [65, 24]],
-  3: [[50, 20], [14, 58], [86, 58]],
-  4: [[30, 22], [70, 22], [14, 60], [86, 60]],
-  5: [[20, 22], [50, 20], [80, 22], [14, 62], [86, 62]],
-  6: [[22, 22], [50, 20], [78, 22], [14, 49], [86, 49], [50, 75]],
-  7: [[22, 22], [50, 20], [78, 22], [14, 49], [86, 49], [14, 74], [86, 74]],
-};
+import { COMPACT_SEAT_LAYOUT, WIDE_SEAT_LAYOUT, tableRingIndex } from '../seating';
 
 export function GameScreen() {
   const { game } = useGameSnapshot();
@@ -147,7 +127,7 @@ export function GameScreen() {
         <div className="board-area">
           <div className="ring">
             {opponents.map((player) => {
-              const rel = (player.seat - human.seat + n) % n;
+              const rel = tableRingIndex(player.seat, human.seat, n, game.state.direction);
               const [x, y] = seatLayout[Math.max(0, Math.min(m - 1, rel - 1))];
               return (
                 <PlayerSeat
@@ -155,6 +135,7 @@ export function GameScreen() {
                   player={player}
                   mode={displayMode}
                   current={player.id === currentId}
+                  acting={lastPlay?.playerId === player.id}
                   targetable={targetable.has(player.id)}
                   targeted={!!lastPlay?.targets.includes(player.id)}
                   selected={selectedTargets.includes(player.id)}
@@ -170,7 +151,11 @@ export function GameScreen() {
                   speech={speechBubbles.find((bubble) => bubble.playerId === player.id) ?? null}
                   style={{ left: `${x}%`, top: `${y}%` }}
                   tableNo={tableSeatLabel(game.state.startPlayer, game.state.direction, player.id, n)}
-                  unavailableHint={targeting && !targetable.has(player.id) ? '距离不足' : undefined}
+                  unavailableHint={
+                    targeting && !targetable.has(player.id)
+                      ? selectedOption?.invalidTargets?.[player.id] ?? '不可选择'
+                      : undefined
+                  }
                   onDetail={() => setDetailPlayer(player.id)}
                   onClick={() => useGameStore.getState().seatClick(player.id)}
                 />
@@ -181,6 +166,7 @@ export function GameScreen() {
             <TableCenter />
           </div>
           <TablePiles />
+      <PlayArrowLayer />
         </div>
         <GameRail onShowLog={() => setLogOpen(true)} />
       </div>
@@ -217,6 +203,7 @@ export function GameScreen() {
           heroId={game.state.players[detailPlayer].heroId}
           player={game.state.players[detailPlayer]}
           mode={displayMode}
+          selfView={detailPlayer === humanId}
           showRole={
             detailPlayer === humanId ||
             game.state.players[detailPlayer].roleRevealed ||

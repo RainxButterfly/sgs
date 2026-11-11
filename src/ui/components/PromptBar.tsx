@@ -12,6 +12,7 @@ export function PromptBar() {
   const wuxieWindow = useGameStore((s) => s.wuxieWindow);
   const wuxieDeadline = useGameStore((s) => s.wuxieDeadline);
   const promptDeadline = useGameStore((s) => s.promptDeadline);
+  const autoPlay = useGameStore((s) => s.autoPlay);
 
   if (!game) return null;
   if (pending && pending.playerId !== humanId) {
@@ -83,6 +84,7 @@ export function PromptBar() {
           <div className="prompt-title">
             <span className="prompt-dot" />
             {pending.prompt}
+            {autoPlay && <span className="prompt-auto-tag">AI 托管中</span>}
             <span className="prompt-sub">
               {cardOptions.length === 0 ? '无可用手牌' : '点击手牌出牌，可点击其他角色选择目标'}
             </span>
@@ -213,6 +215,7 @@ export function PromptBar() {
           <div className="prompt-title">
             <span className="prompt-dot red" />
             {isWuxie ? '无懈可击 · 可以抵消这张锦囊' : pending.prompt}
+            {autoPlay && <span className="prompt-auto-tag">AI 托管中</span>}
             {pending.timeout && promptDeadline && (
               <CountdownRing
                 deadline={promptDeadline}

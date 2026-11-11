@@ -84,10 +84,12 @@ export type HostPayload =
   | { t: 'lobby'; lobby: LobbyState }
   | { t: 'start'; playerId: number }
   | { t: 'role'; role: Role }
+  | { t: 'seat' }
   | { t: 'spectate' }
   | { t: 'spectators'; spectators: SpectatorInfo[] }
   | { t: 'state'; state: GameState }
   | { t: 'ask'; request: AskRequest; state: GameState }
+  | { t: 'spectateAsk'; request: AskRequest | null }
   | { t: 'event'; ev: GameEvent }
   | { t: 'end'; text: string; winner: string }
   | { t: 'chat'; message: ChatMessage }
@@ -99,6 +101,8 @@ export type GuestPayload =
   | { t: 'hello'; version: string }
   | { t: 'bid'; score: number }
   | { t: 'reveal'; index: number }
+  | { t: 'takeSeat' }
+  | { t: 'toSpectate' }
   | { t: 'action'; action: GameAction }
   | { t: 'pickHero'; heroId: string }
   | { t: 'chat'; text: string }

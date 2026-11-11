@@ -3,6 +3,7 @@ import { HERO_MAP } from '../../core/deck';
 import { equipSkillId } from '../../core/equipment';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
+import { cardSuitText, heroSkillGroups, isRedCard, visibleHeroNames, type HeroSkillGroup } from '../labels';
 
 interface Props {
   heroId: string;
@@ -10,6 +11,7 @@ interface Props {
   player?: PlayerState;
   mode?: GameMode;
   showRole?: boolean;
+  selfView?: boolean;
   onClose: () => void;
 }
 
@@ -20,7 +22,22 @@ const SLOTS = [
   { key: 'horseMinus', label: '-1 马' },
 ] as const;
 
-export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', showRole, onClose }: Props) {
+function DetailSkill({ id }: { id: string }) {
+  const skill = SKILL_MAP.get(id);
+  if (!skill) return null;
+  return (
+    <div className={`detail-skill ${skill.lord ? 'is-lord' : ''}`}>
+      <div className="detail-skill-head">
+        <b>{skill.name}</b>
+        {skill.lord && <span className="detail-tag">主公技</span>}
+        {skill.locked && <span className="detail-tag">锁定技</span>}
+      </div>
+      <p>{skill.desc}</p>
+    </div>
+  );
+}
+
+export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', showRole, selfView = false, onClose }: Props) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -39,10 +56,21 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
           : '农民'
         : ROLE_NAME[player.role];
   const dualIds = player?.heroIds?.length ? player.heroIds : heroIds?.length ? heroIds : [heroId];
-  const partners = dualIds
-    .filter((id) => id !== heroId)
-    .map((id) => HERO_MAP.get(id))
-    .filter((item): item is NonNullable<typeof item> => !!item);
+  const groups: HeroSkillGroup[] = player
+    ? heroSkillGroups(player, mode, selfView)
+    : dualIds.map((id, index) => {
+        const item = HERO_MAP.get(id);
+        return {
+          heroId: id,
+          name: item?.name ?? '',
+          title: item?.title,
+          label: dualIds.length > 1 ? (index === 0 ? '主将' : '副将') : null,
+          skillIds: item?.skillIds ?? [],
+          revealed: true,
+        };
+      });
+  const dual = groups.length > 1;
+  const anyRevealed = groups.some((group) => group.revealed);
   const skillIds = [
     ...new Set([
       ...(player?.skills?.length
@@ -52,7 +80,18 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
       ...(player?.extraSkills ?? []),
     ]),
   ];
-  const displayName = [hero, ...partners].map((item) => item?.name).filter(Boolean).join(' / ');
+  const displayName = player
+    ? visibleHeroNames(player, mode, selfView)
+    : groups.map((group) => group.name).filter(Boolean).join(' / ');
+  const titles = groups
+    .filter((group) => group.revealed)
+    .map((group) => group.title)
+    .filter(Boolean)
+    .join(' · ');
+  const quotes = (dual && player
+    ? groups.filter((group) => group.revealed).map((group) => HERO_MAP.get(group.heroId)?.quote)
+    : [hero.quote]
+  ).filter((quote): quote is string => !!quote);
   const pips = player ? Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp) : [];
   const fields = player?.fields ?? [];
 
@@ -77,17 +116,13 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
                 <span className={`role-tag role-${player.role}`}>{roleLabel}</span>
               )}
             </div>
-            <div className="detail-title">
-              {[hero, ...partners].map((item) => item?.title).filter(Boolean).join(' · ')}
-            </div>
+            <div className="detail-title">{titles}</div>
             <div className="detail-meta">
               <span>
                 体力 {player ? `${Math.max(0, player.hp)}/${player.maxHp}` : hero.hp}
-                {player?.heroIds && player.heroIds.length > 1 ? '（双将合计）' : ''}
+                {dual ? '（双将合计）' : ''}
               </span>
-              {player?.heroIds && player.heroIds.length > 1 && (
-                <span>性别：{player.gender === 'male' ? '男' : '女'}（按主将）</span>
-              )}
+              {dual && player && <span>性别：{player.gender === 'male' ? '男' : '女'}（按主将）</span>}
               {player && <span>手牌 {player.hand.length}</span>}
               {player && !player.alive && <span className="detail-dead">已阵亡</span>}
             </div>
@@ -101,7 +136,7 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
           </div>
         </div>
 
-        <div className="detail-quote">「{hero.quote}」</div>
+        {quotes.length > 0 && <div className="detail-quote">{quotes.map((quote) => `「${quote}」`).join(' ')}</div>}
 
         {player && (
           <>
@@ -112,6 +147,9 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
                 return (
                   <span key={key} className={card ? 'filled' : ''}>
                     <i>{label}</i>
+                    {card && (
+                      <i className={`equip-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>{cardSuitText(card)}</i>
+                    )}
                     {card ? card.name : '—'}
                   </span>
                 );
@@ -119,7 +157,9 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
               {player.judgeZone.length > 0 && (
                 <span className="filled">
                   <i>判定区</i>
-                  {player.judgeZone.map((card) => card.name).join('、')}
+                  {player.judgeZone
+                    .map((card) => `${cardSuitText(card)} ${card.name}`)
+                    .join('、')}
                 </span>
               )}
             </div>
@@ -127,22 +167,47 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
         )}
 
         <div className="detail-section-title">武将技能</div>
-        <div className="detail-skills">
-          {skillIds.map((id) => {
-            const skill = SKILL_MAP.get(id);
-            if (!skill) return null;
-            return (
-              <div key={id} className={`detail-skill ${skill.lord ? 'is-lord' : ''}`}>
-                <div className="detail-skill-head">
-                  <b>{skill.name}</b>
-                  {skill.lord && <span className="detail-tag">主公技</span>}
-                  {skill.locked && <span className="detail-tag">锁定技</span>}
+        {dual ? (
+          <div className="detail-skills">
+            {groups.map((group) =>
+              group.revealed ? (
+                <div className="detail-general" key={group.heroId}>
+                  <div className="detail-general-head">
+                    <span className="detail-tag">{group.label}</span>
+                    <b>{group.name}</b>
+                  </div>
+                  {group.skillIds.map((id) => (
+                    <DetailSkill key={id} id={id} />
+                  ))}
                 </div>
-                <p>{skill.desc}</p>
+              ) : (
+                <div className="detail-general is-dark" key={group.heroId}>
+                  <div className="detail-general-head">
+                    <span className="detail-tag">{group.label}</span>
+                    <b>暗将</b>
+                  </div>
+                  <p className="detail-dark-note">明置后显示武将与技能</p>
+                </div>
+              ),
+            )}
+            {anyRevealed && (player?.extraSkills ?? []).length > 0 && (
+              <div className="detail-general">
+                <div className="detail-general-head">
+                  <span className="detail-tag">其他</span>
+                </div>
+                {(player?.extraSkills ?? []).map((id) => (
+                  <DetailSkill key={id} id={id} />
+                ))}
               </div>
-            );
-          })}
-        </div>
+            )}
+          </div>
+        ) : (
+          <div className="detail-skills">
+            {skillIds.map((id) => (
+              <DetailSkill key={id} id={id} />
+            ))}
+          </div>
+        )}
 
         {player && (player.flipped || player.unyu.length > 0 || player.chained || fields.length > 0) && (
           <>
@@ -175,7 +240,14 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
                   <div key={key} className={`detail-equip ${card ? 'filled' : ''}`}>
                     <div className="detail-equip-head">
                       <span>{label}</span>
-                      <b>{card ? card.name : '—'}</b>
+                      <b>
+                        {card && (
+                          <i className={`equip-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>
+                            {cardSuitText(card)}
+                          </i>
+                        )}
+                        {card ? card.name : '—'}
+                      </b>
                     </div>
                     {skill && <p>{skill.desc}</p>}
                   </div>

@@ -37,7 +37,7 @@ export function TableCenter() {
       <div className="center-stage">
         <div className="played-column">
           {lastPlay ? (
-            <div key={lastPlay.id} className={`played faction-${faction(lastPlay.playerId) ?? 'qun'}`}>
+            <div key={lastPlay.id} className={`played faction-${faction(lastPlay.playerId) ?? 'qun'} ${lastPlay.as === '决斗' ? 'is-duel' : ''}`}>
               <div className="played-banner">
                 <span className="played-user">{playerName(lastPlay.playerId)}</span>
                 <span className="played-arrow">→</span>

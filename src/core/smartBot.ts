@@ -231,6 +231,8 @@ function scoreSkill(state: GameState, me: PlayerState, id: string): number {
       return enemies.filter((p) => p.gender === 'male').length >= 2 ? 32 : 0;
     case 'qiangxi':
       return me.equips.weapon || me.hp > 1 ? 50 : 0;
+    case 'zhangba':
+      return me.hand.length >= 2 && enemies.length > 0 ? 56 : 0;
     case 'quhu':
       return me.hand.length > 0 && enemies.some((p) => p.hp > me.hp && p.hand.length > 0) ? 42 : 0;
     case 'tianyi':

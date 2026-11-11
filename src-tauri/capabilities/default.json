@@ -3,10 +3,12 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": [
-    "main"
+    "main",
+    "devtool"
   ],
   "permissions": [
     "core:default",
+    "core:webview:allow-create-webview-window",
     "updater:default",
     "process:default"
   ]

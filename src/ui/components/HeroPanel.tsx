@@ -1,7 +1,7 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
-import { equipSlotText, factionKnown, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
+import { cardSuitText, equipSlotText, factionKnown, isRedCard, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
 import { EquipHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
 interface Flash {
@@ -73,6 +73,7 @@ export function HeroPanel({
       className={`hero-panel faction-${player.faction} ${current ? 'hero-current' : ''} ${
         player.alive ? '' : 'hero-dead'
       }`}
+      data-player-id={player.id}
     >
       {speech && <div className="seat-speech hero-speech">{speech.text}</div>}
       {!player.alive && <span className="hero-dead-badge">阵亡</span>}
@@ -136,7 +137,14 @@ export function HeroPanel({
           const body = (
             <>
               <span className="equip-label">{label}</span>
-              <span className="equip-name">{card ? shortCardName(card.name) : '—'}</span>
+              <span className="equip-name">
+                {card && (
+                  <i className={`equip-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>
+                    {cardSuitText(card)}
+                  </i>
+                )}
+                {card ? shortCardName(card.name) : '—'}
+              </span>
               {card && <span className="equip-slot-hint">{equipSlotText(card.equipSlot)}</span>}
             </>
           );
@@ -157,6 +165,7 @@ export function HeroPanel({
           {player.judgeZone.map((c) => (
             <HoverInfo key={c.id} content={<JudgeHover name={c.name} />}>
               <span className="mini-judge">
+                <i className={`equip-suit ${isRedCard(c) ? 'is-red' : 'is-black'}`}>{cardSuitText(c)}</i>
                 {shortCardName(c.name)}
               </span>
             </HoverInfo>

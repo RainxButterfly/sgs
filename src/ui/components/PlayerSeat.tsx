@@ -1,7 +1,7 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState, type Role } from '../../core/types';
-import { factionKnown, rankText, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
+import { cardSuitText, factionKnown, isRedCard, rankText, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
 import { EquipHover, HeroHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
 interface Flash {
@@ -15,6 +15,7 @@ interface Props {
   player: PlayerState;
   mode?: GameMode;
   current: boolean;
+  acting?: boolean;
   targetable?: boolean;
   targeted?: boolean;
   selected?: boolean;
@@ -36,6 +37,7 @@ export function PlayerSeat({
   player,
   mode = 'identity',
   current,
+  acting,
   targetable,
   targeted,
   selected,
@@ -100,6 +102,7 @@ export function PlayerSeat({
         `faction-${player.faction}`,
         mode === 'guozhan' && !showFaction ? 'is-dark' : '',
         current ? 'seat-current' : '',
+        acting ? 'seat-acting' : '',
         targetable ? 'seat-targetable' : '',
         targeted ? 'seat-targeted' : '',
         selected ? 'seat-selected' : '',
@@ -124,7 +127,7 @@ export function PlayerSeat({
         </span>
       ))}
       {showFaction ? (
-        <HoverInfo as="div" className="seat-head" content={<HeroHover hero={hero} player={player} />}>
+        <HoverInfo as="div" className="seat-head" content={<HeroHover hero={hero} player={player} mode={mode} self={selfView} />}>
           {seatHead}
         </HoverInfo>
       ) : (
@@ -153,8 +156,9 @@ export function PlayerSeat({
             <HoverInfo key={card.id} content={<EquipHover name={card.name} />}>
               <span
                 className="mini-equip"
-                title={`${slot === 'horsePlus' ? '+1 马' : slot === 'horseMinus' ? '-1 马' : card.name} · ${card.name}`}
+                title={`${slot === 'horsePlus' ? '+1 马' : slot === 'horseMinus' ? '-1 马' : card.name} · ${cardSuitText(card)} ${card.name}`}
               >
+                <i className={`equip-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>{cardSuitText(card)}</i>
                 {slot === 'horsePlus' ? '+1马 ' : slot === 'horseMinus' ? '-1马 ' : ''}
                 {shortCardName(card.name)}
               </span>
@@ -166,7 +170,8 @@ export function PlayerSeat({
         <div className="seat-judge">
           {player.judgeZone.map((c) => (
             <HoverInfo key={c.id} content={<JudgeHover name={c.name} />}>
-              <span className="mini-judge" title={c.name}>
+              <span className="mini-judge" title={`${cardSuitText(c)} ${c.name}`}>
+                <i className={`equip-suit ${isRedCard(c) ? 'is-red' : 'is-black'}`}>{cardSuitText(c)}</i>
                 {shortCardName(c.name)}
               </span>
             </HoverInfo>
@@ -222,7 +227,7 @@ export function PlayerSeat({
             </button>
           )}
           {onDetail && showFaction && (
-            <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} />}>
+            <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} mode={mode} self={selfView} />}>
               <button
                 type="button"
                 className="seat-action seat-info"

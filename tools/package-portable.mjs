@@ -21,7 +21,7 @@ fs.copyFileSync(releaseExe, path.join(folder, 'sanguosha.exe'));
 if (fs.existsSync(releaseDll)) fs.copyFileSync(releaseDll, path.join(folder, 'WebView2Loader.dll'));
 fs.writeFileSync(
   path.join(folder, 'README.txt'),
-  `四国闪 · 星河 v${version}\n\n作者：星河一叶Roxy\n维护邮箱：ck_xuv@vip.qq.com\n\n解压后双击 四国闪.bat 启动（也可以直接运行 sanguosha.exe）。\n首次创建房间若出现 Windows 防火墙提示，请允许专用网络访问。\n手机与电脑连接同一 WiFi 后，可扫描大厅二维码加入。\n`,
+  `四国闪 · 星河 v${version}\n\n作者：星河一叶Roxy\n\n解压后双击 四国闪.bat 启动（也可以直接运行 sanguosha.exe）。\n首次创建房间若出现 Windows 防火墙提示，请允许专用网络访问。\n手机与电脑连接同一 WiFi 后，可扫描大厅二维码加入。\n`,
   'utf8',
 );
 fs.writeFileSync(

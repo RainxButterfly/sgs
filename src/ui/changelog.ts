@@ -25,6 +25,52 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.10',
+    date: '2026-11-11',
+    title: '托管、测试工具与国战双将',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '新增 AI 托管：电脑端和手机端都能一键接管出牌、响应、弃牌和技能选择，适合临时离开；再次点击即可随时收回操作权，单机和联机都可用。',
+          '新增独立测试工具页与一人一码授权码：开发者按人数批量生成授权码，每码含唯一编号，首次解锁绑定本机，一台设备只能使用一个授权码；支持按编号或批次单独吊销，授权不匹配时游戏内仅警告并拒绝指令，不会关闭或影响对局。',
+          '游戏内按 Ctrl+Shift+D 或点击左下角测试授权徽章即可打开工具页；桌面端打开同源子窗口，与对局共享测试会话，可替换手牌、置顶牌堆、更换武将、设置体力与身份。',
+          '使用测试工具的对局不获得经验与等级，结算页会标注「测试对局」；正常对局不受影响。',
+          '新增测试武将孙笨，仅通过测试工具使用，不进入正常选将池。',
+          '回合方向由房主在规则中选择，默认逆时针；单机与联机一致，桌号按所选方向编号。',
+          '国战双将固定同势力，并尽量安排天然队友：电脑会优先补齐人类落单的势力，避免出现整场孤势力；联机选将时，未选玩家的候选会优先出现已选势力的队友。',
+          '主公选将获得额外候选：主公会有 6 名候选武将，并保证至少两名带主公技；候选牌上标注「主公将」。电脑担任主公时也会优先选择主公将。',
+          '装备区常显花色和点数：武将信息、座位信息、手机装备栏和武将详情都会显示如「♠5」「♦Q」的牌面信息，红色花色单独着色。',
+          '等级外观强化：青竹、流蓝、紫电、鎏金、赤霞分别使用独立的渐变色、等级框、气泡描边和名字前的光点，未满 60 级也能一眼看出等级段；星虹档保留彩虹流光。',
+          '出牌指向动画：杀、决斗等从使用者连向目标；借刀杀人按「使用者 → 借刀目标 → 被杀目标」逐段连线，并显示目标命中波纹。',
+          '弃牌堆标注每张牌的弃置者和原因，支持按玩家筛选，并改为固定高度滚动，不再把弹窗拉得很长。',
+          '观星等调整牌堆顺序的技能会在每张牌上标注「顶 1 / 底 1」位置，并汇总牌堆顶和牌堆底的顺序。',
+          '联机大厅支持座次与观战席互转：玩家可申请去观战，观战者可申请入座，房主也可以把观战者拉入座次。',
+          '观战玩家可以查看当前玩家正在进行的操作、候选牌和选项；观战结束后可返回房间，不再直接退出。',
+          '当前行动者的座位加入呼吸高亮和更醒目的「行动中」标签，最近出牌者、目标和决斗双方也有独立颜色标记。',
+        ],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '国战悬停与武将详情按主将、副将分组显示两名武将的技能，联机选将悬停同样显示双将；未明置的武将对对手显示「暗将」，不再泄露武将名与技能。',
+          '悬停卡内容过长时可以滚动，鼠标移入卡片不会立即消失，副将技能不再被裁掉。',
+          '按标准规则核对武将势力：孟获、祝融归蜀。',
+          '手机端对手排序与电脑端一致：左边缘是上一号桌位，右边缘是下一号桌位，两种回合方向都成立。',
+          '选择目标时不再一律提示「距离不足」：藤甲、仁王盾、空城、谦逊、帷幕、智迟、判定区已有、没有可拆的牌等都会显示具体原因。',
+          '乐不思蜀、兵粮寸断使用时不再询问无懈可击，无懈窗口统一在判定阶段、翻判定牌之前出现一次；被抵消后不再判定，也不会同一张锦囊问两遍。',
+          '武器技能触发更稳定：青龙偃月刀只在手里确实有杀时询问；丈八蛇矛会遵守天义、将驰等额外出杀次数，也能在借刀杀人等追击中把两张手牌当杀使用。',
+          '武将信息会显示当前装备自带的技能，装备武器或防具后可以直接看到对应技能说明。',
+          '五谷丰登收起后改为醒目的悬浮条，显示当前选择者和剩余张数；轮到自己时自动展开，其他结算窗口收起后也会显示明确的「展开面板」按钮。',
+          '手机横屏的出牌提示条改为单行操作坞，「结束出牌」「确定」并排显示，不再上下分离；顶部隐藏重复的主公徽记和身份统计，避免与回合信息挤在一起。',
+          '桌号和座位改为连续的环状排列：从自己左右两侧的邻座开始，按座位顺序绕桌一圈，距离 1 的对手一定在邻座，距离远的对手在对面；顺时针或逆时针只改变回合方向，不会再出现相邻桌号被放到远处的情况。',
+          '昵称等级框改用等宽数字并统一行高，Lv 数字与昵称垂直对齐，不再因为字体数字高低不一而看起来错位。',
+          '补充观星等技能在战报中的操作记录，方便回看技能实际调整了多少张牌。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.9',
     date: '2026-11-11',
     title: '暗将显示、明置刷新与五谷无懈',
@@ -1317,16 +1363,17 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
-const currentDev = VERSIONS.find((entry) => entry.version === '0.9.9')!;
-const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.8')!;
-const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.7')!;
-const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.6')!;
-const minorBase = VERSIONS.find((entry) => entry.version === '0.9.5')!;
-const olderBase = VERSIONS.find((entry) => entry.version === '0.9.4')!;
-const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
-const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
-const earliestBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
-const dawnBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
+const currentDev = VERSIONS.find((entry) => entry.version === '0.9.10')!;
+const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.9')!;
+const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.8')!;
+const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.7')!;
+const minorBase = VERSIONS.find((entry) => entry.version === '0.9.6')!;
+const olderBase = VERSIONS.find((entry) => entry.version === '0.9.5')!;
+const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.4')!;
+const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
+const earliestBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
+const dawnBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
+const firstBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
 const dated = (entries: ChangelogEntry[], date: string): ChangelogEntry[] =>
   entries.map((entry) => ({ ...entry, date }));
 const eight = [
@@ -1375,6 +1422,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   ancientBase,
   earliestBase,
   dawnBase,
+  firstBase,
   group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
   group('0.7.0~0.7.12', '2026-11-09', '联机、观战与规则完善', seven),
   group('0.6.0~0.6.9', '2026-11-08', '移动端、联机与规则完善', six),

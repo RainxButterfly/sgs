@@ -6,6 +6,7 @@ import { FACTION_NAME, PHASE_NAME, ROLE_NAME } from '../../core/types';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroPanel } from '../components/HeroPanel';
 import { Hand } from '../components/Hand';
+import { CardView } from '../components/CardView';
 import { LogPanel } from '../components/LogPanel';
 import { PlayerSeat } from '../components/PlayerSeat';
 import { TableCenter } from '../components/TableCenter';
@@ -16,24 +17,24 @@ import { useGameSnapshot, useGameStore } from '../store';
 
 const SEAT_LAYOUT: Record<number, [number, number][]> = {
   1: [[50, 20]],
-  2: [[32, 24], [68, 24]],
-  3: [[50, 20], [10, 60], [90, 60]],
-  4: [[30, 24], [70, 24], [10, 56], [90, 56]],
-  5: [[30, 20], [50, 18], [70, 20], [10, 47], [90, 47]],
-  6: [[35, 20], [65, 20], [10, 40], [90, 40], [25, 80], [75, 80]],
-  7: [[30, 20], [50, 18], [70, 20], [10, 36], [90, 36], [10, 68], [90, 68]],
-  8: [[35, 20], [65, 20], [10, 36], [90, 36], [10, 68], [90, 68], [30, 82], [70, 82]],
+  2: [[68, 24], [32, 24]],
+  3: [[90, 60], [50, 20], [10, 60]],
+  4: [[87, 56], [70, 24], [30, 24], [13, 56]],
+  5: [[87, 47], [70, 20], [50, 18], [30, 20], [13, 47]],
+  6: [[75, 80], [90, 40], [65, 20], [35, 20], [10, 40], [25, 80]],
+  7: [[88, 68], [90, 36], [70, 20], [50, 18], [30, 20], [10, 36], [12, 68]],
+  8: [[50, 84], [75, 68], [92, 40], [75, 18], [50, 16], [25, 18], [8, 40], [25, 68]],
 };
 
 const COMPACT_SEAT_LAYOUT: Record<number, [number, number][]> = {
   1: [[50, 22]],
-  2: [[35, 24], [65, 24]],
-  3: [[50, 20], [13, 58], [87, 58]],
-  4: [[30, 22], [70, 22], [13, 60], [87, 60]],
-  5: [[22, 20], [50, 18], [78, 20], [13, 58], [87, 58]],
-  6: [[12, 20], [37, 18], [63, 18], [88, 20], [13, 52], [87, 52]],
-  7: [[22, 20], [50, 18], [78, 20], [12, 44], [88, 44], [12, 72], [88, 72]],
-  8: [[12, 20], [37, 18], [63, 18], [88, 20], [12, 46], [88, 46], [12, 72], [88, 72]],
+  2: [[65, 24], [35, 24]],
+  3: [[87, 58], [50, 20], [13, 58]],
+  4: [[87, 60], [70, 22], [30, 22], [13, 60]],
+  5: [[87, 58], [78, 20], [50, 18], [22, 20], [13, 58]],
+  6: [[80, 58], [90, 24], [68, 18], [32, 18], [10, 24], [20, 58]],
+  7: [[50, 78], [86, 54], [90, 22], [68, 18], [32, 18], [10, 22], [14, 54]],
+  8: [[68, 76], [86, 54], [90, 22], [68, 18], [32, 18], [10, 22], [14, 54], [32, 76]],
 };
 
 export function SpectatorScreen() {
@@ -45,6 +46,7 @@ export function SpectatorScreen() {
   const flashes = useGameStore((s) => s.flashes);
   const speechBubbles = useGameStore((s) => s.speechBubbles);
   const result = useGameStore((s) => s.result);
+  const spectateAsk = useGameStore((s) => s.spectateAsk);
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
   const [focusId, setFocusId] = useState(0);
@@ -134,8 +136,10 @@ export function SpectatorScreen() {
       <div className="spectator-stage spectator-stage-v2">
         <div className="spectator-board">
           <div className="spectator-ring">
-            {game.state.players.map((player, index) => {
-              const [x, y] = layout[index] ?? [50, 50];
+            {game.state.players.map((player) => {
+              const ring =
+                (((player.id - game.state.startPlayer) * game.state.direction) % n + n) % n;
+              const [x, y] = layout[ring] ?? [50, 50];
               return (
                 <PlayerSeat
                   key={player.id}
@@ -278,6 +282,37 @@ export function SpectatorScreen() {
           <Hand player={focus} pending={null} onSelect={() => undefined} />
         </div>
       </div>
+      {spectateAsk && !result && (
+        <div className="spectator-ask-panel">
+          <div className="spectator-ask-head">
+            <b>{game.state.players[spectateAsk.playerId]?.name ?? '玩家'} · 正在操作</b>
+            <span>{spectateAsk.prompt}</span>
+          </div>
+          {spectateAsk.detail && <p>{spectateAsk.detail}</p>}
+          {spectateAsk.kind === 'reorder' && (spectateAsk.cards?.length ?? 0) > 0 && (
+            <div className="spectator-ask-cards">
+              {spectateAsk.cards?.map((card) => <CardView key={card.id} card={card} size="sm" />)}
+            </div>
+          )}
+          {spectateAsk.kind === 'chooseCards' && (spectateAsk.cards?.length ?? 0) > 0 && (
+            <div className="spectator-ask-cards">
+              {spectateAsk.cards?.map((card) => <CardView key={card.id} card={card} size="sm" />)}
+            </div>
+          )}
+          {spectateAsk.options && spectateAsk.options.length > 0 && (
+            <div className="spectator-ask-options">
+              {spectateAsk.options.map((option) => <span key={option.id}>{option.label}</span>)}
+            </div>
+          )}
+          {(spectateAsk.kind === 'play' || spectateAsk.kind === 'respond') && (
+            <div className="spectator-ask-options">
+              {(spectateAsk.cardOptions ?? []).slice(0, 8).map((option) => (
+                <span key={`${option.cardId}-${option.as}`}>{option.as}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {result && (
         <div className="spectator-result-backdrop">
           <div className="spectator-result">
@@ -285,7 +320,10 @@ export function SpectatorScreen() {
             <h2>对局结束</h2>
             <p>{result.text}</p>
             <div className="spectator-result-actions">
-              <button type="button" className="btn primary" onClick={exit}>
+              <button type="button" className="btn primary" onClick={() => useGameStore.getState().returnToLobby()}>
+                返回房间
+              </button>
+              <button type="button" className="btn ghost" onClick={exit}>
                 退出观战
               </button>
             </div>
@@ -298,6 +336,7 @@ export function SpectatorScreen() {
           heroId={game.state.players[detailPlayer].heroId}
           player={game.state.players[detailPlayer]}
           mode={mode}
+          selfView
           showRole
           onClose={() => setDetailPlayer(null)}
         />

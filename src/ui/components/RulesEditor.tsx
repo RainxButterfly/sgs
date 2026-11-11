@@ -64,6 +64,25 @@ export function RulesEditor({ rules, onChange }: Props) {
       <Toggle label="延时锦囊" value={rules.allowDelayed} onChange={(v) => set({ allowDelayed: v })} />
       <Toggle label="无懈可击" value={rules.allowNullification} onChange={(v) => set({ allowNullification: v })} />
       <Toggle label="装备牌" value={rules.allowEquipment} onChange={(v) => set({ allowEquipment: v })} />
+      <div className="setting-row">
+        <span>回合方向</span>
+        <div className="stepper">
+          <button
+            type="button"
+            className={`toggle-btn ${rules.turnDirection !== 1 ? 'on' : ''}`}
+            onClick={() => set({ turnDirection: -1 })}
+          >
+            逆时针
+          </button>
+          <button
+            type="button"
+            className={`toggle-btn ${rules.turnDirection === 1 ? 'on' : ''}`}
+            onClick={() => set({ turnDirection: 1 })}
+          >
+            顺时针
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

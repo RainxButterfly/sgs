@@ -432,7 +432,7 @@ const SKILLS: SkillDef[] = [
           );
           deck.push(...top.slice().reverse());
           deck.unshift(...bottom);
-          c.game.log(`【${c.owner.name}】发动观星，调整了 ${n} 张牌`, 'skill');
+          c.game.log(`【${c.owner.name}】发动观星：${top.length} 张置于牌堆顶，${bottom.length} 张置于牌堆底`, 'skill');
         },
       },
     ],
@@ -895,7 +895,7 @@ const SKILLS: SkillDef[] = [
           !!c.target &&
           c.owner.alive &&
           c.game.canBeTargeted(c.target, c.owner, '杀') &&
-          allCards(c.owner).length > 0,
+          c.game.hasShaForResponse(c.owner),
         optional: true,
         prompt: '是否发动【青龙偃月刀】再使用一张杀？',
         effect: async (c) => {
@@ -918,7 +918,7 @@ const SKILLS: SkillDef[] = [
       usable: (game, owner) =>
         owner.hand.length >= 2 &&
         game.shaTargets(owner).length > 0 &&
-        (game.skillsOf(owner).some((s) => s.unlimitedSha) || (owner.usedThisTurn.sha ?? 0) < 1),
+        game.canUseShaNow(owner),
       run: async (game, owner) => {
         const picked = await game.askCards(owner, owner.hand, 2, 2, '丈八蛇矛：选择两张手牌当杀');
         if (picked.length !== 2) return;

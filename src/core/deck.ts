@@ -566,7 +566,7 @@ export const HEROES: HeroData[] = [
   {
     id: 'menghuo',
     name: '孟获',
-    faction: 'qun',
+    faction: 'shu',
     gender: 'male',
     hp: 4,
     title: '南蛮王',
@@ -576,7 +576,7 @@ export const HEROES: HeroData[] = [
   {
     id: 'zhurong',
     name: '祝融',
-    faction: 'qun',
+    faction: 'shu',
     gender: 'female',
     hp: 4,
     title: '野性的女王',
@@ -717,6 +717,18 @@ export const HEROES: HeroData[] = [
     skillIds: ['jiang', 'hunzi'],
     lordSkillId: 'zhiba',
     quote: '江东子弟，何惧于天下！',
+  },
+  {
+    id: 'sunben',
+    name: '孙笨',
+    faction: 'wu',
+    gender: 'male',
+    hp: 4,
+    title: '那个男人',
+    skillIds: ['jiang', 'hunzi'],
+    lordSkillId: 'zhiba',
+    quote: '江东子弟，何惧于天下……算了，躺好。',
+    disabled: true,
   },
   {
     id: 'zhangzhaozhanghong',

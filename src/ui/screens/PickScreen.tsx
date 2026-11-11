@@ -168,7 +168,13 @@ export function PickScreen() {
           <section className="pick-choice">
             <div className="setup-row">
               <span className="setup-label">{pairs.length ? '你的候选双将' : '你的候选武将'}</span>
-              <span className="setup-hint">{pairs.length ? '点击一组同势力双将' : '点击一张武将牌选择'}</span>
+              <span className="setup-hint">
+                {pairs.length
+                  ? '点击一组同势力双将'
+                  : gameMode === 'identity' && preGame.lordIndex === 0
+                    ? '主公候选比其他人多一名，并包含主公将'
+                    : '点击一张武将牌选择'}
+              </span>
             </div>
             {pairs.length ? (
               <div className="pick-hero-grid">
@@ -229,6 +235,7 @@ export function PickScreen() {
                       <div className="hero-card-top">
                         <span className="faction-badge">{FACTION_NAME[hero.faction]}</span>
                         <span className="hero-card-name">{hero.name}</span>
+                        {hero.lordSkillId && <span className="lord-general-badge">主公将</span>}
                         <span className={`gender-badge ${hero.gender}`}>{hero.gender === 'male' ? '♂' : '♀'}</span>
                       </div>
                       <div className="hero-card-title">{hero.title}</div>

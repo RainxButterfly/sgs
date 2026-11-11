@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../store';
 import { CardView } from './CardView';
 
@@ -14,34 +14,58 @@ export function HarvestModal() {
   const [collapsed, setCollapsed] = useState(false);
 
   const done = !!harvest?.done;
+  const harvestPending =
+    !!pending && pending.kind === 'chooseCards' && pending.prompt.startsWith('五谷');
+  const myTurn = harvestPending && pending?.playerId === humanId;
+  const chooser = harvest?.chooserId !== undefined ? game?.state.players[harvest.chooserId] : undefined;
+  const chooserName = chooser?.name ?? '';
+  const harvestKey = harvest ? harvest.cards.map((card) => card.id).join('|') : '';
+  const wasMyTurn = useRef(false);
+
   useEffect(() => {
     if (!done) return;
     const timer = window.setTimeout(() => useGameStore.getState().dismissHarvest(), 6000);
     return () => window.clearTimeout(timer);
   }, [done]);
 
-  if (!harvest) return null;
-  if (pending && pending.kind !== 'chooseCards') return null;
-  if (pending && !pending.prompt.startsWith('五谷')) return null;
+  useEffect(() => {
+    if (harvestKey) setCollapsed(false);
+  }, [harvestKey]);
 
-  const myTurn =
-    !!pending &&
-    pending.kind === 'chooseCards' &&
-    pending.playerId === humanId &&
-    pending.prompt.startsWith('五谷');
-  const chooser = harvest.chooserId !== undefined ? game?.state.players[harvest.chooserId] : undefined;
+  useEffect(() => {
+    if (myTurn && !wasMyTurn.current) setCollapsed(false);
+    wasMyTurn.current = myTurn;
+  }, [myTurn]);
+
+  if (!harvest) return null;
+
   const pickedBy = new Map(harvest.picks.map((pick) => [pick.card.id, pick.playerId]));
   const remaining = harvest.cards.filter((card) => !pickedBy.has(card.id));
-  const chooserName = chooser?.name ?? '';
 
   if (collapsed) {
     return (
-      <button type="button" className="harvest-mini" onClick={() => setCollapsed(false)}>
-        五谷丰登 · {done ? '已选完' : myTurn ? '轮到你选' : `等待${chooserName || '其他玩家'}`}
-        <span>展开</span>
+      <button
+        type="button"
+        className={`harvest-mini ${myTurn ? 'is-my-turn' : ''}`}
+        onClick={() => setCollapsed(false)}
+        aria-label="展开五谷丰登结算"
+      >
+        <span className="harvest-mini-icon">五</span>
+        <span className="harvest-mini-copy">
+          <b>五谷丰登</b>
+          <em>
+            {done ? '已选完' : myTurn ? '轮到你选择' : `等待${chooserName || '其他玩家'}`}
+            {done ? '' : ` · 剩余 ${remaining.length} 张`}
+          </em>
+        </span>
+        <span className="harvest-mini-open">
+          展开<i>▾</i>
+        </span>
       </button>
     );
   }
+
+  if (pending && !harvestPending) return null;
 
   return (
     <div className="modal-backdrop harvest-backdrop">
@@ -49,7 +73,7 @@ export function HarvestModal() {
         <div className="modal-head">
           <div className="modal-title">五谷丰登</div>
           <button type="button" className="modal-minimize" onClick={() => setCollapsed(true)}>
-            收起查看牌桌
+            <i>▴</i>收起
           </button>
         </div>
         <div className="harvest-cards">

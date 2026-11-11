@@ -21,6 +21,8 @@ export function LobbyScreen() {
   const setLanCount = useGameStore((s) => s.setLanCount);
   const leaveLan = useGameStore((s) => s.leaveLan);
   const pickLanHero = useGameStore((s) => s.pickLanHero);
+  const requestSeat = useGameStore((s) => s.requestSeat);
+  const requestToSpectate = useGameStore((s) => s.requestToSpectate);
   const bidLan = useGameStore((s) => s.bidLan);
   const lanConnId = useGameStore((s) => s.lanConnId);
   const spectate = useGameStore((s) => s.spectate);
@@ -643,6 +645,16 @@ export function LobbyScreen() {
                         : '待选将'}
                   </span>
                   <span className="lobby-status">{player.connected ? '已入座' : '掉线'}</span>
+                  {!host && player.connId === lanConnId && (
+                    <button
+                      type="button"
+                      className="lobby-switch"
+                      onClick={requestToSpectate}
+                      title="离开座次，进入观战席"
+                    >
+                      去观战
+                    </button>
+                  )}
                   {host && !player.isHost && (
                     <button
                       type="button"
@@ -761,6 +773,30 @@ export function LobbyScreen() {
                         <NameChip name={spectator.name} level={spectator.level ?? 1} size="sm" />
                       </span>
                       <code className="spectator-ip">{spectator.ip || 'IP 未知'}</code>
+                      {!host && spectator.connId === lanConnId && players.length < maxTotal && (
+                        <button
+                          type="button"
+                          className="lobby-switch"
+                          onClick={() => {
+                            requestSeat();
+                            setSpectatorOpen(false);
+                          }}
+                        >
+                          申请入座
+                        </button>
+                      )}
+                      {host && players.length < maxTotal && (
+                        <button
+                          type="button"
+                          className="lobby-switch"
+                          onClick={() => {
+                            lanHost?.seatSpectator(spectator.connId);
+                            setSpectatorOpen(false);
+                          }}
+                        >
+                          拉入座次
+                        </button>
+                      )}
                       {host && (
                         <button
                           type="button"
