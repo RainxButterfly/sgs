@@ -14,6 +14,7 @@ import {
   type HostPayload,
   type LobbyPlayer,
   type LobbyState,
+  type PropMessage,
   type RoomInfo,
   type ServerEvent,
   type SpectatorInfo,
@@ -157,6 +158,7 @@ interface HostHooks {
   onLobby: (lobby: LobbyState) => void;
   onGame: (game: Game) => void;
   onChat: (message: ChatMessage) => void;
+  onProp: (message: PropMessage) => void;
   onSpectators: (spectators: SpectatorInfo[]) => void;
   onError: (message: string) => void;
   onClosed: () => void;
@@ -497,21 +499,29 @@ export class LanHostManager {
       this.lordPlayerId = lordIndex;
       this.lordBotHero = null;
       if (gameMode === 'identity') {
-        const used = new Set<string>();
-        for (const choice of this.hostChoices) for (const id of choiceHeroIds(choice)) used.add(id);
-        for (const guest of this.guests) {
-          for (const choice of guest.choices) for (const id of choiceHeroIds(choice)) used.add(id);
+        const backupCount = this.rules.lordBackupCount ?? 3;
+        const lordGuest = lordIndex === 0 ? null : this.guests.find((item) => item.playerId === lordIndex);
+        const usedByOthers = new Set<string>();
+        if (lordIndex !== 0) {
+          for (const choice of this.hostChoices) for (const id of choiceHeroIds(choice)) usedByOthers.add(id);
         }
-        const lordChoice = PLAYABLE_HEROES.find(
-          (hero) => hero.lordSkillId && !used.has(hero.id),
-        )?.id;
-        if (lordChoice) {
-          if (lordIndex === 0) {
-            this.hostChoices = [...this.hostChoices, lordChoice];
-          } else {
-            const guest = this.guests.find((item) => item.playerId === lordIndex);
-            if (guest) guest.choices = [...guest.choices, lordChoice];
-          }
+        for (const guest of this.guests) {
+          if (guest.playerId === lordIndex) continue;
+          for (const choice of guest.choices) for (const id of choiceHeroIds(choice)) usedByOthers.add(id);
+        }
+        if (this.hostHeroId) usedByOthers.add(this.hostHeroId);
+        for (const guest of this.guests) if (guest.heroId) usedByOthers.add(guest.heroId);
+        const lordHeroes = PLAYABLE_HEROES.filter((hero) => hero.lordSkillId && !usedByOthers.has(hero.id)).map((hero) => hero.id);
+        const otherPool = PLAYABLE_HEROES.filter((hero) => !hero.lordSkillId && !usedByOthers.has(hero.id)).map((hero) => hero.id);
+        for (let i = otherPool.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [otherPool[i], otherPool[j]] = [otherPool[j], otherPool[i]];
+        }
+        const newChoices = [...lordHeroes, ...otherPool.slice(0, backupCount)];
+        if (lordIndex === 0) {
+          this.hostChoices = newChoices;
+        } else if (lordGuest) {
+          lordGuest.choices = newChoices;
         }
       }
     } else {
@@ -813,6 +823,22 @@ export class LanHostManager {
     this.broadcast({ t: 'chat', message });
   }
 
+  sendProp(targetId: number, prop: string): void {
+    const kind = prop === 'flower' ? 'flower' : 'egg';
+    if (!Number.isInteger(targetId) || targetId < 0) return;
+    this.chatSeq += 1;
+    const message: PropMessage = {
+      id: this.chatSeq,
+      fromId: 0,
+      fromName: this.hostName,
+      targetId,
+      prop: kind,
+      at: Date.now(),
+    };
+    this.hooks.onProp(message);
+    this.broadcast({ t: 'prop', message });
+  }
+
   private handleGuestPayload(from: number, payload: unknown): void {
     const message = payload as GuestPayload | undefined;
     if (!message) return;
@@ -889,6 +915,24 @@ export class LanHostManager {
       };
       this.hooks.onChat(chat);
       this.broadcast({ t: 'chat', message: chat });
+      return;
+    }
+    if (message.t === 'prop') {
+      if (!guest) return;
+      const kind = message.prop === 'flower' ? 'flower' : 'egg';
+      const targetId = Number(message.targetId);
+      if (!Number.isInteger(targetId) || targetId < 0) return;
+      this.chatSeq += 1;
+      const propMsg: PropMessage = {
+        id: this.chatSeq,
+        fromId: guest.playerId,
+        fromName: guest.name,
+        targetId,
+        prop: kind,
+        at: Date.now(),
+      };
+      this.hooks.onProp(propMsg);
+      this.broadcast({ t: 'prop', message: propMsg });
       return;
     }
     if (!guest) return;
@@ -1179,9 +1223,11 @@ export class LanHostManager {
     }
     this.broadcastSpectators();
     this.hooks.onGame(game);
-    game.begin().catch((error) => {
-      this.hooks.onError(`对局异常：${(error as Error).message}`);
-    });
+    setTimeout(() => {
+      game.begin().catch((error) => {
+        this.hooks.onError(`对局异常：${(error as Error).message}`);
+      });
+    }, 3000);
   }
 
   returnToLobby(): void {
@@ -1241,6 +1287,7 @@ interface ClientHooks {
   onEnd: (text: string, winner: string) => void;
   onSpectateAsk?: (request: AskRequest | null) => void;
   onChat: (message: ChatMessage) => void;
+  onProp: (message: PropMessage) => void;
   onError: (message: string) => void;
   onKicked?: (reason: string) => void;
   onVersionMismatch?: (message: string) => void;
@@ -1338,6 +1385,9 @@ export class LanClientManager {
       case 'chat':
         this.hooks.onChat(message.message);
         break;
+      case 'prop':
+        this.hooks.onProp(message.message);
+        break;
       case 'kicked':
         this.closedByUser = true;
         this.hooks.onKicked?.(message.reason);
@@ -1375,6 +1425,12 @@ export class LanClientManager {
     const value = text.trim().slice(0, 200);
     if (!value) return;
     this.relay.send({ t: 'chat', text: value } satisfies GuestPayload);
+  }
+
+  sendProp(targetId: number, prop: string): void {
+    const kind = prop === 'flower' ? 'flower' : 'egg';
+    if (!Number.isInteger(targetId) || targetId < 0) return;
+    this.relay.send({ t: 'prop', targetId, prop: kind } satisfies GuestPayload);
   }
 
   requestSeat(): void {

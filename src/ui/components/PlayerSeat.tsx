@@ -3,6 +3,7 @@ import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState, type Role } from '../../core/types';
 import { cardSuitText, factionKnown, isRedCard, rankText, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
 import { EquipHover, HeroHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
+import { useGameStore } from '../store';
 
 interface Flash {
   id: number;
@@ -55,6 +56,9 @@ export function PlayerSeat({
   onClick,
 }: Props) {
   const selfView = !!revealRoles;
+  const propThrows = useGameStore((s) => s.propThrows);
+  const sendProp = useGameStore((s) => s.sendProp);
+  const incomingProps = propThrows.filter((p) => p.targetId === player.id);
   const hero = HERO_MAP.get(player.heroId);
   const showFaction = factionKnown(player, mode, selfView);
   const heroLabel = visibleHeroNames(player, mode, selfView);
@@ -115,6 +119,13 @@ export function PlayerSeat({
       role={clickable ? 'button' : undefined}
     >
       {speech && <div className="seat-speech">{speech.text}</div>}
+      {incomingProps.map((p) => (
+        <div key={p.id} className={`seat-prop seat-prop-${p.prop}`} aria-hidden="true">
+          <span className="seat-prop-emoji">{p.prop === 'flower' ? '🌸' : '🥚'}</span>
+          <span className="seat-prop-splat">{p.prop === 'flower' ? '✿' : '💥'}</span>
+          <span className="seat-prop-from">{p.fromName}</span>
+        </div>
+      ))}
       {unavailableHint && <span className="seat-unavailable">{unavailableHint}</span>}
       {displayFlashes.map((item, index) => (
         <span
@@ -161,6 +172,7 @@ export function PlayerSeat({
                 <i className={`equip-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>{cardSuitText(card)}</i>
                 {slot === 'horsePlus' ? '+1马 ' : slot === 'horseMinus' ? '-1马 ' : ''}
                 {shortCardName(card.name)}
+                {slot === 'weapon' ? ` 攻${card.range ?? 1}` : ''}
               </span>
             </HoverInfo>
           ))
@@ -209,38 +221,72 @@ export function PlayerSeat({
           ) : null;
         })}
       </div>
-      {(canMark || (onDetail && showFaction)) && (
+      {(canMark || (onDetail && showFaction) || player.alive) && (
         <div className="seat-actions">
-          {canMark && (
-            <button
-              type="button"
-              className={`seat-action seat-mark ${mark ? `role-${mark}` : ''}`}
-              title="标记你判断的身份（仅自己可见）"
-              aria-label="标记身份"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                onMark?.();
-              }}
-            >
-              {mark ? ROLE_NAME[mark].slice(0, 1) : '标'}
-            </button>
-          )}
-          {onDetail && showFaction && (
-            <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} mode={mode} self={selfView} />}>
+          {player.alive && (
+            <div className="seat-prop-row">
               <button
                 type="button"
-                className="seat-action seat-info"
-                title="查看武将详情"
+                className="seat-action seat-prop-btn"
+                title="砸鸡蛋"
+                aria-label="砸鸡蛋"
                 onPointerDown={(event) => event.stopPropagation()}
                 onClick={(event) => {
                   event.stopPropagation();
-                  onDetail();
+                  sendProp(player.id, 'egg');
                 }}
               >
-                i
+                🥚
               </button>
-            </HoverInfo>
+              <button
+                type="button"
+                className="seat-action seat-prop-btn"
+                title="送花"
+                aria-label="送花"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  sendProp(player.id, 'flower');
+                }}
+              >
+                🌸
+              </button>
+            </div>
+          )}
+          {(canMark || (onDetail && showFaction)) && (
+            <div className="seat-action-row">
+              {canMark && (
+                <button
+                  type="button"
+                  className={`seat-action seat-mark ${mark ? `role-${mark}` : ''}`}
+                  title="标记你判断的身份（仅自己可见）"
+                  aria-label="标记身份"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onMark?.();
+                  }}
+                >
+                  {mark ? ROLE_NAME[mark].slice(0, 1) : '标'}
+                </button>
+              )}
+              {onDetail && showFaction && (
+                <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} mode={mode} self={selfView} />}>
+                  <button
+                    type="button"
+                    className="seat-action seat-info"
+                    title="查看武将详情"
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDetail();
+                    }}
+                  >
+                    i
+                  </button>
+                </HoverInfo>
+              )}
+            </div>
           )}
         </div>
       )}

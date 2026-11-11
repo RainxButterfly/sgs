@@ -2266,8 +2266,8 @@ button {
 }
 
 .card-dimmed {
-  filter: grayscale(0.4) brightness(0.82);
-  opacity: 0.82;
+  filter: grayscale(0.18) brightness(0.94);
+  opacity: 0.92;
 }
 
 .card-sm {
@@ -16143,8 +16143,27 @@ button {
   bottom: 7px;
   z-index: 6;
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.seat-prop-row,
+.seat-action-row {
+  display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+}
+
+.seat-actions .seat-prop-btn {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  line-height: 1;
+  border-radius: 6px;
 }
 
 .seat-actions .seat-mark,
@@ -16202,8 +16221,28 @@ button {
   bottom: 4px;
   z-index: 6;
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.m-seat-prop-row,
+.m-seat-action-row {
+  display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
+}
+
+.m-seat-actions .m-seat-prop {
+  min-width: 16px;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  line-height: 1;
+  border-radius: 4px;
 }
 
 .m-seat-actions .m-seat-mark,
@@ -20506,4 +20545,249 @@ html {
 
 .dev-badge button:hover {
   background: rgba(120, 220, 160, 0.22);
+}
+
+/* 雷杀/火杀图片卡面属性标注（哈字前标火/雷） */
+.card-element-badge {
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  writing-mode: vertical-rl;
+  padding: 5px 2px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.card-element-fire {
+  background: linear-gradient(160deg, #ff8a3c, #e23b1f);
+}
+
+.card-element-thunder {
+  background: linear-gradient(160deg, #8aa6ff, #3b4fe2);
+}
+
+.card-sm .card-element-badge {
+  left: 1px;
+  padding: 3px 1px;
+  font-size: 10px;
+  border-radius: 4px;
+}
+
+.card-lg .card-element-badge {
+  font-size: 17px;
+  padding: 7px 3px;
+}
+
+/* 手机横屏：手牌铺满可用宽度，卡面文字不再挤压（按尺寸适配，不依赖指针类型） */
+@media (orientation: landscape) and (max-height: 900px) {
+  .m-bottom .m-hand .hand-cards {
+    justify-content: center;
+    gap: 6px;
+    padding: 0 6px;
+  }
+
+  .m-bottom .m-hand .card {
+    flex: 1 1 0;
+    width: auto;
+    min-width: clamp(52px, 14dvh, 72px);
+    max-width: 108px;
+  }
+
+  .m-bottom .m-hand .card-name {
+    max-width: 100%;
+    word-break: keep-all;
+    font-size: clamp(11px, 3.2dvh, 14px);
+  }
+}
+
+/* 攻击范围与坐骑效果 */
+.hero-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 2px;
+  font-size: 11px;
+  color: var(--muted, #b8a98a);
+}
+
+.hero-range-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 163, 90, 0.35);
+  background: rgba(201, 163, 90, 0.12);
+  color: #e7cf9a;
+  font-weight: 600;
+}
+
+.hero-range-main b {
+  color: #ffd97a;
+  font-size: 13px;
+}
+
+.hero-range-horse {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.hero-range-horse.plus {
+  background: rgba(120, 180, 255, 0.14);
+  color: #a9ccff;
+}
+
+.hero-range-horse.minus {
+  background: rgba(255, 140, 120, 0.14);
+  color: #ffb3a3;
+}
+
+/* 砸鸡蛋/送花道具互动 */
+.seat-prop-btn {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.seat-prop {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.seat-prop-emoji {
+  position: absolute;
+  font-size: 30px;
+  animation: propFly 0.55s cubic-bezier(.3,.7,.4,1) forwards;
+}
+
+.seat-prop-splat {
+  position: absolute;
+  font-size: 40px;
+  opacity: 0;
+  animation: propSplat 1.6s ease forwards;
+}
+
+.seat-prop-from {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #fff;
+  background: rgba(12, 9, 7, 0.7);
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  opacity: 0;
+  animation: propFrom 2.2s ease forwards;
+}
+
+.seat-prop-flower .seat-prop-splat {
+  color: #ff9ecb;
+}
+
+@keyframes propFly {
+  0% { transform: translate(-70px, -90px) scale(0.5) rotate(-40deg); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(0, 0) scale(1.1) rotate(10deg); opacity: 1; }
+}
+
+@keyframes propSplat {
+  0%, 35% { opacity: 0; transform: scale(0.3); }
+  45% { opacity: 1; transform: scale(1.3); }
+  70% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+
+@keyframes propFrom {
+  0%, 40% { opacity: 0; }
+  55% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 开局保护：前 3 秒屏蔽操作 */
+.start-protection {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 5, 16, 0.42);
+  backdrop-filter: blur(2px);
+  cursor: default;
+  animation: fadeIn 0.2s ease;
+}
+
+.start-protection-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 26px 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(170, 142, 255, 0.4);
+  background: linear-gradient(180deg, rgba(38, 24, 58, 0.96), rgba(16, 10, 30, 0.97));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+.start-protection-card b {
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: #f1ebff;
+}
+
+.start-protection-card small {
+  font-size: 12px;
+  color: #bdb0e6;
+}
+
+.start-protection-ring {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1030;
+  background: var(--rainbow, linear-gradient(120deg, #ff5db1, #f5c451, #46e6a0, #38e1ff, #a78bfa));
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.6);
+}
+
+/* 主菜单自定义壁纸 */
+.menu-custom-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.menu-custom-bg-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #080512;
+}
+
+.bg-scope-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }

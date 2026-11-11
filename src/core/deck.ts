@@ -883,7 +883,7 @@ export const HEROES: HeroData[] = [
     name: '华雄',
     faction: 'qun',
     gender: 'male',
-    hp: 4,
+    hp: 6,
     title: '关西猛将',
     skillIds: ['yaowu'],
     quote: '关西华雄，谁敢一战！',

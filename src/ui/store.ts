@@ -6,7 +6,7 @@ import { getDevPickPool } from '../dev/bridge';
 import { safeBotAction } from '../core/smartBot';
 import { endGameSession, markGameSession, recordDiagnostic } from './diagnostics';
 import { LanClientManager, LanHostManager, createRoomInfo, initPlatform, isAndroidApp, isTauri, parseAddress } from '../net/lan';
-import type { ChatMessage, LobbyState, RoomInfo, SpectatorInfo } from '../net/protocol';
+import type { ChatMessage, LobbyState, PropMessage, RoomInfo, SpectatorInfo } from '../net/protocol';
 import {
   checkAndroidUpdate,
   checkAndroidUpdateFromWeb,
@@ -17,7 +17,7 @@ import {
   installAppUpdate,
   type AppUpdateInfo,
 } from './update';
-import { loadBackgroundSettings, saveBackgroundSettings } from './background';
+import { loadBackgroundSettings, saveBackgroundSettings, type BackgroundScope } from './background';
 import { applySoundSettings, getSoundSettings, playSound } from './sound';
 import { applyMatchXp, loadProfile, normalizePlayerName, saveProfile, type PlayerProfile, type XpGain } from './profile';
 import { scheduleDataSnapshot } from './dataStorage';
@@ -236,6 +236,8 @@ export interface GameLike {
   revealGeneral?: (player: import('../core/types').PlayerState, index: number) => boolean;
   buildPlayOptions?: (player: import('../core/types').PlayerState) => CardOption[];
   activeSkillOptions?: (player: import('../core/types').PlayerState) => import('../core/types').SkillOption[];
+  attackRange?: (player: import('../core/types').PlayerState) => number;
+  distance?: (from: import('../core/types').PlayerState, to: import('../core/types').PlayerState) => number;
 }
 
 interface AsChooser {
@@ -286,6 +288,14 @@ interface SpeechBubble {
   text: string;
 }
 
+interface PropThrow {
+  id: number;
+  fromId: number;
+  fromName: string;
+  targetId: number;
+  prop: string;
+}
+
 interface SkillNotice {
   id: number;
   playerId: number;
@@ -313,7 +323,7 @@ interface DamageNotice {
 
 interface CardHistoryEntry {
   id: number;
-  kind: 'play' | 'respond' | 'discard' | 'reveal' | 'judge' | 'gain';
+  kind: 'play' | 'respond' | 'discard' | 'reveal' | 'judge' | 'gain' | 'skill';
   playerId?: number;
   cards: Card[];
   label: string;
@@ -368,6 +378,8 @@ interface GameStore {
   responseWindow: { playerId: number; name: string; ms: number; until: number } | null;
   promptDeadline: number | null;
   speechBubbles: SpeechBubble[];
+  propThrows: PropThrow[];
+  protectionUntil: number | null;
   error: string | null;
   lanRole: 'host' | 'client' | null;
   lanHost: LanHostManager | null;
@@ -396,6 +408,7 @@ interface GameStore {
   updateModalOpen: boolean;
   bgImage: string | null;
   bgDim: number;
+  bgScope: BackgroundScope;
   selfCardSide: 'left' | 'right';
   uiTheme: 'classic' | 'magic';
   uiPalette: UiPalette;
@@ -468,6 +481,7 @@ interface GameStore {
   setSoundVolume: (value: number) => void;
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
+  setBgScope: (scope: BackgroundScope) => void;
   setSelfCardSide: (side: 'left' | 'right') => void;
   setUiTheme: (theme: 'classic' | 'magic') => void;
   setUiPalette: (palette: UiPalette) => void;
@@ -487,6 +501,8 @@ interface GameStore {
   cancelAllWuxie: () => void;
   receiveChat: (message: ChatMessage) => void;
   sendChat: (text: string) => void;
+  receiveProp: (message: PropMessage) => void;
+  sendProp: (targetId: number, prop: string) => void;
   openChat: () => void;
   closeChat: () => void;
   dismissHarvest: () => void;
@@ -598,6 +614,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   responseWindow: null,
   promptDeadline: null,
   speechBubbles: [],
+  propThrows: [],
+  protectionUntil: null,
   error: null,
   lanRole: null,
   lanHost: null,
@@ -626,6 +644,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   updateModalOpen: false,
   bgImage: initialBackground.image,
   bgDim: initialBackground.dim,
+  bgScope: initialBackground.scope,
   selfCardSide: loadSelfCardSide(),
   uiTheme: loadUiTheme(),
   uiPalette: loadUiPalette(),
@@ -767,19 +786,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
             return { name: botNames[i % botNames.length], heroId: lordHero };
           }
         }
-        return { name: botNames[i % botNames.length], heroId: pool.pop()! };
+        let pickIdx = pool.length - 1;
+        if (humanIsLord) {
+          while (pickIdx >= 0 && lordHeroIds.has(pool[pickIdx])) pickIdx -= 1;
+          if (pickIdx < 0) pickIdx = pool.length - 1;
+        }
+        const [heroId] = pool.splice(pickIdx, 1);
+        return { name: botNames[i % botNames.length], heroId };
       });
       if (humanIsLord) {
-        const picks: string[] = [];
-        for (const id of pool) {
-          if (picks.length >= 2) break;
-          if (lordHeroIds.has(id)) picks.push(id);
-        }
-        for (const id of pool) {
-          if (picks.length >= 6) break;
-          if (!picks.includes(id)) picks.push(id);
-        }
-        candidates = picks.slice(0, 6);
+        const backupCount = rules?.lordBackupCount ?? 3;
+        const lordPicks = pool.filter((id) => lordHeroIds.has(id));
+        const others = pool.filter((id) => !lordHeroIds.has(id));
+        candidates = [...lordPicks, ...others.slice(0, backupCount)];
       } else {
         candidates = pool.slice(0, 5);
       }
@@ -789,7 +808,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (forced.length) candidates = forced;
       }
     }
-    const lordIndex = visibleLordIndex;
+    if (mode !== 'landlord' && bots.length > 1) {
+      const paired = bots.map((bot, i) => ({ bot, role: roles[i + 1] }));
+      for (let i = paired.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [paired[i], paired[j]] = [paired[j], paired[i]];
+      }
+      bots = paired.map((p) => p.bot);
+      paired.forEach((p, i) => {
+        roles[i + 1] = p.role;
+      });
+    }
+    const lordIndex = count > 2 && mode === 'identity' ? roles.indexOf('lord') : -1;
     const lordHeroId = lordIndex > 0 ? bots[lordIndex - 1].heroId : null;
     const bid =
       mode === 'landlord'
@@ -922,6 +952,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       firstPlayerId: null,
       pending: null,
       result: null,
+      protectionUntil: Date.now() + 3000,
       devTainted: !!getDevPickPool()?.length,
       lastPlay: null,
       lastJudge: null,
@@ -944,7 +975,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         recordDiagnostic('error', `对局异常：${(err as Error).message}`, (err as Error).stack);
         set({ error: `对局异常：${(err as Error).message}` });
       });
-    }, 0);
+    }, 3000);
   },
 
   backToMenu: () => {
@@ -1070,6 +1101,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         emitHost: (event) => get().event(event),
         onLobby: (lobby) => set({ lobby, version: get().version + 1 }),
         onChat: (message) => get().receiveChat(message),
+        onProp: (message) => get().receiveProp(message),
         onSpectators: (spectators) => set({
           spectators,
           lobby: get().lobby ? { ...get().lobby!, spectators } : null,
@@ -1085,6 +1117,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             devTainted: false,
             pending: null,
             result: null,
+            protectionUntil: Date.now() + 3000,
             lastPlay: null,
             lastJudge: null,
             lastDiscard: null,
@@ -1175,6 +1208,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           devTainted: false,
           pending: null,
           result: null,
+          protectionUntil: Date.now() + 3000,
           game: null,
           lastPlay: null,
           lastJudge: null,
@@ -1256,6 +1290,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       onSpectateAsk: (request) => set({ spectateAsk: request, version: get().version + 1 }),
       onEvent: (event) => get().event(event),
       onChat: (message) => get().receiveChat(message),
+      onProp: (message) => get().receiveProp(message),
       onEnd: (text, winner) => {
         if (get().result) return;
         clearSavedLanSession();
@@ -1584,12 +1619,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   setBgImage: (image) => {
     set({ bgImage: image });
-    saveBackgroundSettings({ image, dim: get().bgDim });
+    saveBackgroundSettings({ image, dim: get().bgDim, scope: get().bgScope });
   },
   setBgDim: (dim) => {
     const next = Math.min(90, Math.max(0, Math.round(dim)));
     set({ bgDim: next });
-    saveBackgroundSettings({ image: get().bgImage, dim: next });
+    saveBackgroundSettings({ image: get().bgImage, dim: next, scope: get().bgScope });
+  },
+  setBgScope: (scope) => {
+    set({ bgScope: scope });
+    saveBackgroundSettings({ image: get().bgImage, dim: get().bgDim, scope });
   },
   setSelfCardSide: (side) => {
     saveSelfCardSide(side);
@@ -1836,7 +1875,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           id: eventSeq,
           kind: isResponse ? ('respond' as const) : ('play' as const),
           playerId: ev.playerId,
-          cards: [ev.card],
+          cards: ev.type === 'respond' && ev.cards ? ev.cards : [ev.card],
           label: isResponse ? '打出' : '使用',
           as: ev.as,
           targets: ev.type === 'playCard' ? ev.targets : [],
@@ -1926,6 +1965,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
         name: ev.name,
         text: ev.text,
       };
+      patch.cardHistory = [
+        ...(patch.cardHistory ?? state.cardHistory),
+        {
+          id: eventSeq,
+          kind: 'skill' as const,
+          playerId: ev.playerId,
+          cards: [],
+          label: '发动',
+          as: ev.text ? `${ev.name}·${ev.text}` : ev.name,
+          turn: state.game?.state.turn,
+        },
+      ].slice(-40);
       const skillId = eventSeq;
       setTimeout(() => {
         if (get().lastSkill?.id === skillId) set({ lastSkill: null });
@@ -2029,6 +2080,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
                   : '身份场';
           const firstPlayer =
             current.firstPlayerId !== null ? finishedState.players[current.firstPlayerId] : undefined;
+          const lobbyLevels = new Map<number, number>();
+          for (const p of current.lobby?.players ?? []) {
+            if (typeof p.level === 'number') lobbyLevels.set(p.playerId, p.level);
+          }
           addMatchRecord({
             id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
             dateKey: localDateKey(),
@@ -2048,6 +2103,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
               role: player.role,
               isBot: player.isBot,
               alive: player.alive,
+              level: player.id === current.humanId ? current.profile.level : lobbyLevels.get(player.id),
             })),
             log: finishedState.log.slice(-400),
           });
@@ -2078,7 +2134,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         return;
       }
       const autoOption =
-        req.kind === 'respond' && req.respondName === '无懈可击'
+        req.kind === 'respond'
           ? (req.cardOptions ?? []).find((option) => !option.cardId.startsWith('__'))
           : undefined;
       clearAskTimer();
@@ -2315,6 +2371,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     if (state.lanRole === 'host') state.lanHost?.sendChat(value);
     else if (state.lanRole === 'client') state.lanClient?.sendChat(value);
+  },
+
+  receiveProp: (message) => {
+    const state = get();
+    const item: PropThrow = {
+      id: message.id,
+      fromId: message.fromId,
+      fromName: message.fromName,
+      targetId: message.targetId,
+      prop: message.prop,
+    };
+    set({ propThrows: [...state.propThrows, item].slice(-12) });
+    setTimeout(() => {
+      set({ propThrows: get().propThrows.filter((p) => p.id !== item.id) });
+    }, 2600);
+  },
+
+  sendProp: (targetId, prop) => {
+    const state = get();
+    const kind = prop === 'flower' ? 'flower' : 'egg';
+    if (state.lanRole === 'host') {
+      state.lanHost?.sendProp(targetId, kind);
+    } else if (state.lanRole === 'client') {
+      state.lanClient?.sendProp(targetId, kind);
+    } else {
+      const human = state.game?.state.players[state.humanId];
+      get().receiveProp({
+        id: Date.now(),
+        fromId: state.humanId,
+        fromName: human?.name ?? '你',
+        targetId,
+        prop: kind,
+        at: Date.now(),
+      });
+    }
   },
 
   openChat: () => set({ chatOpen: true, chatUnread: 0 }),

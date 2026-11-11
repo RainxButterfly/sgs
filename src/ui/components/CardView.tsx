@@ -45,6 +45,11 @@ export function CardView({ card, size = 'md', selected, disabled, dimmed, onClic
 ${cardEffectText(card)}` : ''}`}
     >
       {art && <img className="card-art-img" src={art} alt="" aria-hidden="true" />}
+      {art && (card.element === 'fire' || card.element === 'thunder') && (
+        <span className={`card-element-badge card-element-${card.element}`}>
+          {card.element === 'fire' ? '火' : '雷'}
+        </span>
+      )}
       <span className="card-corner card-corner-tl">
         <span className="card-suit">{SUIT_CHAR[card.suit]}</span>
         <span className="card-rank">{rankText(card.rank)}</span>

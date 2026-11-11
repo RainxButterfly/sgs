@@ -2,7 +2,7 @@ import { PLAYABLE_HEROES } from '../../core/deck';
 import { NameChip } from './NameChip';
 import { useGameStore } from '../store';
 
-const TESTERS = ['心晴未央', '花不琢', '青晨之城', '星野', '甘雨门卫', '孙笨'];
+const TESTERS = ['心晴未央', '花不琢', '青晨之城', '星野', '甘雨门卫', '孙笨', '墙尼赢手'];
 
 export function AboutModal() {
   const open = useGameStore((s) => s.aboutOpen);

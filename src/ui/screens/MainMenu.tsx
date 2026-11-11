@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HEROES, PLAYABLE_HEROES } from '../../core/deck';
+import { effectiveBackground } from '../background';
 import { FACTION_NAME } from '../../core/types';
 import { isTauri } from '../../net/lan';
 import { NameChip } from '../components/NameChip';
@@ -21,6 +22,10 @@ export function MainMenu() {
   const netError = useGameStore((s) => s.netError);
   const profile = useGameStore((s) => s.profile);
   const uiPalette = useGameStore((s) => s.uiPalette);
+  const bgImage = useGameStore((s) => s.bgImage);
+  const bgScope = useGameStore((s) => s.bgScope);
+  const bgDim = useGameStore((s) => s.bgDim);
+  const menuBg = effectiveBackground(bgImage, bgScope, 'menu');
   const setUiPalette = useGameStore((s) => s.setUiPalette);
   const setUiTheme = useGameStore((s) => s.setUiTheme);
   const [editingName, setEditingName] = useState(false);
@@ -49,6 +54,12 @@ export function MainMenu() {
   return (
     <div className="menu-screen">
       <div className="ink-bg" />
+      {menuBg && (
+        <>
+          <div className="menu-custom-bg" style={{ backgroundImage: `url(${menuBg})` }} />
+          <div className="menu-custom-bg-shade" style={{ opacity: bgDim / 100 }} />
+        </>
+      )}
       <div className="menu-ambient" aria-hidden="true">
         <span className="ambient-stardust" />
         <span className="ambient-sigil">

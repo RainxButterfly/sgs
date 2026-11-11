@@ -8,6 +8,7 @@ import {
   type MatchRecord,
 } from '../history';
 import { useGameStore } from '../store';
+import { NameChip } from './NameChip';
 
 function roleName(record: MatchRecord, role: MatchRecord['players'][number]['role']): string {
   if (record.mode === 'duel') return '';
@@ -185,7 +186,13 @@ export function MatchHistoryModal() {
                       <div key={`${player.name}-${index}`} className={`history-player faction-${player.faction}`}>
                         <span className="faction-badge">{FACTION_NAME[player.faction]}</span>
                         <span className="history-player-hero">{player.heroName}</span>
-                        <span className="history-player-name">{player.name}</span>
+                        <NameChip
+                          name={player.name}
+                          level={player.level ?? 1}
+                          size="sm"
+                          showLevel={player.level != null}
+                          className="history-player-name"
+                        />
                         {roleName(match, player.role) && (
                           <span className={`role-tag role-${player.role}`}>{roleName(match, player.role)}</span>
                         )}

@@ -18,6 +18,7 @@ export interface XpGain {
   realPlayers: number;
   base: number;
   winBonus: number;
+  winExtra: number;
   realBonus: number;
   total: number;
   levelBefore: number;
@@ -143,6 +144,7 @@ export function matchXpBreakdown(mode: MatchMode, result: MatchResult, realPlaye
   const winner = Math.max(1, Math.round(realPlayers || 1));
   const winRate = result === 'win' ? 0.5 : result === 'draw' ? 0.2 : 0;
   const winBonus = Math.round(base * winRate);
+  const winExtra = result === 'win' ? 8 : 0;
   const realMultiplier = Math.min(2, 1 + 0.25 * (winner - 1));
   const realBonus = Math.round((base + winBonus) * (realMultiplier - 1));
   return {
@@ -151,8 +153,9 @@ export function matchXpBreakdown(mode: MatchMode, result: MatchResult, realPlaye
     realPlayers: winner,
     base,
     winBonus,
+    winExtra,
     realBonus,
-    total: base + winBonus + realBonus,
+    total: base + winBonus + winExtra + realBonus,
   };
 }
 

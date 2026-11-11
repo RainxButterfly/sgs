@@ -838,7 +838,8 @@ ${skill.desc}` : ''}`
                 : skill.desc;
             const ok = await this.confirm(
               owner,
-              trig.prompt ?? `是否发动【${skill.name}】？`,
+              (typeof trig.prompt === 'function' ? trig.prompt(ctx) : trig.prompt) ??
+                `是否发动【${skill.name}】？`,
               triggerDetail,
             );
             if (!ok) continue;
@@ -1133,6 +1134,16 @@ ${skill.desc}` : ''}`
 
   hasAnyCard(player: PlayerState): boolean {
     return this.hasCards(player);
+  }
+
+  guhuoDeclarable(user: PlayerState, name: string): boolean {
+    if (!this.canUseName(user, name)) return false;
+    const needsTarget = ['杀', '决斗', '过河拆桥', '顺手牵羊', '借刀杀人', '火攻', '铁索连环'].includes(name);
+    if (needsTarget) return this.targetInfo(user, name, false).ids.length > 0;
+    if (name === '南蛮入侵' || name === '万箭齐发') {
+      return this.players.some((p) => p.alive && p.id !== user.id);
+    }
+    return true;
   }
 
   randomItem<T>(arr: T[]): T | null {
@@ -2244,12 +2255,28 @@ ${skill.desc}` : ''}`
     let ignoreArmor = opts.ignoreArmor ?? false;
     const excluded = new Set<string>();
     const responseWindow =
-      !player.isBot && name !== '无懈可击' ? Math.min(opts.windowMs ?? 5000, 5000) : 0;
+      !player.isBot && name !== '无懈可击' ? Math.max(opts.windowMs ?? 0, 12000) : 0;
     let windowShown = false;
     for (let guard = 0; guard < 8; guard += 1) {
       const options = this.buildRespondOptions(player, name, ignoreArmor).filter(
         (o) => !excluded.has(o.cardId),
       );
+      if (options.length === 0) {
+        if (responseWindow > 0 && player.hand.length > 0) {
+          if (!windowShown) {
+            windowShown = true;
+            this.emit({
+              type: 'responseWindow',
+              playerId: player.id,
+              name,
+              ms: responseWindow,
+              until: Date.now() + responseWindow,
+            });
+          }
+          await this.io.delay(responseWindow);
+        }
+        return null;
+      }
       if (responseWindow > 0 && !windowShown) {
         windowShown = true;
         this.emit({
@@ -2259,10 +2286,6 @@ ${skill.desc}` : ''}`
           ms: responseWindow,
           until: Date.now() + responseWindow,
         });
-      }
-      if (options.length === 0) {
-        if (responseWindow > 0) await this.io.delay(responseWindow);
-        return null;
       }
       const res = await this.io.ask({
         id: this.askId(),
@@ -2369,10 +2392,11 @@ ${skill.desc}` : ''}`
           type: 'respond',
           playerId: player.id,
           card: picked[0],
+          cards: picked,
           as: '杀',
           skillId: 'zhangba',
         });
-        this.log(`【${player.name}】发动丈八蛇矛，将两张手牌当【杀】打出`);
+        this.log(`【${player.name}】发动丈八蛇矛，将 ${cardLabel(picked[0])}、${cardLabel(picked[1])} 当【杀】打出`);
         player.usedThisTurn.sha = (player.usedThisTurn.sha ?? 0) + 1;
         await this.notifyHandLost(player);
         return { card: null, as: '杀', skillId: 'zhangba', virtual: true };
@@ -2605,7 +2629,7 @@ ${skill.desc}` : ''}`
   ): Promise<boolean> {
     if (this.wuxieWindowPending || forceWindow) {
       this.wuxieWindowPending = false;
-      const ms = 3000;
+      const ms = 6000;
       this.emit({ type: 'wuxieWindow', ms, until: Date.now() + ms });
       await this.io.delay(ms);
     }
@@ -2614,13 +2638,12 @@ ${skill.desc}` : ''}`
       let played = false;
       for (const p of this.turnOrder()) {
         if (!p.alive) continue;
-        const has = p.hand.some((c) => c.name === '无懈可击');
-        if (!has) continue;
+        if (this.buildRespondOptions(p, '无懈可击').length === 0) continue;
         const resp = await this.askRespond(p, '无懈可击', {
           prompt: `${desc}，是否使用无懈可击？`,
           canCancel: true,
           targetId: target.id,
-          timeout: 8000,
+          timeout: 12000,
         });
         if (resp) {
           nullified = !nullified;
@@ -3075,14 +3098,20 @@ ${skill.desc}` : ''}`
           await this.damage(null, player, 3, card, '闪电', 'thunder');
           this.toDiscard(card);
         } else {
-          const next = this.nextAlive(player);
-          if (next && !next.judgeZone.some((c) => c.name === '闪电')) {
-            next.judgeZone.push(card);
+          let target = this.nextAlive(player);
+          const aliveOthers = this.players.filter((p) => p.alive && p.id !== player.id).length;
+          let hops = 0;
+          while (target && target.judgeZone.some((c) => c.name === '闪电') && hops < aliveOthers) {
+            target = this.nextAlive(target);
+            hops += 1;
+          }
+          if (target && !target.judgeZone.some((c) => c.name === '闪电')) {
+            target.judgeZone.push(card);
             this.removeFromLimbo(card);
-            this.log(`闪电移动到【${next.name}】的判定区`);
+            this.log(`闪电移动到【${target.name}】的判定区`);
           } else {
             this.toDiscard(card);
-            this.log(next ? '下家判定区已有闪电，闪电置入弃牌堆' : '闪电无人可传，置入弃牌堆');
+            this.log('闪电无人可传，置入弃牌堆');
           }
         }
       } else if (card.name === '兵粮寸断') {

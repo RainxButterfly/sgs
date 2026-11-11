@@ -80,6 +80,15 @@ export interface ChatMessage {
   playerId?: number;
 }
 
+export interface PropMessage {
+  id: number;
+  fromId: number;
+  fromName: string;
+  targetId: number;
+  prop: string;
+  at: number;
+}
+
 export type HostPayload =
   | { t: 'lobby'; lobby: LobbyState }
   | { t: 'start'; playerId: number }
@@ -93,6 +102,7 @@ export type HostPayload =
   | { t: 'event'; ev: GameEvent }
   | { t: 'end'; text: string; winner: string }
   | { t: 'chat'; message: ChatMessage }
+  | { t: 'prop'; message: PropMessage }
   | { t: 'kicked'; reason: string }
   | { t: 'versionMismatch'; message: string }
   | { t: 'error'; message: string };
@@ -106,6 +116,7 @@ export type GuestPayload =
   | { t: 'action'; action: GameAction }
   | { t: 'pickHero'; heroId: string }
   | { t: 'chat'; text: string }
+  | { t: 'prop'; targetId: number; prop: string }
   | { t: 'leave' };
 
 function hiddenCard(playerId: number, index: number): Card {

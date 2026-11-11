@@ -1,4 +1,4 @@
-import { cardDisplayName } from '../labels';
+import { cardDisplayName, playTargetText } from '../labels';
 import { cardEffectText } from '../cardEffects';
 import { useGameSnapshot, useGameStore } from '../store';
 import { CardView } from './CardView';
@@ -18,19 +18,19 @@ export function TableCenter() {
         entry.targets && entry.targets.length > 0
           ? ` → ${entry.targets.map(playerName).join('、')}`
           : '';
-      return `${entry.kind === 'respond' ? '打出' : '使用'}【${entry.as ?? (card ? cardDisplayName(card) : '')}】${targetText}`;
+      const multi =
+        entry.cards.length > 1
+          ? `（${entry.cards.map((c) => cardDisplayName(c)).join('＋')}）`
+          : '';
+      return `${entry.kind === 'respond' ? '打出' : '使用'}【${entry.as ?? (card ? cardDisplayName(card) : '')}】${multi}${targetText}`;
     }
     if (entry.kind === 'judge') return `判定${card ? `【${card.name}】` : ''}`;
     if (entry.kind === 'discard') return `弃置${card ? `【${card.name}】` : ''}`;
     if (entry.kind === 'gain') return `获得${card ? `【${card.name}】` : ''}`;
+    if (entry.kind === 'skill') return `发动【${entry.as ?? ''}】`;
     return entry.label;
   };
-  const targetText = (ids: number[]) =>
-    ids.length === 0
-      ? '无目标'
-      : ids.length > 3
-        ? `${ids.slice(0, 3).map(playerName).join('、')} 等 ${ids.length} 人`
-        : ids.map(playerName).join('、');
+  const targetText = (ids: number[]) => playTargetText(ids, lastPlay?.card, lastPlay?.as, playerName);
 
   return (
     <div className="table-center">

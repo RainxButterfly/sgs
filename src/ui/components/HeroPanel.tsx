@@ -2,6 +2,7 @@ import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
 import { cardSuitText, equipSlotText, factionKnown, isRedCard, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
+import { useGameSnapshot } from '../store';
 import { EquipHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 
 interface Flash {
@@ -39,6 +40,8 @@ export function HeroPanel({
   tableNo,
 }: Props) {
   const hero = HERO_MAP.get(player.heroId);
+  const { game } = useGameSnapshot();
+  const attackRange = game?.attackRange?.(player) ?? (player.equips.weapon?.range ?? 1);
   const titles = (player.heroIds?.length ? player.heroIds : [player.heroId])
     .map((id) => HERO_MAP.get(id)?.title)
     .filter(Boolean)
@@ -130,6 +133,11 @@ export function HeroPanel({
               </HoverInfo>
             ) : null;
           })}
+        </div>
+        <div className="hero-range">
+          <span className="hero-range-main">攻击范围 <b>{attackRange}</b></span>
+          {player.equips.horsePlus && <span className="hero-range-horse plus">+1马 · 他人距我+1</span>}
+          {player.equips.horseMinus && <span className="hero-range-horse minus">-1马 · 我距他人-1</span>}
         </div>
         <div className="hero-equips">
         {slots.map(({ key, label }) => {

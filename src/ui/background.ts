@@ -3,14 +3,18 @@ import { scheduleDataSnapshot } from './dataStorage';
 const STORAGE_KEY = 'sgs-background-v1';
 const MAX_EDGE = 1920;
 
+export type BackgroundScope = 'game' | 'menu' | 'all';
+
 export interface BackgroundSettings {
   image: string | null;
   dim: number;
+  scope: BackgroundScope;
 }
 
 export const DEFAULT_BACKGROUND: BackgroundSettings = {
   image: null,
   dim: 52,
+  scope: 'game',
 };
 
 export function loadBackgroundSettings(): BackgroundSettings {
@@ -21,7 +25,8 @@ export function loadBackgroundSettings(): BackgroundSettings {
     const parsed = JSON.parse(raw) as Partial<BackgroundSettings>;
     const dim = typeof parsed.dim === 'number' ? Math.min(90, Math.max(0, parsed.dim)) : DEFAULT_BACKGROUND.dim;
     const image = typeof parsed.image === 'string' && parsed.image.startsWith('data:image/') ? parsed.image : null;
-    return { image, dim };
+    const scope: BackgroundScope = parsed.scope === 'menu' || parsed.scope === 'all' ? parsed.scope : 'game';
+    return { image, dim, scope };
   } catch {
     return DEFAULT_BACKGROUND;
   }
@@ -35,6 +40,16 @@ export function saveBackgroundSettings(settings: BackgroundSettings): void {
   } catch {
     // 存储空间不足时保留当前会话内的设置
   }
+}
+
+export function effectiveBackground(
+  image: string | null,
+  scope: BackgroundScope,
+  area: 'game' | 'menu',
+): string | null {
+  if (!image) return null;
+  if (scope === 'all') return image;
+  return scope === area ? image : null;
 }
 
 function readAsDataUrl(file: File): Promise<string> {

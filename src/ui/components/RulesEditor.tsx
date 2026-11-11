@@ -59,6 +59,13 @@ export function RulesEditor({ rules, onChange }: Props) {
         max={4}
         onChange={(v) => set({ handLimitModifier: v })}
       />
+      <Stepper
+        label="主公备选武将"
+        value={rules.lordBackupCount ?? 3}
+        min={0}
+        max={8}
+        onChange={(v) => set({ lordBackupCount: v })}
+      />
       <Toggle label="身份公开" value={rules.revealRoles} onChange={(v) => set({ revealRoles: v })} />
       <Toggle label="武将技能" value={rules.skillsEnabled} onChange={(v) => set({ skillsEnabled: v })} />
       <Toggle label="延时锦囊" value={rules.allowDelayed} onChange={(v) => set({ allowDelayed: v })} />

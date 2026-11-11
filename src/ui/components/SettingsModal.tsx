@@ -31,6 +31,8 @@ export function SettingsModal() {
   const setSoundVolume = useGameStore((s) => s.setSoundVolume);
   const setBgImage = useGameStore((s) => s.setBgImage);
   const setBgDim = useGameStore((s) => s.setBgDim);
+  const bgScope = useGameStore((s) => s.bgScope);
+  const setBgScope = useGameStore((s) => s.setBgScope);
   const setSelfCardSide = useGameStore((s) => s.setSelfCardSide);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -246,6 +248,26 @@ export function SettingsModal() {
             <b>{bgDim}%</b>
           </div>
           <div className="bg-setting-hint">遮罩越深，桌面文字和卡牌越清晰。</div>
+          <div className="bg-setting-row">
+            <span>应用范围</span>
+            <div className="bg-scope-options">
+              {([
+                ['game', '仅对局'],
+                ['menu', '仅主菜单'],
+                ['all', '全部界面'],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`toggle-btn ${bgScope === value ? 'on' : ''}`}
+                  onClick={() => setBgScope(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bg-setting-hint">选择自定义壁纸应用到哪些界面；未选中的界面使用默认背景。</div>
           {error && <div className="net-error">{error}</div>}
           <div className="settings-actions">
             <input

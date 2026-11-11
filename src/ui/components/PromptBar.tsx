@@ -47,7 +47,7 @@ export function PromptBar() {
               : '等待对局开始'}
         </span>
         {wuxieWindow && wuxieDeadline && (
-          <CountdownRing deadline={wuxieDeadline} totalMs={3000} size={26} className="prompt-wuxie-ring" />
+          <CountdownRing deadline={wuxieDeadline} totalMs={6000} size={26} className="prompt-wuxie-ring" />
         )}
         {current && (
           <span className="prompt-idle-sub">

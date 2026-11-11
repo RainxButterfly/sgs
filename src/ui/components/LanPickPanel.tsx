@@ -81,7 +81,7 @@ export function LanPickPanel({
           <div className="room-card-title">座次与武将</div>
           {players.map((player) => {
             const isLord = lordPlayerId != null && player.playerId === lordPlayerId;
-            const showHero = isLord || revealed || landlord || player.connId === me.connId;
+            const showHero = player.connId === me.connId || revealed || (landlord ? !isLord : isLord);
             const selectedIds = playerHeroIds(player);
             const hero = player.heroId && showHero ? HERO_MAP.get(player.heroId) : undefined;
             return (
@@ -90,7 +90,7 @@ export function LanPickPanel({
                 className={`pick-seat ${player.connId === me.connId ? 'is-human' : ''} ${isLord ? 'is-lord' : ''}`}
               >
                 <span className="pick-seat-label">
-                  {isLord ? (landlord ? '地主' : '主公') : player.isHost ? '房主' : '玩家'}
+                  {isLord ? (landlord ? '地主' : '主公') : player.isHost ? '房主' : '玩家'} · {player.playerId + 1}号位
                 </span>
                 <span className="pick-seat-hero">
                   {selectedIds.length
@@ -120,7 +120,7 @@ export function LanPickPanel({
             const isBotLord = !lordPlayerId && !!lordBotHero && lordSeat === seatIndex;
             return (
               <div key={`empty-${index}`} className={`pick-seat ${isBotLord ? 'is-lord' : ''}`}>
-                <span className="pick-seat-label">{isBotLord ? (landlord ? '地主' : '主公') : '电脑'}</span>
+                <span className="pick-seat-label">{isBotLord ? (landlord ? '地主' : '主公') : '电脑'} · {seatIndex + 1}号位</span>
                 <span className="pick-seat-hero">{isBotLord ? lordBotHero?.name : '自动补足'}</span>
                 <span className="pick-seat-tag">{isBotLord ? '电脑' : '空位'}</span>
               </div>

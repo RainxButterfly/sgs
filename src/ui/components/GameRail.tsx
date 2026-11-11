@@ -1,5 +1,6 @@
+import { useEffect, useRef } from 'react';
 import { cardEffectText } from '../cardEffects';
-import { cardDisplayName, cardTypeText } from '../labels';
+import { cardDisplayName, cardTypeText, playTargetText } from '../labels';
 import { useGameSnapshot, useGameStore } from '../store';
 import { CardView } from './CardView';
 
@@ -10,16 +11,15 @@ interface Props {
 export function GameRail({ onShowLog }: Props) {
   const { game } = useGameSnapshot();
   const lastPlay = useGameStore((s) => s.lastPlay);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const lastLogId = game?.state.log[game.state.log.length - 1]?.id;
+  useEffect(() => {
+    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
+  }, [lastLogId]);
   if (!game) return null;
 
   const playerName = (id: number) => game.state.players[id]?.name ?? `座位${id}`;
-  const targetText = (ids: number[]) =>
-    ids.length === 0
-      ? '无目标'
-      : ids.length > 3
-        ? `${ids.slice(0, 3).map(playerName).join('、')} 等 ${ids.length} 人`
-        : ids.map(playerName).join('、');
-  const recent = [...game.state.log].reverse().slice(0, 16);
+  const recent = game.state.log.slice(-16);
 
   return (
     <aside className="game-rail">
@@ -33,7 +33,7 @@ export function GameRail({ onShowLog }: Props) {
             <div className="rail-route">
               <b>{playerName(lastPlay.playerId)}</b>
               <i>→</i>
-              <span>{targetText(lastPlay.targets)}</span>
+              <span>{playTargetText(lastPlay.targets, lastPlay.card, lastPlay.as, playerName)}</span>
             </div>
             <div className="rail-play-main">
               <CardView card={lastPlay.card} size="sm" />
@@ -58,7 +58,7 @@ export function GameRail({ onShowLog }: Props) {
             完整战报
           </button>
         </div>
-        <div className="rail-feed-list">
+        <div className="rail-feed-list" ref={feedRef}>
           {recent.length === 0 && <div className="rail-empty">暂无记录</div>}
           {recent.map((entry) => (
             <div key={entry.id} className={`rail-feed-line log-${entry.kind}`}>

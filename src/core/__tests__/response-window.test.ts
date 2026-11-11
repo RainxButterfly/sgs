@@ -26,9 +26,26 @@ function setup() {
 }
 
 describe('普通响应窗口', () => {
-  it('没有闪时也显示三秒响应计时并等待', async () => {
+  it('无牌且无相关技能时跳过响应计时', async () => {
     const { game, events, delay, player } = setup();
     player.hand = [];
+    const result = await (game as unknown as {
+      askRespond: (
+        player: unknown,
+        name: string,
+        opts: { prompt: string },
+      ) => Promise<unknown>;
+    }).askRespond(player, '闪', { prompt: '请打出一张闪' });
+    expect(result).toBeNull();
+    expect(
+      events.some((event) => event.type === 'responseWindow' && event.name === '闪'),
+    ).toBe(false);
+    expect(delay).not.toHaveBeenCalled();
+  });
+
+  it('有牌但无匹配时仍保留计时防止信息泄露', async () => {
+    const { game, events, delay, player } = setup();
+    player.hand = [{ id: 'sha', name: '杀', suit: 'spade', rank: 7, type: 'basic' }];
     const result = await (game as unknown as {
       askRespond: (
         player: unknown,
@@ -57,6 +74,6 @@ describe('普通响应窗口', () => {
     }).askRespond(player, '闪', { prompt: '请打出一张闪' });
     expect(ask).toHaveBeenCalled();
     const request = ask.mock.calls[0]?.[0] as { timeout?: number } | undefined;
-    expect(request?.timeout).toBe(5000);
+    expect(request?.timeout).toBe(12000);
   });
 });

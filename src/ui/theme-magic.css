@@ -998,6 +998,22 @@ html.theme-magic .mobile-game .m-prompt .prompt-bar {
   background: linear-gradient(180deg, rgba(38, 24, 58, 0.97), rgba(12, 9, 22, 0.99));
 }
 
+html.theme-magic .mobile-game .prompt-dock-badge {
+  background: linear-gradient(160deg, #a78bfa, #6d28d9);
+  color: #f1ebff;
+  box-shadow: 0 4px 14px rgba(109, 40, 217, 0.4);
+}
+
+html.theme-magic .mobile-game .prompt-dock-badge.respond {
+  background: linear-gradient(160deg, #ff5db1, #be185d);
+  color: #fff;
+}
+
+html.theme-magic .mobile-game .prompt-dock-badge.choose {
+  background: linear-gradient(160deg, #46e6a0, #0f766e);
+  color: #06281c;
+}
+
 /* 固定渐变，不做循环动画 */
 html.theme-magic .about-seal-v2,
 html.theme-magic .about-avatar-v2 {

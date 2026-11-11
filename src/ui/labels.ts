@@ -39,6 +39,26 @@ export function cardDisplayName(card: Card): string {
   return card.name;
 }
 
+const SELF_TARGET_CARDS = ['桃', '酒', '无中生有', '闪电'];
+const AOE_TARGET_CARDS = ['南蛮入侵', '万箭齐发', '桃园结义', '五谷丰登'];
+
+export function playTargetText(
+  ids: number[],
+  card: Card | undefined,
+  as: string | undefined,
+  nameOf: (id: number) => string,
+): string {
+  if (ids.length > 0) {
+    return ids.length > 3
+      ? `${ids.slice(0, 3).map(nameOf).join('、')} 等 ${ids.length} 人`
+      : ids.map(nameOf).join('、');
+  }
+  const name = as ?? card?.name ?? '';
+  if (card?.equipSlot || SELF_TARGET_CARDS.includes(name)) return '对自己';
+  if (AOE_TARGET_CARDS.includes(name)) return '全体角色';
+  return '无目标';
+}
+
 export function shortCardName(name: string): string {
   if (name === '雌雄双股剑') return '雌雄剑';
   if (name === '青龙偃月刀') return '青龙刀';

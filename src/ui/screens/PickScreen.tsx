@@ -113,7 +113,7 @@ export function PickScreen() {
           <section className="pick-seats">
             <div className="room-card-title">座次与武将</div>
             <div className="pick-seat is-human">
-              <span className="pick-seat-label">你</span>
+              <span className="pick-seat-label">你 · 1号位</span>
               <span className="pick-seat-hero">
                 {selectedPair
                   ? `${HERO_MAP.get(selectedPair.primary)?.name ?? ''} / ${HERO_MAP.get(selectedPair.secondary)?.name ?? ''}`
@@ -122,7 +122,7 @@ export function PickScreen() {
               <span className="pick-seat-tag">
                 {preGame.lordIndex === 0
                   ? gameMode === 'landlord'
-                    ? '地主 · 已亮将'
+                    ? '地主'
                     : '主公 · 已亮将'
                   : selectedPair
                     ? '双将 · 已选择'
@@ -134,16 +134,17 @@ export function PickScreen() {
             {preGame.bots.map((bot, index) => {
               const hero = HERO_MAP.get(bot.heroId);
               const isLord = preGame.lordIndex === index + 1;
+              const showHero = gameMode === 'landlord' ? !isLord : isLord;
               return (
                 <div key={bot.name + bot.heroId} className={`pick-seat ${isLord ? 'is-lord' : ''}`}>
-                  <span className="pick-seat-label">电脑</span>
+                  <span className="pick-seat-label">电脑 · {index + 2}号位</span>
                   <span className="pick-seat-hero">
-                    {isLord || gameMode === 'landlord' ? (hero?.name ?? '随机') : '未亮将'}
+                    {showHero ? (hero?.name ?? '随机') : '未亮将'}
                   </span>
                   <span className="pick-seat-tag">
                     {isLord ? (gameMode === 'landlord' ? '地主' : '主公') : bot.name}
                   </span>
-                  {(isLord || gameMode === 'landlord') && hero && (
+                  {showHero && hero && (
                     <button
                       type="button"
                       className="pick-seat-info"
@@ -172,7 +173,7 @@ export function PickScreen() {
                 {pairs.length
                   ? '点击一组同势力双将'
                   : gameMode === 'identity' && preGame.lordIndex === 0
-                    ? '主公候选比其他人多一名，并包含主公将'
+                    ? '主公可选全部主公技武将，另有随机备选武将'
                     : '点击一张武将牌选择'}
               </span>
             </div>

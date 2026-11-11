@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { HERO_MAP } from '../../core/deck';
+import { HERO_MAP, PLAYABLE_HEROES } from '../../core/deck';
 import { useGameStore } from '../store';
 
 describe('主公将候选', () => {
@@ -7,7 +7,8 @@ describe('主公将候选', () => {
     useGameStore.setState({ game: null, preGame: null });
   });
 
-  it('主公候选比普通玩家多一名，并至少包含两名主公将', () => {
+  it('主公候选包含全部主公技武将，另加默认 3 名备选', () => {
+    const allLordCount = PLAYABLE_HEROES.filter((hero) => hero.lordSkillId).length;
     let sawHumanLord = false;
     for (let round = 0; round < 120; round += 1) {
       useGameStore.getState().prepareLocal(8, { mode: 'identity' });
@@ -16,9 +17,9 @@ describe('主公将候选', () => {
       if (!pre) continue;
       if (pre.roles[0] === 'lord') {
         sawHumanLord = true;
-        expect(pre.candidates).toHaveLength(6);
         const lordCount = pre.candidates.filter((id) => !!HERO_MAP.get(id)?.lordSkillId).length;
-        expect(lordCount).toBeGreaterThanOrEqual(2);
+        expect(lordCount).toBe(allLordCount);
+        expect(pre.candidates.length).toBe(allLordCount + 3);
       } else {
         expect(pre.candidates).toHaveLength(5);
       }
@@ -28,5 +29,17 @@ describe('主公将候选', () => {
       }
     }
     expect(sawHumanLord).toBe(true);
+  });
+
+  it('主公备选数量可由房主自定义', () => {
+    for (let round = 0; round < 60; round += 1) {
+      useGameStore.getState().prepareLocal(8, { mode: 'identity', lordBackupCount: 5 });
+      const pre = useGameStore.getState().preGame;
+      if (pre?.roles[0] === 'lord') {
+        const allLordCount = PLAYABLE_HEROES.filter((hero) => hero.lordSkillId).length;
+        expect(pre.candidates.length).toBe(allLordCount + 5);
+        return;
+      }
+    }
   });
 });

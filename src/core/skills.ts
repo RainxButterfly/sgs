@@ -1,5 +1,5 @@
 import type { Game } from './game';
-import { SUIT_CN, type Card, type PlayerState } from './types';
+import { PHASE_NAME, SUIT_CN, type Card, type Phase, type PlayerState } from './types';
 import { EQUIP_SKILL_ID } from './equipment';
 
 export type SkillEvent =
@@ -42,7 +42,7 @@ export interface TriggerDef {
   when?: (ctx: SkillContext) => boolean;
   optional?: boolean;
   oncePerTurn?: boolean;
-  prompt?: string;
+  prompt?: string | ((ctx: SkillContext) => string);
   effect: (ctx: SkillContext) => Promise<void>;
 }
 
@@ -85,6 +85,23 @@ const allCards = (p: PlayerState): Card[] => [
 ];
 const others = (game: Game, owner: PlayerState) => game.players.filter((p) => p.alive && p.id !== owner.id);
 const isCurrent = (ctx: SkillContext) => ctx.owner.id === ctx.game.currentPlayer?.id;
+
+const GUHUO_NAMES = [
+  '杀',
+  '桃',
+  '酒',
+  '无中生有',
+  '决斗',
+  '过河拆桥',
+  '顺手牵羊',
+  '万箭齐发',
+  '南蛮入侵',
+  '桃园结义',
+  '五谷丰登',
+  '火攻',
+  '铁索连环',
+  '借刀杀人',
+];
 
 async function xuanfengDiscard(game: Game, owner: PlayerState): Promise<void> {
   for (let i = 0; i < 2; i += 1) {
@@ -1648,6 +1665,7 @@ const SKILLS: SkillDef[] = [
           c.owner.flags.shensuJudge = 1;
           c.owner.skipPhases.push('draw');
           c.data.skip = true;
+          c.game.log(`【${c.owner.name}】发动【神速】跳过判定阶段与摸牌阶段`, 'skill');
           const target = await c.game.askPlayer(
             c.owner,
             others(c.game, c.owner),
@@ -1681,6 +1699,7 @@ const SKILLS: SkillDef[] = [
           await c.game.discardCards(c.owner, picked, '神速');
           c.owner.flags.shensuPlay = 1;
           c.data.skip = true;
+          c.game.log(`【${c.owner.name}】发动【神速】跳过出牌阶段`, 'skill');
           const target = await c.game.askPlayer(
             c.owner,
             others(c.game, c.owner),
@@ -2020,7 +2039,8 @@ const SKILLS: SkillDef[] = [
           ['judge', 'draw', 'play', 'discard'].includes(String(c.data.phase)) &&
           c.owner.hand.length > 0,
         optional: true,
-        prompt: '是否发动【巧变】弃一张手牌跳过当前阶段？',
+        prompt: (c) =>
+          `是否发动【巧变】弃一张手牌跳过${PHASE_NAME[String(c.data.phase) as Phase] ?? '当前阶段'}？`,
         effect: async (c) => {
           const cost = await c.game.askCards(
             c.owner,
@@ -2035,6 +2055,7 @@ const SKILLS: SkillDef[] = [
           await c.game.discardCards(c.owner, cost, '巧变');
           c.data.skip = true;
           const phase = String(c.data.phase);
+          c.game.log(`【${c.owner.name}】发动【巧变】跳过${PHASE_NAME[phase as Phase] ?? phase}`, 'skill');
           if (phase === 'draw') {
             const chosen = new Set<number>();
             for (let i = 0; i < 2; i += 1) {
@@ -2494,24 +2515,11 @@ const SKILLS: SkillDef[] = [
     name: '蛊惑',
     desc: '你可以将一张手牌声明为一种基本牌或非延时锦囊牌。其他角色可以依次质疑：若为真，质疑者各失去 1 点体力；若为假，质疑者各摸一张牌。无论真假，被质疑的牌均置入弃牌堆；仅当此牌为红桃且为真时，仍按声明结算。',
     active: {
-      usable: (_game, owner) => owner.hand.length > 0,
+      usable: (game, owner) =>
+        owner.hand.length > 0 && GUHUO_NAMES.some((name) => game.guhuoDeclarable(owner, name)),
       run: async (game, owner) => {
-        const names = [
-          '杀',
-          '桃',
-          '酒',
-          '无中生有',
-          '决斗',
-          '过河拆桥',
-          '顺手牵羊',
-          '万箭齐发',
-          '南蛮入侵',
-          '桃园结义',
-          '五谷丰登',
-          '火攻',
-          '铁索连环',
-          '借刀杀人',
-        ];
+        const names = GUHUO_NAMES.filter((name) => game.guhuoDeclarable(owner, name));
+        if (!names.length) return;
         const picked = await game.askCards(owner, owner.hand, 1, 1, '蛊惑：选择一张手牌', undefined, false);
         if (picked.length !== 1) return;
         const declared = await game.askOption(
@@ -2583,10 +2591,11 @@ const SKILLS: SkillDef[] = [
         }
         const card = picked[0];
         const questioners: PlayerState[] = [];
+        game.log(`【${owner.name}】发动【蛊惑】，声明此牌为【${declared}】`, 'skill');
         for (const p of otherAlive()) {
           const yes = await game.confirm(
             p,
-            `是否质疑【${owner.name}】的蛊惑？`,
+            `【${owner.name}】发动蛊惑，声明此牌为【${declared}】，是否质疑？`,
             '若此牌为真，你将失去 1 点体力；若为假，你摸一张牌',
           );
           if (yes) questioners.push(p);

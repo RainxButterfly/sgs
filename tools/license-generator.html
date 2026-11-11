@@ -221,6 +221,49 @@
   @keyframes toastIn{from{opacity:0;transform:translateY(20px) scale(.9)}to{opacity:1;transform:none}}
   @keyframes toastOut{to{opacity:0;transform:translateY(14px) scale(.94)}}
 
+  /* ---------- manage: history + revocation ---------- */
+  .manage-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:start;animation:rise .6s cubic-bezier(.2,.8,.2,1) both}
+  @media(max-width:940px){.manage-grid{grid-template-columns:1fr}}
+  .manage-panel{padding:0;overflow:hidden}
+  .manage-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 22px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(46,29,84,.5),transparent)}
+  .manage-head h2{margin:0;font-size:16px;font-weight:800;display:flex;align-items:center;gap:10px}
+  .manage-head .head-actions{margin-left:auto;display:flex;gap:8px}
+  .revoke-badge{background:var(--red);color:#2a0808}
+  .manage-body{padding:18px 22px;max-height:calc(100vh - 240px);overflow-y:auto}
+  .history-batch{border:1px solid var(--line);border-radius:var(--r-md);background:linear-gradient(180deg,var(--surface-2),rgba(20,12,38,.5));margin-bottom:14px;overflow:hidden}
+  .history-batch-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 15px;border-bottom:1px solid var(--line);cursor:pointer}
+  .history-batch-head .b-name{font-weight:700;font-size:14px;color:var(--ink)}
+  .history-batch-head .b-meta{font-size:11.5px;color:var(--ink-faint);font-family:var(--mono)}
+  .history-batch-head .b-actions{margin-left:auto;display:flex;gap:6px}
+  .history-batch-body{padding:10px 15px;display:none}
+  .history-batch.open .history-batch-body{display:block}
+  .history-code{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .history-code:last-child{border-bottom:0}
+  .history-code .h-name{flex:0 0 64px;font-size:12.5px;color:var(--ink-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .history-code .h-serial{flex:0 0 auto;font-family:var(--mono);font-size:11.5px;color:var(--cyan)}
+  .history-code code{flex:1;font-family:var(--mono);font-size:11px;color:var(--gold);word-break:break-all;line-height:1.5}
+  .history-code .revoked-tag{flex:0 0 auto;font-size:10.5px;color:#ffd0d0;background:rgba(255,107,107,.16);border:1px solid rgba(255,107,107,.4);padding:1px 7px;border-radius:999px}
+  .mini-btn{cursor:pointer;border:1px solid var(--line-strong);border-radius:7px;background:var(--surface-3);color:var(--violet-soft);padding:4px 9px;font-size:11.5px;font-weight:600;transition:.18s;font-family:inherit;white-space:nowrap}
+  .mini-btn:hover{background:var(--violet);color:#fff;border-color:var(--violet)}
+  .mini-btn.danger:hover{background:var(--red);border-color:var(--red)}
+  .revoke-add{display:flex;gap:8px;margin-bottom:14px}
+  .revoke-add input{flex:1}
+  .revoke-list{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;max-height:280px;overflow-y:auto}
+  .revoke-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:rgba(10,6,20,.5)}
+  .revoke-item.on{border-color:rgba(255,107,107,.5);background:rgba(255,107,107,.08)}
+  .revoke-item .r-serial{font-family:var(--mono);font-size:13px;color:var(--ink);font-weight:700}
+  .revoke-item .r-src{font-size:11px;color:var(--ink-faint)}
+  .revoke-item .r-state{margin-left:auto;font-size:11px;font-weight:700}
+  .revoke-item.on .r-state{color:var(--red)}
+  .revoke-item:not(.on) .r-state{color:var(--green)}
+  .revoke-snippet{border:1px dashed var(--line-strong);border-radius:var(--r-md);padding:14px;background:rgba(10,6,20,.5)}
+  .revoke-snippet .lbl{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--ink-faint);font-weight:800;margin-bottom:9px}
+  .revoke-snippet pre{font-family:var(--mono);font-size:12px;color:var(--cyan);background:rgba(8,5,16,.7);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;margin:0 0 10px;white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:200px;overflow-y:auto}
+  .manage-empty{color:var(--ink-faint);font-size:13px;text-align:center;padding:30px 10px}
+  .history-add{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed var(--line)}
+  .history-add textarea{min-height:64px;font-family:var(--mono);font-size:12px}
+  .history-add .btn{align-self:flex-start}
+
   footer.note{margin-top:26px;padding:18px 22px;border-radius:var(--r-md);border:1px solid rgba(245,196,81,.28);background:rgba(245,196,81,.06);font-size:12.5px;color:var(--ink-dim);line-height:1.8}
   footer.note b{color:var(--gold)}
   footer.note code{font-family:var(--mono);color:var(--cyan);background:rgba(56,225,255,.08);padding:1px 6px;border-radius:5px;font-size:12px}
@@ -259,10 +302,11 @@
     </div>
     <div class="top-right">
       <span class="chip local"><span class="dot"></span>本地专用 · 请勿打包发布</span>
-      <span class="chip ver"><span class="dot"></span><span id="verChip">工具 v1 · 游戏 v0.9.11</span></span>
+      <span class="chip ver"><span class="dot"></span><span id="verChip">工具 v1 · 游戏 v0.9.12</span></span>
       <div class="tabs" role="tablist">
         <button class="tab on" data-mode="forge" role="tab">铸造授权码</button>
         <button class="tab" data-mode="verify" role="tab">校验授权码</button>
+        <button class="tab" data-mode="manage" role="tab">历史与吊销</button>
       </div>
     </div>
   </header>
@@ -275,7 +319,7 @@
           <h3 class="group-title"><span class="idx">1</span>批次与人数</h3>
           <div class="field">
             <label for="batch">用途批次 <span class="val" id="batchVal">—</span></label>
-            <input type="text" id="batch" placeholder="如：武器专项 / 0.9.11 内测" autocomplete="off" spellcheck="false" />
+            <input type="text" id="batch" placeholder="如：武器专项 / 0.9.12 内测" autocomplete="off" spellcheck="false" />
             <div class="hint" id="batchHint">批次名不能含「.」，会写进授权码明文。</div>
           </div>
           <div class="field">
@@ -346,8 +390,8 @@
           <div class="field">
             <label>游戏版本区间</label>
             <div class="two-col">
-              <input type="text" id="gameMin" value="0.9.11" spellcheck="false" />
-              <input type="text" id="gameMax" value="0.9.11" spellcheck="false" />
+              <input type="text" id="gameMin" value="0.9.12" spellcheck="false" />
+              <input type="text" id="gameMax" value="0.9.12" spellcheck="false" />
             </div>
             <div class="hint" id="gameHint">格式 x.y.z；默认锁定当前版本，跨版本测试可放宽上限。</div>
           </div>
@@ -417,7 +461,7 @@
         <h3 class="group-title"><span class="idx">✦</span>校验 / 解码授权码</h3>
         <div class="field">
           <label for="verifyInput">粘贴授权码</label>
-          <textarea id="verifyInput" placeholder="XH2.20261111.武器专项.a3f2c1.1-1.0.9.11~0.9.11.20261211.xxxxxxxxxxxx" spellcheck="false"></textarea>
+          <textarea id="verifyInput" placeholder="XH2.20261111.武器专项.a3f2c1.1-1.0.9.12~0.9.12.20261211.xxxxxxxxxxxx" spellcheck="false"></textarea>
         </div>
         <div class="v-actions">
           <button class="btn primary" id="verifyBtn" style="width:auto;flex:0 0 auto">🔍 校验签名与范围</button>
@@ -428,7 +472,7 @@
         <div class="v-env">
           <div class="field" style="margin:0">
             <label for="vGame">核对游戏版本</label>
-            <input type="text" id="vGame" value="0.9.11" spellcheck="false" />
+            <input type="text" id="vGame" value="0.9.12" spellcheck="false" />
           </div>
           <div class="field" style="margin:0">
             <label for="vTool">核对工具版本</label>
@@ -444,9 +488,50 @@
     </div>
   </div>
 
+  <!-- ===================== MANAGE ===================== -->
+  <div id="view-manage" class="hidden">
+    <div class="manage-grid">
+      <section class="panel manage-panel">
+        <div class="manage-head">
+          <h2>铸造历史 <span class="count-badge" id="historyCount">0</span></h2>
+          <div class="head-actions">
+            <button class="btn sm" id="historyExport">导出全部 JSON</button>
+            <button class="btn sm" id="historyClear">清空历史</button>
+          </div>
+        </div>
+        <div class="manage-body">
+          <div class="history-add">
+            <textarea id="historyAddInput" placeholder="粘贴之前生成的授权码（每行一个，可夹杂姓名/编号说明），自动识别其中的 XH2 码并按批次加入历史"></textarea>
+            <button class="btn sm" id="historyAddBtn">＋ 添加到历史</button>
+          </div>
+          <div id="historyList"></div>
+        </div>
+      </section>
+
+      <section class="panel manage-panel">
+        <div class="manage-head">
+          <h2>吊销管理 <span class="count-badge revoke-badge" id="revokeCount">0</span></h2>
+        </div>
+        <div class="manage-body">
+          <p class="hint" style="margin:0 0 12px">勾选编号即标记为「已吊销」。下方片段复制到 <code style="font-family:var(--mono);color:var(--cyan)">src/dev/policy.ts</code> 的 <code style="font-family:var(--mono);color:var(--cyan)">REVOKED_DEV_SERIALS</code>，随下个版本发布生效。吊销状态仅保存在本机。</p>
+          <div class="revoke-add">
+            <input type="text" id="revokeManual" placeholder="手动输入要吊销的编号，如 a3f2c1" spellcheck="false" />
+            <button class="btn sm" id="revokeAddBtn">加入吊销</button>
+          </div>
+          <div class="revoke-list" id="revokeList"></div>
+          <div class="revoke-snippet">
+            <div class="lbl">吊销名单片段</div>
+            <pre id="revokeSnippet"></pre>
+            <button class="btn sm" id="revokeCopy">复制片段</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
   <footer class="note">
     <b>安全约定：</b>本工具内置签名密钥，<b>仅供开发者本地使用</b>，请勿打包进 <code>dist</code>、上传公共仓库的发布产物或发给测试者。测试者只使用游戏内的工具页解锁与发指令。<br>
-    <b>吊销某个码：</b>复制其编号，加入 <code>src/dev/policy.ts</code> 的 <code>REVOKED_DEV_SERIALS</code>（整批吊销用 <code>REVOKED_DEV_BATCHES</code>），随下个版本发布生效。可在结果区勾选号码后点「吊销片段」自动生成代码。<br>
+    <b>吊销某个码：</b>在「历史与吊销」页勾选编号，复制片段加入 <code>src/dev/policy.ts</code> 的 <code>REVOKED_DEV_SERIALS</code>（整批吊销用 <code>REVOKED_DEV_BATCHES</code>），随下个版本发布生效。<br>
     <b>分发：</b>每个授权码发给对应的人；首次解锁绑定其本机，一台设备只能使用一个授权码。
   </footer>
 </div>
@@ -457,7 +542,7 @@
 /* ===== LICENSE-CORE-START (mirror of src/dev/license.ts — keep in sync; guarded by generator-html.test.ts) ===== */
 const SECRET = 'xinghe-sanguo-devtools-2026-rainbow';
 const DEV_TOOL_VERSION = 1;
-const DEFAULT_GAME_VERSION = '0.9.11';
+const DEFAULT_GAME_VERSION = '0.9.12';
 
 function todayStamp(){ return new Date().toISOString().slice(0,10).replace(/-/g,''); }
 
@@ -711,6 +796,7 @@ async function generate(){
       results.push({index:i+1,name:f.names[i]||'',serial,code,fields});
     }
     state.results=results; state.selected.clear();
+    addBatchToHistory(results,f);
     renderResults();
     toast(`已铸造 ${results.length} 个授权码`,'ok');
     saveForm();
@@ -774,6 +860,117 @@ async function revokeSnippet(){
   if(!serials.length) return toast('请先勾选要吊销的编号','err');
   const snippet=`// 加入 src/dev/policy.ts\nexport const REVOKED_DEV_SERIALS: string[] = [\n${serials.map(s=>`  '${s}',`).join('\n')}\n];`;
   (await copyText(snippet))?toast(`已复制 ${serials.length} 个编号的吊销片段`,'ok'):toast('复制失败','err');
+}
+
+/* ---- history & revocation management ---- */
+const HISTORY_KEY='xhs-license-gen-history-v1';
+const REVOKED_KEY='xhs-license-gen-revoked-v1';
+function loadHistory(){ try{ const h=JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]'); return Array.isArray(h)?h:[]; }catch(e){ return []; } }
+function saveHistoryList(h){ try{ localStorage.setItem(HISTORY_KEY, JSON.stringify(h.slice(0,60))); }catch(e){} }
+function loadRevoked(){ try{ const r=JSON.parse(localStorage.getItem(REVOKED_KEY)||'[]'); return Array.isArray(r)?r:[]; }catch(e){ return []; } }
+function saveRevokedList(r){ try{ localStorage.setItem(REVOKED_KEY, JSON.stringify([...new Set(r)])); }catch(e){} }
+function addBatchToHistory(results,f){
+  const h=loadHistory();
+  h.unshift({ id:'b'+Date.now(), batch:f.batch, createdAt:new Date().toISOString(), gameMin:f.gameMin, gameMax:f.gameMax, expires:f.expires, codes:results.map(r=>({serial:r.serial,name:r.name,code:r.code})) });
+  saveHistoryList(h);
+}
+function allKnownSerials(){
+  const map=new Map();
+  for(const b of loadHistory()) for(const c of b.codes) if(!map.has(c.serial)) map.set(c.serial,b.batch);
+  for(const s of loadRevoked()) if(!map.has(s)) map.set(s,'手动添加');
+  return map;
+}
+function revokeSnippetText(serials){ return `// 加入 src/dev/policy.ts\nexport const REVOKED_DEV_SERIALS: string[] = [\n${serials.map(s=>`  '${s}',`).join('\n')}\n];`; }
+function renderManage(){
+  const h=loadHistory(); const revoked=new Set(loadRevoked());
+  $('historyCount').textContent=h.length;
+  $('revokeCount').textContent=revoked.size;
+  const hl=$('historyList');
+  if(!h.length){ hl.innerHTML='<div class="manage-empty">还没有铸造记录。在「铸造授权码」页生成后会自动保存到这里。</div>'; }
+  else{
+    hl.innerHTML=h.map(b=>{
+      const codes=b.codes.map(c=>`<div class="history-code"><span class="h-name">${escapeHtml(c.name||'未命名')}</span><span class="h-serial">${c.serial}</span><code>${escapeHtml(c.code)}</code>${revoked.has(c.serial)?'<span class="revoked-tag">已吊销</span>':''}<button class="mini-btn" data-copy="${escapeHtml(c.code)}">复制</button></div>`).join('');
+      const date=new Date(b.createdAt).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<div class="history-batch" data-batch="${b.id}"><div class="history-batch-head"><span class="b-name">${escapeHtml(b.batch)}</span><span class="b-meta">${date} · ${b.codes.length} 个 · v${b.gameMin}~${b.gameMax}</span><span class="b-actions"><button class="mini-btn" data-bcopy="${b.id}">复制全部</button><button class="mini-btn" data-bexport="${b.id}">导出</button><button class="mini-btn danger" data-bdel="${b.id}">删除</button></span></div><div class="history-batch-body">${codes}</div></div>`;
+    }).join('');
+  }
+  const known=allKnownSerials();
+  const rl=$('revokeList');
+  if(!known.size){ rl.innerHTML='<div class="manage-empty">暂无编号。铸造或手动添加后可在此吊销。</div>'; }
+  else{ rl.innerHTML=[...known.entries()].map(([serial,src])=>`<label class="revoke-item ${revoked.has(serial)?'on':''}"><input type="checkbox" class="cc-check" data-revoke="${serial}" ${revoked.has(serial)?'checked':''}><span class="r-serial">${serial}</span><span class="r-src">${escapeHtml(src)}</span><span class="r-state">${revoked.has(serial)?'已吊销':'正常'}</span></label>`).join(''); }
+  $('revokeSnippet').textContent=revokeSnippetText([...revoked]);
+}
+function addManualHistory(){
+  const text=$('historyAddInput').value;
+  const re=/XH2\.\d{8}\.[^.]+\.[A-Za-z0-9-]+\.\d+-\d+\.\d+\.\d+\.\d+~\d+\.\d+\.\d+\.(?:\d{8}|long)\.[0-9a-f]{12}/g;
+  const matches=text.match(re)||[];
+  const h=loadHistory();
+  const existing=new Set();
+  for(const b of h) for(const c of b.codes) existing.add(c.serial);
+  const groups=new Map();
+  let added=0;
+  for(const m of matches){
+    const parsed=parseLicense(m);
+    if(!parsed||existing.has(parsed.fields.serial)) continue;
+    existing.add(parsed.fields.serial);
+    const f=parsed.fields;
+    const key=`${f.batch}|${f.created}|${f.gameMin}|${f.gameMax}|${f.expires}`;
+    if(!groups.has(key)) groups.set(key,{batch:f.batch,createdAt:new Date().toISOString(),gameMin:f.gameMin,gameMax:f.gameMax,expires:f.expires,codes:[]});
+    groups.get(key).codes.push({serial:f.serial,name:'',code:m});
+    added++;
+  }
+  if(!added) return toast(matches.length?'这些授权码已在历史中':'没有识别到有效的 XH2 授权码', matches.length?'info':'err');
+  const newBatches=[...groups.values()].map(g=>({id:'b'+Date.now()+Math.random().toString(36).slice(2,6),...g}));
+  saveHistoryList([...newBatches,...h]);
+  $('historyAddInput').value='';
+  renderManage();
+  toast(`已添加 ${added} 个授权码到历史`,'ok');
+}
+function wireManage(){
+  $('historyList').addEventListener('click',async(e)=>{
+    const copy=e.target.closest('[data-copy]');
+    if(copy){ (await copyText(copy.dataset.copy))?toast('已复制该授权码','ok'):toast('复制失败','err'); return; }
+    const bcopy=e.target.closest('[data-bcopy]');
+    const bexport=e.target.closest('[data-bexport]');
+    const bdel=e.target.closest('[data-bdel]');
+    const h=loadHistory();
+    if(bcopy){ const b=h.find(x=>x.id===bcopy.dataset.bcopy); if(b){ const text=b.codes.map(c=>`${c.name||'未命名'} 编号 ${c.serial}\n${c.code}`).join('\n\n'); (await copyText(text))?toast(`已复制 ${b.codes.length} 个授权码`,'ok'):toast('复制失败','err'); } return; }
+    if(bexport){ const b=h.find(x=>x.id===bexport.dataset.bexport); if(b){ download(`授权码-${b.batch}-${b.id}.json`, JSON.stringify(b,null,2)+'\n','application/json;charset=utf-8'); toast('已导出该批次','ok'); } return; }
+    if(bdel){ const id=bdel.dataset.bdel; saveHistoryList(h.filter(x=>x.id!==id)); renderManage(); toast('已删除该批次历史','info'); return; }
+    const head=e.target.closest('.history-batch-head');
+    if(head){ head.parentElement.classList.toggle('open'); }
+  });
+  $('revokeList').addEventListener('change',(e)=>{
+    const chk=e.target.closest('[data-revoke]');
+    if(!chk) return;
+    const serial=chk.dataset.revoke; const r=new Set(loadRevoked());
+    chk.checked?r.add(serial):r.delete(serial);
+    saveRevokedList([...r]); renderManage();
+    toast(chk.checked?`已标记吊销 ${serial}`:`已取消吊销 ${serial}`, chk.checked?'err':'ok');
+  });
+  $('revokeAddBtn').addEventListener('click',()=>{
+    const v=$('revokeManual').value.trim();
+    if(!v) return toast('请输入编号','err');
+    if(!/^[A-Za-z0-9-]+$/.test(v)) return toast('编号格式不正确','err');
+    const r=new Set(loadRevoked()); r.add(v); saveRevokedList([...r]); $('revokeManual').value=''; renderManage(); toast(`已加入吊销 ${v}`,'ok');
+  });
+  $('revokeCopy').addEventListener('click',async()=>{
+    const r=loadRevoked();
+    if(!r.length) return toast('还没有吊销任何编号','err');
+    (await copyText(revokeSnippetText(r)))?toast(`已复制 ${r.length} 个编号的吊销片段`,'ok'):toast('复制失败','err');
+  });
+  $('historyExport').addEventListener('click',()=>{
+    const h=loadHistory();
+    if(!h.length) return toast('还没有历史','err');
+    download(`授权码历史-${todayStamp()}.json`, JSON.stringify({exportedAt:new Date().toISOString(),revoked:loadRevoked(),batches:h},null,2)+'\n','application/json;charset=utf-8');
+    toast('已导出全部历史','ok');
+  });
+  $('historyClear').addEventListener('click',()=>{
+    if(!loadHistory().length) return toast('历史已为空','info');
+    if(!confirm('确定清空全部铸造历史？吊销名单会保留。')) return;
+    saveHistoryList([]); renderManage(); toast('已清空历史','info');
+  });
+  $('historyAddBtn').addEventListener('click',addManualHistory);
 }
 
 /* ---- verify ---- */
@@ -847,6 +1044,8 @@ function wire(){
     const mode=tab.dataset.mode;
     $('view-forge').classList.toggle('hidden',mode!=='forge');
     $('view-verify').classList.toggle('hidden',mode!=='verify');
+    $('view-manage').classList.toggle('hidden',mode!=='manage');
+    if(mode==='manage') renderManage();
   }));
   // steppers
   document.querySelectorAll('.step-btn').forEach(b=>b.addEventListener('click',()=>{
@@ -906,7 +1105,8 @@ function wire(){
   });
   ['vGame','vTool','vToday'].forEach(id=>$(id).addEventListener('input',()=>{ if($('verifyInput').value.trim()) runVerify(); }));
   // keyboard: Ctrl+Enter generate
-  document.addEventListener('keydown',(e)=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ if(!$('view-forge').classList.contains('hidden')) generate(); else runVerify(); } });
+  document.addEventListener('keydown',(e)=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ if(!$('view-forge').classList.contains('hidden')) generate(); else if(!$('view-verify').classList.contains('hidden')) runVerify(); } });
+  wireManage();
 }
 
 function init(){
@@ -914,6 +1114,7 @@ function init(){
   loadForm();
   wire();
   updatePreview();
+  renderManage();
   initStars();
   if(!(globalThis.crypto&&crypto.subtle)){
     toast('当前环境无 crypto.subtle，已启用纯 JS 签名兜底','info');

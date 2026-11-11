@@ -9,6 +9,7 @@ export interface MatchPlayerRecord {
   role: Role;
   isBot: boolean;
   alive: boolean;
+  level?: number;
 }
 
 export interface MatchRecord {

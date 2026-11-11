@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
+import { effectiveBackground } from '../background';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME } from '../../core/types';
@@ -40,6 +41,7 @@ const COMPACT_SEAT_LAYOUT: Record<number, [number, number][]> = {
 export function SpectatorScreen() {
   const { game } = useGameSnapshot();
   const bgImage = useGameStore((s) => s.bgImage);
+  const bgScope = useGameStore((s) => s.bgScope);
   const bgDim = useGameStore((s) => s.bgDim);
   const openChat = useGameStore((s) => s.openChat);
   const chatUnread = useGameStore((s) => s.chatUnread);
@@ -58,6 +60,12 @@ export function SpectatorScreen() {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
+  const feedRef = useRef<HTMLDivElement>(null);
+  const feedLastId = game?.state.log[game.state.log.length - 1]?.id;
+  useEffect(() => {
+    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
+  }, [feedLastId]);
 
   useEffect(() => {
     if (!game) return;
@@ -88,7 +96,7 @@ export function SpectatorScreen() {
   if (!game) {
     return (
       <div className="spectator-screen spectator-loading">
-        <div className="game-bg" style={{ backgroundImage: `url(${bgImage ?? defaultBg})` }} />
+        <div className="game-bg" style={{ backgroundImage: `url(${effectiveBackground(bgImage, bgScope, 'game') ?? defaultBg})` }} />
         <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
         <div className="fatal-card">
           <h1>正在接入观战</h1>
@@ -111,7 +119,7 @@ export function SpectatorScreen() {
     : game.state.players[focusId] ?? game.state.players[0];
   const current = game.state.players[currentId] ?? game.state.players[0];
   const latestEvent = [...game.state.log].reverse().find((entry) => entry.kind !== 'system');
-  const recent = [...game.state.log].reverse().slice(0, 8);
+  const recent = game.state.log.slice(-8);
   const layout =
     (compactRing ? COMPACT_SEAT_LAYOUT : SEAT_LAYOUT)[Math.max(1, Math.min(8, n))] ?? SEAT_LAYOUT[8];
   const focusHero = HERO_MAP.get(focus.heroId);
@@ -130,7 +138,7 @@ export function SpectatorScreen() {
 
   return (
     <div className="spectator-screen">
-      <div className="game-bg" style={{ backgroundImage: `url(${bgImage ?? defaultBg})` }} />
+      <div className="game-bg" style={{ backgroundImage: `url(${effectiveBackground(bgImage, bgScope, 'game') ?? defaultBg})` }} />
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
       <TopBar logOpen={logOpen} onToggleLog={() => setLogOpen((v) => !v)} onExit={exit} />
       <div className="spectator-stage spectator-stage-v2">
@@ -223,7 +231,7 @@ export function SpectatorScreen() {
               <b>最近动向</b>
               <span>FEED</span>
             </div>
-            <div className="rail-feed-list">
+            <div className="rail-feed-list" ref={feedRef}>
               {recent.length === 0 && <div className="rail-empty">暂无记录</div>}
               {recent.map((entry) => (
                 <div key={entry.id} className={`rail-feed-line log-${entry.kind}`}>

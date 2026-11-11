@@ -131,6 +131,7 @@ export interface CustomRules {
   allowEquipment: boolean;
   military: boolean;
   turnDirection: 1 | -1;
+  lordBackupCount?: number;
 }
 
 export const DEFAULT_RULES: CustomRules = {
@@ -146,6 +147,7 @@ export const DEFAULT_RULES: CustomRules = {
   allowEquipment: true,
   military: true,
   turnDirection: -1,
+  lordBackupCount: 3,
 };
 
 export interface CardOption {
@@ -233,7 +235,7 @@ export type GameEvent =
   | { type: 'turn'; playerId: number; turn: number }
   | { type: 'phase'; playerId: number; phase: Phase }
   | { type: 'playCard'; playerId: number; card: Card; as: string; targets: number[]; skillId?: string }
-  | { type: 'respond'; playerId: number; card: Card; as: string; skillId?: string }
+  | { type: 'respond'; playerId: number; card: Card; as: string; skillId?: string; cards?: Card[] }
   | { type: 'draw'; playerId: number; count: number; cardIds: string[] }
   | { type: 'gain'; playerId: number; cards: Card[]; from?: number; public: boolean }
   | { type: 'discard'; playerId: number; cards: Card[]; reason?: string }

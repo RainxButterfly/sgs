@@ -9,6 +9,7 @@ import { ChangelogModal } from './ui/components/ChangelogModal';
 import { ClickSparkles } from './ui/components/ClickSparkles';
 import { DamageFeedback } from './ui/components/DamageFeedback';
 import { DevNotice } from './ui/components/DevNotice';
+import { StartProtection } from './ui/components/StartProtection';
 import { JudgeNotice } from './ui/components/JudgeNotice';
 import { SkillNotice } from './ui/components/SkillNotice';
 import { WuxieWindowNotice } from './ui/components/WuxieWindowNotice';
@@ -164,6 +165,7 @@ export default function App() {
       <UpdateModal />
       <ProfileSetupModal />
       <DevNotice />
+      <StartProtection />
       <ClickSparkles />
     </div>
   );

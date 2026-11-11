@@ -25,6 +25,49 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.12',
+    date: '2026-11-11',
+    title: '响应体验、规则核对与界面优化',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '新增砸鸡蛋、送花道具互动，可以给其他玩家丢道具，电脑端和手机端都可用。',
+          '需要响应时自动选中匹配的牌（例如被杀时有闪会自动选中），只需点确定即可打出。',
+          '开局加入 3 秒保护时间，期间双方暂停行动，可以先看清座次与武将。',
+          '自定义壁纸可选择应用范围：仅对局、仅主菜单或全部界面。',
+          '选将阶段显示每位玩家的座次，并且每局随机座次。',
+          '主公选将默认包含全部带主公技的武将，另加随机备选武将，备选数量房主可自定义。',
+          '对局记录里的玩家显示等级胶囊；获胜额外获得少量经验。',
+        ],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '响应时间加长，有牌不再因为超时打不出去；没有牌也没有相关技能时不再空等计时。',
+          '于吉蛊惑可以响应锦囊、在他人濒死时声明桃，质疑时会显示声明的牌名，且不能声明当前不可打出的牌。',
+          '卧龙诸葛的看破可以把黑色牌当无懈可击，响应他人的锦囊。',
+          '丈八蛇矛用两张牌当杀时，记录里完整显示两张牌。',
+          '战报与最近动向会显示技能发动，最新动态统一为最新在最下面。',
+          '张角改判后获得原判定牌；闪电转移会跳过已有闪电的下家；华雄体力改为 6。',
+          '斗地主的地主不再提前亮出武将。',
+          '火杀、雷杀的标记移到牌面左侧，不再遮挡立绘。',
+          '修复主菜单可以滑动到空白、手机手牌拥挤、牌面偏暗等问题。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '座位上的道具图标与标记、详情图标分行摆放，不再互相遮挡。',
+          '常显武器攻击距离与 +1/-1 马的效果，距离一目了然。',
+          '对自己使用装备或闪电时显示「对自己」。',
+          '去掉确定、取消按钮背景的杂色条。',
+          '关于页测试组名单更新。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.11',
     date: '2026-11-11',
     title: '主菜单一屏锁定与测试组更新',
@@ -1378,6 +1421,7 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
+const latestRelease = VERSIONS.find((entry) => entry.version === '0.9.12')!;
 const currentRelease = VERSIONS.find((entry) => entry.version === '0.9.11')!;
 const currentDev = VERSIONS.find((entry) => entry.version === '0.9.10')!;
 const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.9')!;
@@ -1428,6 +1472,7 @@ const five = [
 ];
 
 export const CHANGELOG: ChangelogEntry[] = [
+  latestRelease,
   currentRelease,
   currentDev,
   currentPatch,

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
+import { effectiveBackground } from '../background';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, PHASE_NAME, ROLE_NAME, type PlayerState } from '../../core/types';
@@ -49,7 +50,7 @@ function equipTokens(player: PlayerState) {
   return (['weapon', 'armor', 'horsePlus', 'horseMinus'] as const).map((slot) => {
     const card = player.equips[slot];
     if (!card) return null;
-    const prefix = slot === 'horsePlus' ? '+1 ' : slot === 'horseMinus' ? '-1 ' : '';
+    const prefix = slot === 'horsePlus' ? '+1 ' : slot === 'horseMinus' ? '-1 ' : slot === 'weapon' ? `攻${card.range ?? 1} ` : '';
     return (
       <span key={slot} className={`m-gear-token equip-${slot}`} title={`${EQUIP_ICON[slot]} ${cardSuitText(card)} ${card.name}`}>
         <i className={`equip-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>{cardSuitText(card)}</i>
@@ -71,6 +72,8 @@ export function MobileGameScreen() {
   const lastPlay = useGameStore((s) => s.lastPlay);
   const flashes = useGameStore((s) => s.flashes);
   const speechBubbles = useGameStore((s) => s.speechBubbles);
+  const propThrows = useGameStore((s) => s.propThrows);
+  const sendProp = useGameStore((s) => s.sendProp);
   const cardHistory = useGameStore((s) => s.cardHistory);
   const wuxieWindow = useGameStore((s) => s.wuxieWindow);
   const wuxieDeadline = useGameStore((s) => s.wuxieDeadline);
@@ -79,6 +82,7 @@ export function MobileGameScreen() {
   const openIdentityMark = useGameStore((s) => s.openIdentityMark);
   const revealGeneral = useGameStore((s) => s.revealGeneral);
   const bgImage = useGameStore((s) => s.bgImage);
+  const bgScope = useGameStore((s) => s.bgScope);
   const bgDim = useGameStore((s) => s.bgDim);
   const openChat = useGameStore((s) => s.openChat);
   const chatUnread = useGameStore((s) => s.chatUnread);
@@ -186,6 +190,7 @@ export function MobileGameScreen() {
     if (entry.kind === 'gain') {
       return `获得${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
     }
+    if (entry.kind === 'skill') return `发动【${entry.as ?? ''}】`;
     return `${entry.label} ${entry.cards.map((item) => `【${cardDisplayName(item)}】`).join('')}`;
   };
   const shortActionText = (entry: (typeof cardHistory)[number]) => {
@@ -199,6 +204,7 @@ export function MobileGameScreen() {
     }
     if (entry.kind === 'judge') return `判定【${card ? cardDisplayName(card) : ''}】`;
     if (entry.kind === 'gain') return '获得牌';
+    if (entry.kind === 'skill') return `发动【${entry.as ?? ''}】`;
     return actionText(entry);
   };
 
@@ -224,7 +230,7 @@ export function MobileGameScreen() {
 
   return (
     <div className={`mobile-game self-card-${selfCardSide} ${prompting ? 'is-prompting' : ''}`}>
-      <div className="game-bg" style={{ backgroundImage: `url(${bgImage ?? defaultBg})` }} />
+      <div className="game-bg" style={{ backgroundImage: `url(${effectiveBackground(bgImage, bgScope, 'game') ?? defaultBg})` }} />
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
 
       <header className="m-topbar">
@@ -329,6 +335,14 @@ export function MobileGameScreen() {
                 const bubble = speechBubbles.find((item) => item.playerId === player.id);
                 return bubble ? <div className="m-seat-speech">{bubble.text}</div> : null;
               })()}
+              {propThrows
+                .filter((p) => p.targetId === player.id)
+                .map((p) => (
+                  <div key={p.id} className={`seat-prop seat-prop-${p.prop}`} aria-hidden="true">
+                    <span className="seat-prop-emoji">{p.prop === 'flower' ? '🌸' : '🥚'}</span>
+                    <span className="seat-prop-splat">{p.prop === 'flower' ? '✿' : '💥'}</span>
+                  </div>
+                ))}
               {unavailableHint(player.id) && (
                 <span className="m-seat-unavailable">{unavailableHint(player.id)}</span>
               )}
@@ -373,36 +387,68 @@ export function MobileGameScreen() {
                 <i style={{ width: `${Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))}%` }} />
               </div>
               <div className="m-seat-skills">{skills.join(' · ') || '无技能'}</div>
-              {(mode === 'identity' || factionKnown(player, mode)) && (
+              {(mode === 'identity' || factionKnown(player, mode) || player.alive) && (
                 <div className="m-seat-actions">
-                  {canMark && (
-                    <button
-                      type="button"
-                      className={`m-seat-mark ${identityMarks[player.id] ? `role-${identityMarks[player.id]}` : ''}`}
-                      title="标记你判断的身份（仅自己可见）"
-                      onPointerDown={(event) => event.stopPropagation()}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        openIdentityMark(player.id);
-                      }}
-                    >
-                      {identityMarks[player.id]
-                        ? ROLE_NAME[identityMarks[player.id]!].slice(0, 1)
-                        : '标'}
-                    </button>
+                  {player.alive && (
+                    <div className="m-seat-prop-row">
+                      <button
+                        type="button"
+                        className="m-seat-mark m-seat-prop"
+                        title="砸鸡蛋"
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          sendProp(player.id, 'egg');
+                        }}
+                      >
+                        🥚
+                      </button>
+                      <button
+                        type="button"
+                        className="m-seat-mark m-seat-prop"
+                        title="送花"
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          sendProp(player.id, 'flower');
+                        }}
+                      >
+                        🌸
+                      </button>
+                    </div>
                   )}
-                  {factionKnown(player, mode) && (
-                    <button
-                      type="button"
-                      className="m-seat-info"
-                      onPointerDown={(event) => event.stopPropagation()}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setDetailPlayer(player.id);
-                      }}
-                    >
-                      i
-                    </button>
+                  {(canMark || factionKnown(player, mode)) && (
+                    <div className="m-seat-action-row">
+                      {canMark && (
+                        <button
+                          type="button"
+                          className={`m-seat-mark ${identityMarks[player.id] ? `role-${identityMarks[player.id]}` : ''}`}
+                          title="标记你判断的身份（仅自己可见）"
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openIdentityMark(player.id);
+                          }}
+                        >
+                          {identityMarks[player.id]
+                            ? ROLE_NAME[identityMarks[player.id]!].slice(0, 1)
+                            : '标'}
+                        </button>
+                      )}
+                      {factionKnown(player, mode) && (
+                        <button
+                          type="button"
+                          className="m-seat-info"
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setDetailPlayer(player.id);
+                          }}
+                        >
+                          i
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

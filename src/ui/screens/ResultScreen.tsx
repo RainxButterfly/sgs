@@ -78,6 +78,7 @@ export function ResultScreen() {
               <div className="result-xp-breakdown">
                 <span>基础 {xpGain.base}</span>
                 {xpGain.winBonus > 0 && <span>胜利 +{xpGain.winBonus}</span>}
+                {xpGain.winExtra > 0 && <span>夺胜额外 +{xpGain.winExtra}</span>}
                 {xpGain.realBonus > 0 && <span>真人 +{xpGain.realBonus}</span>}
                 {xpGain.levelsGained > 0 && <b>升 {xpGain.levelsGained} 级</b>}
               </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
+import { effectiveBackground } from '../background';
 import { useGameSnapshot, useGameStore } from '../store';
 import { GameContextMenu } from '../components/GameContextMenu';
 import { GameRail } from '../components/GameRail';
@@ -32,6 +33,7 @@ export function GameScreen() {
   const lastPlay = useGameStore((s) => s.lastPlay);
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
+  const bgScope = useGameStore((s) => s.bgScope);
   const selectedCardId = selected?.cardId;
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
@@ -120,7 +122,7 @@ export function GameScreen() {
 
   return (
     <div className={`game-screen self-card-${selfCardSide}`}>
-      <div className="game-bg" style={{ backgroundImage: `url(${bgImage ?? defaultBg})` }} />
+      <div className="game-bg" style={{ backgroundImage: `url(${effectiveBackground(bgImage, bgScope, 'game') ?? defaultBg})` }} />
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
       <TopBar logOpen={logOpen} onToggleLog={() => setLogOpen((v) => !v)} onExit={exit} />
       <div className="table-area">

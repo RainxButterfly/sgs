@@ -54,3 +54,49 @@ describe('改判提示', () => {
     expect(judgeEvent?.changedBy).toBe('鬼才');
   });
 });
+
+class GuidaoIO implements GameIO {
+  events: GameEvent[] = [];
+  emit(event: GameEvent): void {
+    this.events.push(event);
+  }
+  ask(req: AskRequest): Promise<GameAction> {
+    if (req.kind === 'chooseOption') {
+      const yes = /鬼道/.test(req.prompt);
+      return Promise.resolve({ type: 'chooseOption', optionId: yes ? 'yes' : 'no' });
+    }
+    if (req.kind === 'chooseCards') {
+      return Promise.resolve({ type: 'chooseCards', cardIds: [req.cards?.[0]?.id ?? ''] });
+    }
+    return Promise.resolve({ type: 'cancel' });
+  }
+  delay(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+describe('张角鬼道改判', () => {
+  it('替换判定牌后，原判定牌交给张角', async () => {
+    const io = new GuidaoIO();
+    const game = new Game(
+      {
+        players: [
+          { name: '张角', heroId: 'zhangjiao', isBot: false },
+          { name: '目标', heroId: 'liubei', isBot: false },
+        ],
+        seed: 20261113,
+        rules: { skillsEnabled: true },
+      },
+      io,
+    );
+    const [zhangjiao, target] = game.state.players;
+    const replacement = card('replacement', '杀', 'spade', 7);
+    zhangjiao.hand = [replacement];
+    const original = card('original', '桃', 'heart', 5);
+    game.state.deck.push(original);
+
+    const judged = await game.judge(target, '测试判定');
+    expect(judged.id).toBe(replacement.id);
+    expect(zhangjiao.hand.some((c) => c.id === original.id)).toBe(true);
+  });
+});
