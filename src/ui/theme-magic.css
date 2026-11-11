@@ -3049,3 +3049,12 @@ html.theme-magic .btn.primary:focus-visible:not(:disabled) {
   color: #160a1c;
   filter: brightness(1.08);
 }
+
+html.theme-magic .m-last-play {
+  border-color: var(--line);
+  background: linear-gradient(160deg, rgba(38, 24, 58, 0.94), rgba(12, 9, 22, 0.96));
+}
+
+html.theme-magic .m-last-play-copy b {
+  color: var(--accent);
+}

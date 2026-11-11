@@ -18824,3 +18824,142 @@ html.theme-magic .mobile-game .m-hand .card.card-selected {
   font-size: 11.5px;
   line-height: 1.7;
 }
+
+/* 手机牌桌：只展示最近一次出牌，保证名字和牌面可读 */
+.m-last-play {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 0;
+  padding: 5px 9px;
+  border: 1px solid rgba(219, 181, 108, 0.22);
+  border-radius: 8px;
+  background: rgba(22, 17, 12, 0.72);
+}
+
+.m-last-play .card {
+  width: 46px;
+  height: 66px;
+  padding: 2px;
+}
+
+.m-last-play .card-name {
+  font-size: 10px;
+  max-width: 38px;
+}
+
+.m-last-play-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.m-last-play-copy b {
+  overflow: hidden;
+  color: var(--gold-bright);
+  font-size: 11px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-last-play-copy span {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-last-play-copy i {
+  overflow: hidden;
+  color: var(--gold);
+  font-size: 10.5px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-last-play-copy em {
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (pointer: coarse) {
+  .m-seats {
+    justify-content: center;
+    gap: 3px;
+    padding: 2px 6px;
+    overflow: hidden;
+  }
+
+  .m-seat {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: clamp(118px, 14vw, 140px);
+    overflow: hidden;
+  }
+
+  .m-seat .m-role {
+    position: static;
+    top: auto;
+    left: auto;
+    background: transparent;
+  }
+
+  .m-seat-head {
+    gap: 2px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .m-seat-head b {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: clamp(11px, 3vw, 14px);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .m-seat-stats,
+  .m-seat-gear {
+    overflow: hidden;
+    font-size: 9px;
+  }
+
+  .m-bottom {
+    padding-bottom: calc(7px + env(safe-area-inset-bottom));
+  }
+
+  .m-bottom .m-hand .hand-cards {
+    justify-content: safe center;
+  }
+
+  .m-hand .card {
+    max-height: calc(100% - 8px);
+  }
+
+  .detail-backdrop {
+    pointer-events: auto;
+  }
+}
+
+/* 手机端页面锁定，禁止整页上下/左右拖动 */
+@media (pointer: coarse) and (orientation: landscape) {
+  html,
+  body,
+  #root,
+  .app-root {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .menu-screen {
+    overflow: hidden;
+  }
+}

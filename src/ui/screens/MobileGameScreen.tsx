@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
@@ -77,16 +77,6 @@ export function MobileGameScreen() {
   const identityMarks = useGameStore((s) => s.identityMarks);
   const openIdentityMark = useGameStore((s) => s.openIdentityMark);
   const revealGeneral = useGameStore((s) => s.revealGeneral);
-  const feedRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = feedRef.current;
-    if (!element) return;
-    const frame = window.requestAnimationFrame(() => {
-      element.scrollLeft = element.scrollWidth;
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [cardHistory.length]);
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
   const openChat = useGameStore((s) => s.openChat);
@@ -160,7 +150,7 @@ export function MobileGameScreen() {
   const humanSkills = visibleSkillIds(human, mode, true)
     .map((id) => SKILL_MAP.get(id)?.name)
     .filter(Boolean);
-  const feed = cardHistory.slice(-6);
+  const latest = [...cardHistory].reverse().find((entry) => entry.kind !== 'gain');
   const targetName = (id: number) => game.state.players[id]?.name ?? '';
   const actionText = (entry: (typeof cardHistory)[number]) => {
     const card = entry.cards[0];
@@ -409,37 +399,22 @@ export function MobileGameScreen() {
             ))}
           </div>
         )}
-        {feed.length === 0 ? (
-          <div className="m-feed-empty">牌桌暂无声响</div>
-        ) : (
-          <div className="m-feed" ref={feedRef}>
-            {feed.map((entry, index) => {
-              const previous = feed[index - 1];
-              const owner = entry.playerId !== undefined ? game.state.players[entry.playerId] : undefined;
-              const card = entry.cards[0];
-              return (
-                <Fragment key={entry.id}>
-                  {(!previous || previous.turn !== entry.turn) && (
-                    <span className="m-round-chip">第{entry.turn ?? 0}回合</span>
-                  )}
-                  <div className={`m-feed-item faction-${owner?.faction ?? 'qun'}`}>
-                    <div className="m-feed-who">
-                      <b>{entry.playerId !== undefined ? targetName(entry.playerId) : '牌堆'}</b>
-                      <span>{actionText(entry)}</span>
-                      {entry.targets && entry.targets.length > 0 && (
-                        <i>→ {entry.targets.map(targetName).join('、')}</i>
-                      )}
-                    </div>
-                    {card ? (
-                      <CardView card={card} size="sm" />
-                    ) : (
-                      <span className="m-feed-card-empty">牌</span>
-                    )}
-                  </div>
-                </Fragment>
-              );
-            })}
+        {latest ? (
+          <div className={`m-last-play${latest.kind === 'respond' ? ' is-response' : ''}`}>
+            {latest.kind !== 'gain' && latest.cards[0] && (
+              <CardView card={latest.cards[0]} size="sm" />
+            )}
+            <div className="m-last-play-copy">
+              <b>{latest.playerId !== undefined ? targetName(latest.playerId) : '牌堆'}</b>
+              <span>{actionText(latest)}</span>
+              {latest.targets && latest.targets.length > 0 && (
+                <i>→ {latest.targets.map(targetName).join('、')}</i>
+              )}
+              <em>第 {latest.turn ?? 0} 回合</em>
+            </div>
           </div>
+        ) : (
+          <div className="m-feed-empty">牌桌暂无声响</div>
         )}
       </div>
 

@@ -25,6 +25,22 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.5',
+    date: '2026-11-11',
+    title: '手机牌桌、详情关闭与页面锁定',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '手机对局重新排版：七名对手座位压缩到同一行完整显示，手牌居中并整体上移，花色、点数和牌名不再被屏幕底边裁掉。',
+          '手机牌桌中央改为“最近一次出牌”：保留一张较大的牌面，完整显示谁使用/打出、牌名和目标，不再把六条操作挤成看不清的小卡片。',
+          '打开武将详情后，点击右侧详情面板以外的区域会关闭详情，不再因为点到其他座位而直接切换到另一名武将。',
+          '手机横屏锁定页面，不再整页上下滑动或左右拖动；菜单、牌桌和手牌各区域保持固定。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.4',
     date: '2026-11-11',
     title: '技能核对、移动端卡面与更新修复',
@@ -43,7 +59,7 @@ const VERSIONS: ChangelogEntry[] = [
         items: [
           '手牌改为严格单选：点第二张会替换第一张，再点同一张会取消选中；点击当前不可用的手牌也会清除选中，不再出现旧牌一直亮着的情况。',
           '手牌悬停不再上浮，选中状态只保留一种上移幅度，双击取消后卡牌回到原位，不再越点越高。',
-          '按官网武将页核对技能：黄月英【集智】使用【无懈可击】也会触发摸牌；孟获【再起】改为按亮出牌中的红桃数量回复体力，并获得其余牌，不再保底回复 1 点。',
+          '按最新规则核对技能：黄月英【集智】使用【无懈可击】也会触发摸牌；孟获【再起】改为按亮出牌中的红桃数量回复体力，并获得其余牌，不再保底回复 1 点。',
           '修正技能语义：马岱【潜袭】改为杀造成伤害时判定、非红桃防止伤害并减体力上限；法正【恩怨】改为锁定技并补齐回复/受伤两条效果；【眩惑】获得的牌必须交给除目标外的另一名角色。',
           '修正【旋风】增加弃牌阶段弃置至少两张牌的触发，并允许弃置至多两名角色共计两张牌；【恂恂】改为只调整牌堆顶四张，不再直接获得牌；【放逐】改为先翻面再摸牌。',
           '【巧变】跳过出牌阶段时可以移动装备区或判定区的牌到另一名角色的对应区域；高顺【陷阵】对拼点目标使用【顺手牵羊】和【兵粮寸断】时也无视距离。',
@@ -1210,11 +1226,12 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
-const currentDev = VERSIONS.find((entry) => entry.version === '0.9.4')!;
-const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.3')!;
-const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.2')!;
-const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.1')!;
-const minorBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
+const currentDev = VERSIONS.find((entry) => entry.version === '0.9.5')!;
+const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.4')!;
+const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.3')!;
+const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.2')!;
+const minorBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
+const olderBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
 const dated = (entries: ChangelogEntry[], date: string): ChangelogEntry[] =>
   entries.map((entry) => ({ ...entry, date }));
 const eight = [
@@ -1258,6 +1275,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   previousPatch,
   currentMinor,
   minorBase,
+  olderBase,
   group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
   group('0.7.0~0.7.12', '2026-11-09', '联机、观战与规则完善', seven),
   group('0.6.0~0.6.9', '2026-11-08', '移动端、联机与规则完善', six),
