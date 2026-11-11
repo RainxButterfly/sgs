@@ -186,10 +186,12 @@ export function HeroPanel({
           ))}
         </div>
       )}
+      </div>
       {mode === 'guozhan' &&
         player.generalRevealed?.some((value) => !value) &&
         onReveal && (
-          <div className="hero-reveal-row">
+          <div className="hero-reveal-bar">
+            <span className="hero-reveal-label">暗将 · 明置后获得对应技能</span>
             {player.generalRevealed.map((revealed, index) =>
               revealed ? null : (
                 <button
@@ -204,7 +206,6 @@ export function HeroPanel({
             )}
           </div>
         )}
-      </div>
       <div className="hero-foot">
         <span>手牌 {player.hand.length}</span>
         <span>手牌上限 {Math.max(0, player.hp + handLimitModifier)}</span>

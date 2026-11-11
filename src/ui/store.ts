@@ -232,6 +232,8 @@ export interface GameLike {
   state: GameState;
   stop?: () => void;
   revealGeneral?: (player: import('../core/types').PlayerState, index: number) => boolean;
+  buildPlayOptions?: (player: import('../core/types').PlayerState) => CardOption[];
+  activeSkillOptions?: (player: import('../core/types').PlayerState) => import('../core/types').SkillOption[];
 }
 
 interface AsChooser {
@@ -359,6 +361,7 @@ interface GameStore {
   lastSkill: SkillNotice | null;
   wuxieWindow: boolean;
   wuxieDeadline: number | null;
+  responseWindow: { playerId: number; name: string; ms: number; until: number } | null;
   promptDeadline: number | null;
   speechBubbles: SpeechBubble[];
   error: string | null;
@@ -549,6 +552,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   lastSkill: null,
   wuxieWindow: false,
   wuxieDeadline: null,
+  responseWindow: null,
   promptDeadline: null,
   speechBubbles: [],
   error: null,
@@ -1260,7 +1264,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   revealGeneral: (index) => {
-    const { lanRole, lanClient, lanHost, game, humanId } = get();
+    const { lanRole, lanClient, lanHost, game, humanId, pending } = get();
     if (lanRole === 'client') {
       lanClient?.revealGeneral(index);
       return;
@@ -1268,8 +1272,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!game) return;
     const player = game.state.players[humanId];
     if (!player) return;
-    game.revealGeneral?.(player, index);
+    const changed = game.revealGeneral?.(player, index) ?? false;
     lanHost?.sendStates();
+    if (
+      changed &&
+      pending?.kind === 'play' &&
+      pending.playerId === humanId &&
+      game.buildPlayOptions &&
+      game.activeSkillOptions
+    ) {
+      set({
+        pending: {
+          ...pending,
+          cardOptions: game.buildPlayOptions(player),
+          skillOptions: game.activeSkillOptions(player),
+        },
+        version: get().version + 1,
+      });
+      return;
+    }
     set({ version: get().version + 1 });
   },
 
@@ -1713,6 +1734,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
       patch.wuxieWindow = true;
       patch.wuxieDeadline = ev.until ?? Date.now() + ev.ms;
       setTimeout(() => set({ wuxieWindow: false, wuxieDeadline: null }), ev.ms);
+    } else if (ev.type === 'responseWindow') {
+      const until = ev.until ?? Date.now() + ev.ms;
+      patch.responseWindow = { playerId: ev.playerId, name: ev.name, ms: ev.ms, until };
+      setTimeout(() => {
+        if (get().responseWindow?.until === until) set({ responseWindow: null });
+      }, ev.ms);
+      patch.version = state.version + 1;
     } else if (ev.type === 'skill') {
       eventSeq += 1;
       patch.lastSkill = {

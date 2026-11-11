@@ -1998,7 +1998,7 @@ ${skill.desc}` : ''}`
       }
       if (this.hasSkill(p, 'zhichi') && p.flags.zhichi === this.state.turn) continue;
       this.emit({ type: 'harvest', cards: allCards, picks: picks.slice(), chooserId: p.id });
-      if (await this.askWuxie('五谷丰登', p, user, `【${p.name}】受到五谷丰登影响`)) continue;
+      if (await this.askWuxie('五谷丰登', p, user, `【${p.name}】受到五谷丰登影响`, true)) continue;
       const picked = await this.askCards(p, revealed.slice(), 1, 1, '五谷丰登：选择一张牌获得', undefined, false);
       const got = picked[0] ?? revealed[revealed.length - 1];
       const idx = revealed.findIndex((c) => c.id === got.id);
@@ -2178,16 +2178,32 @@ ${skill.desc}` : ''}`
   async askRespond(
     player: PlayerState,
     name: string,
-    opts: { prompt: string; detail?: string; canCancel?: boolean; ignoreArmor?: boolean; forcedTarget?: number; targetId?: number; timeout?: number },
+    opts: { prompt: string; detail?: string; canCancel?: boolean; ignoreArmor?: boolean; forcedTarget?: number; targetId?: number; timeout?: number; windowMs?: number },
   ): Promise<ResponseUse | null> {
     if (!player.alive || this.state.over) return null;
     let ignoreArmor = opts.ignoreArmor ?? false;
     const excluded = new Set<string>();
+    const responseWindow =
+      !player.isBot && name !== '无懈可击' ? Math.min(opts.windowMs ?? 5000, 5000) : 0;
+    let windowShown = false;
     for (let guard = 0; guard < 8; guard += 1) {
       const options = this.buildRespondOptions(player, name, ignoreArmor).filter(
         (o) => !excluded.has(o.cardId),
       );
-      if (options.length === 0) return null;
+      if (responseWindow > 0 && !windowShown) {
+        windowShown = true;
+        this.emit({
+          type: 'responseWindow',
+          playerId: player.id,
+          name,
+          ms: responseWindow,
+          until: Date.now() + responseWindow,
+        });
+      }
+      if (options.length === 0) {
+        if (responseWindow > 0) await this.io.delay(responseWindow);
+        return null;
+      }
       const res = await this.io.ask({
         id: this.askId(),
         playerId: player.id,
@@ -2198,8 +2214,12 @@ ${skill.desc}` : ''}`
         cardOptions: options,
         canCancel: opts.canCancel ?? true,
         targetId: opts.targetId,
-        timeout: opts.timeout,
-        deadline: opts.timeout ? Date.now() + opts.timeout : undefined,
+        timeout: responseWindow || opts.timeout,
+        deadline: responseWindow
+          ? Date.now() + responseWindow
+          : opts.timeout
+            ? Date.now() + opts.timeout
+            : undefined,
       });
       if (res.type === 'cancel') return null;
       if (res.type !== 'respondCard') continue;
@@ -2216,13 +2236,15 @@ ${skill.desc}` : ''}`
         );
         if (!picked.length) return null;
         const card = picked[0];
+        this.emit({ type: 'skill', playerId: player.id, name: '蛊惑', text: `声明为【${name}】` });
+        this.log(`【${player.name}】发动蛊惑，声明为【${name}】`, 'skill');
         const questioners: PlayerState[] = [];
         for (const other of this.players) {
           if (!other.alive || other.id === player.id) continue;
           const yes = await this.confirm(
             other,
-            `是否质疑【${player.name}】的蛊惑？`,
-            '若此牌为真，你将失去 1 点体力；若为假，你摸一张牌',
+            `【${player.name}】发动蛊惑，声明为【${name}】`,
+            `是否质疑？若此牌为真，质疑者失去 1 点体力；若为假，质疑者摸一张牌。`,
           );
           if (yes) questioners.push(other);
         }
@@ -2459,8 +2481,14 @@ ${skill.desc}` : ''}`
     return true;
   }
 
-  private async askWuxie(cardName: string, target: PlayerState, user: PlayerState, desc: string): Promise<boolean> {
-    if (this.wuxieWindowPending) {
+  private async askWuxie(
+    cardName: string,
+    target: PlayerState,
+    user: PlayerState,
+    desc: string,
+    forceWindow = false,
+  ): Promise<boolean> {
+    if (this.wuxieWindowPending || forceWindow) {
       this.wuxieWindowPending = false;
       const ms = 3000;
       this.emit({ type: 'wuxieWindow', ms, until: Date.now() + ms });

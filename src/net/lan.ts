@@ -767,8 +767,21 @@ export class LanHostManager {
     if (message.t === 'reveal') {
       if (guest && this.game) {
         const player = this.game.state.players[guest.playerId];
-        if (player) {
-          this.game.revealGeneral(player, Number(message.index));
+        if (player && this.game.revealGeneral(player, Number(message.index))) {
+          const pending = this.pending.get(player.id);
+          if (pending && pending.request.kind === 'play') {
+            const request: AskRequest = {
+              ...pending.request,
+              cardOptions: this.game.buildPlayOptions(player),
+              skillOptions: this.game.activeSkillOptions(player),
+            };
+            pending.request = request;
+            this.sendTo(guest.connId, {
+              t: 'ask',
+              request,
+              state: redactState(this.game.state, player.id),
+            });
+          }
           this.sendStates();
         }
       }

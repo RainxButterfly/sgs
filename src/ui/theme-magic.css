@@ -3383,3 +3383,9 @@ html.theme-magic .lobby-bid-player.active {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
+
+html.theme-magic .hero-reveal-bar,
+html.theme-magic .m-self .m-reveal-row {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

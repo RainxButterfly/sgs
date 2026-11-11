@@ -1,5 +1,6 @@
 import { PHASE_NAME } from '../../core/types';
 import { compositionText } from '../composition';
+import { visibleHeroNames } from '../labels';
 import { useGameSnapshot, useGameStore } from '../store';
 import { SpectatorBadge } from './SpectatorBadge';
 
@@ -31,7 +32,11 @@ export function TopBar({ logOpen, onToggleLog, onExit }: Props) {
         <span className="turn-direction">{game.state.direction === 1 ? '顺时针' : '逆时针'}</span>
         <span className="turn-dot" />
         <span className="turn-label">{spectate ? '观战中' : mine ? '轮到你' : '等待'}</span>
-        <span className="turn-player">{current ? `${current.name} · ${current.heroName}` : '—'}</span>
+        <span className="turn-player">
+          {current
+            ? `${current.name} · ${visibleHeroNames(current, mode, spectate || current.id === humanId)}`
+            : '—'}
+        </span>
         <span className={`phase-pill phase-${game.state.phase}`}>{PHASE_NAME[game.state.phase]}</span>
         {composition && <span className="turn-composition">{composition}</span>}
       </div>

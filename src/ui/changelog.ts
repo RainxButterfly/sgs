@@ -25,6 +25,30 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.9',
+    date: '2026-11-11',
+    title: '暗将显示、明置刷新与五谷无懈',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '国战暗将的顶部状态不再显示真实武将名，统一显示「暗将」，避免暗将信息泄露。',
+          '个人信息卡把「明置主将/副将」固定在卡片顶部，不再藏在下拉或滚动区域；点击明置后技能按钮立即刷新，不需要先出一张牌。',
+          '于吉发动蛊惑时，先显示「声明为【某牌】」和是否质疑的说明，再弹出质疑选择，不再让玩家在不知道声明内容的情况下被询问。',
+          '选将锁定后顶部提示改为「已锁定，等待其他玩家」，不再显示「可以重新选择」。',
+          '五谷丰登改成每次抽取前都有 3 秒无懈可击窗口，即使场上没有人持有无懈可击也会走计时，避免通过是否出现反制来判断手牌。',
+          '【杀】、南蛮、万箭、决斗等需要打出闪或杀时也增加 5 秒响应窗口：即使没有对应手牌，也会显示等待计时后再结算，避免其他玩家通过停顿判断你是否有闪或杀。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '联机大厅背景加入星尘、旋转法阵和漂浮的「聚義廳」大字，并保留房间卡原有的扫描和高光。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.8',
     date: '2026-11-11',
     title: '叫分修复、聊天等级与字号',
@@ -1293,15 +1317,16 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
-const currentDev = VERSIONS.find((entry) => entry.version === '0.9.8')!;
-const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.7')!;
-const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.6')!;
-const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.5')!;
-const minorBase = VERSIONS.find((entry) => entry.version === '0.9.4')!;
-const olderBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
-const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
-const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
-const earliestBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
+const currentDev = VERSIONS.find((entry) => entry.version === '0.9.9')!;
+const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.8')!;
+const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.7')!;
+const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.6')!;
+const minorBase = VERSIONS.find((entry) => entry.version === '0.9.5')!;
+const olderBase = VERSIONS.find((entry) => entry.version === '0.9.4')!;
+const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
+const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
+const earliestBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
+const dawnBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
 const dated = (entries: ChangelogEntry[], date: string): ChangelogEntry[] =>
   entries.map((entry) => ({ ...entry, date }));
 const eight = [
@@ -1349,6 +1374,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   oldestBase,
   ancientBase,
   earliestBase,
+  dawnBase,
   group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
   group('0.7.0~0.7.12', '2026-11-09', '联机、观战与规则完善', seven),
   group('0.6.0~0.6.9', '2026-11-08', '移动端、联机与规则完善', six),

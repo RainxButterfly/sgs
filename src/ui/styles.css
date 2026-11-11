@@ -19421,3 +19421,203 @@ html {
 .chat-message.tier-4 .chat-name { color: #e3bd69; }
 .chat-message.tier-5 .chat-name { color: #ff9a86; }
 .chat-message.tier-6 .chat-name { color: #ffb7ef; }
+
+/* 蛊惑质疑：先显示声明牌名，再让玩家选择是否质疑 */
+.guhuo-question {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 10px;
+  padding: 12px;
+  border: 1px solid rgba(190, 150, 255, 0.4);
+  border-radius: 10px;
+  background: rgba(90, 45, 120, 0.16);
+}
+
+.guhuo-seal {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 211, 110, 0.5);
+  border-radius: 10px;
+  background: rgba(28, 18, 40, 0.72);
+  color: var(--gold-bright);
+  font-family: var(--font-calligraphy);
+  font-size: 22px;
+}
+
+.guhuo-question b {
+  display: block;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.guhuo-question p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* 明置入口固定在个人信息卡顶部，不再藏在滚动区里 */
+.hero-reveal-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 7px 12px 0;
+  padding: 6px 9px;
+  border: 1px solid rgba(219, 181, 108, 0.4);
+  border-radius: 7px;
+  background: rgba(219, 181, 108, 0.1);
+}
+
+.hero-reveal-label {
+  flex: 1;
+  min-width: 120px;
+  color: var(--ink);
+  font-size: 10.5px;
+}
+
+.m-self .m-reveal-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border: 1px solid rgba(219, 181, 108, 0.4);
+  border-radius: 4px;
+  background: rgba(219, 181, 108, 0.1);
+}
+
+.m-reveal-label {
+  color: var(--gold-bright);
+  font-size: 9px;
+  margin-right: 2px;
+}
+
+/* 联机大厅背景：星尘、法阵和漂浮大字 */
+.lobby-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lobby-panel {
+  position: relative;
+  z-index: 1;
+}
+
+.lobby-ambient .ambient-sigil {
+  left: 50%;
+  top: 2%;
+  margin-left: calc(clamp(340px, 34vw, 520px) / -2);
+  opacity: 0.24;
+}
+
+.lobby-ambient .ambient-orb {
+  opacity: 0.1;
+}
+
+.lobby-runes b {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.045);
+  font-family: var(--font-calligraphy);
+  font-weight: 500;
+  line-height: 1;
+  animation: lobbyRuneFloat 16s ease-in-out infinite;
+}
+
+.lobby-runes b:nth-child(1) {
+  left: 4%;
+  top: 13%;
+  font-size: clamp(80px, 12vw, 170px);
+  animation-delay: -3s;
+}
+.lobby-runes b:nth-child(2) {
+  right: 3%;
+  top: 26%;
+  font-size: clamp(64px, 9vw, 130px);
+  animation-delay: -8s;
+}
+.lobby-runes b:nth-child(3) {
+  left: 30%;
+  bottom: 4%;
+  font-size: clamp(54px, 7vw, 100px);
+  animation-delay: -11s;
+}
+
+@keyframes lobbyRuneFloat {
+  0%, 100% { transform: translateY(0) rotate(-4deg); opacity: 0.45; }
+  50% { transform: translateY(-12px) rotate(4deg); opacity: 0.8; }
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (pointer: coarse) {
+  .lobby-ambient .ambient-sigil {
+    top: 0;
+    width: 300px;
+    height: 300px;
+    margin-left: -150px;
+    opacity: 0.18;
+  }
+
+  .lobby-runes b {
+    font-size: 54px;
+  }
+
+  .lobby-runes b:nth-child(3) {
+    display: none;
+  }
+}
+
+/* 普通响应窗口：即使没有对应的牌也走计时，避免通过停顿判断手牌 */
+.response-window-notice {
+  position: fixed;
+  left: 50%;
+  top: 88px;
+  transform: translateX(-50%);
+  z-index: 53;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid rgba(219, 181, 108, 0.4);
+  border-radius: 12px;
+  background: rgba(38, 29, 22, 0.94);
+  color: var(--ink);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.response-window-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(219, 181, 108, 0.7);
+  animation: wuxiePulse 0.9s ease-in-out infinite;
+}
+
+@media (orientation: landscape) and (max-height: 900px) and (pointer: coarse) {
+  .response-window-notice {
+    top: 46%;
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) {
+  .wuxie-window-notice {
+    display: flex;
+    top: 46%;
+    transform: translate(-50%, -50%);
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+}

@@ -221,6 +221,21 @@ export function LobbyScreen() {
   return (
     <div className="lan-screen">
       <div className="ink-bg" />
+      <div className="lobby-ambient" aria-hidden="true">
+        <span className="ambient-stardust" />
+        <span className="ambient-sigil">
+          <i />
+          <i />
+          <i />
+        </span>
+        <span className="ambient-orb orb-a" />
+        <span className="ambient-orb orb-b" />
+        <span className="lobby-runes">
+          <b>聚</b>
+          <b>義</b>
+          <b>廳</b>
+        </span>
+      </div>
       <div className="setup-panel lobby-panel">
         <div className="setup-head">
           <div>

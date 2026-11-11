@@ -9,6 +9,7 @@ import { DamageFeedback } from './ui/components/DamageFeedback';
 import { JudgeNotice } from './ui/components/JudgeNotice';
 import { SkillNotice } from './ui/components/SkillNotice';
 import { WuxieWindowNotice } from './ui/components/WuxieWindowNotice';
+import { ResponseWindowNotice } from './ui/components/ResponseWindowNotice';
 import { RevealNotice } from './ui/components/RevealNotice';
 import { HarvestLayer } from './ui/components/HarvestModal';
 import { SettingsModal } from './ui/components/SettingsModal';
@@ -139,6 +140,7 @@ export default function App() {
       <JudgeNotice />
       <SkillNotice />
       <WuxieWindowNotice />
+      <ResponseWindowNotice />
       <HarvestLayer />
       <ChatPanel />
       <MatchHistoryModal />

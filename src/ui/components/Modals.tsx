@@ -158,7 +158,7 @@ export function OptionModal() {
   const skill = skillName
     ? [...SKILL_MAP.values()].find((item) => item.name === skillName)
     : undefined;
-  const isQuestion = /是否质疑/.test(pending.prompt);
+  const isQuestion = /是否质疑/.test(pending.prompt) || /是否质疑/.test(pending.detail ?? '');
   const isSkillLike = isQuestion || /是否发动|是否使用/.test(pending.prompt);
   const canCancel = pending.canCancel || isSkillLike;
   const label = (id: string, fallback: string) => {
@@ -169,8 +169,17 @@ export function OptionModal() {
     return fallback;
   };
   return (
-    <Overlay title={isSkillLike ? (isQuestion ? '是否质疑' : '技能发动') : pending.prompt}>
-      {isSkillLike && (
+    <Overlay title={isQuestion ? '蛊惑 · 是否质疑' : isSkillLike ? '技能发动' : pending.prompt}>
+      {isQuestion && (
+        <div className="guhuo-question">
+          <span className="guhuo-seal">疑</span>
+          <div>
+            <b>{pending.prompt}</b>
+            <p>{pending.detail || '是否质疑这次蛊惑？'}</p>
+          </div>
+        </div>
+      )}
+      {!isQuestion && isSkillLike && (
         <div className="skill-prompt">
           <span className="skill-prompt-seal">技</span>
           <div>

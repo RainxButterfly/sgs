@@ -139,10 +139,10 @@ export function LanPickPanel({
           <div className="setup-row">
             <span className="setup-label">{guozhan ? '你的候选双将' : '你的候选武将'}</span>
             <span className="setup-hint">
-              {!lordReady && me.playerId !== lordPlayerId
-                ? '等待主公选择武将'
-                : me.heroId
-                  ? '可以重新选择'
+              {playerHeroIds(me).length
+                ? '已锁定，等待其他玩家'
+                : !lordReady && me.playerId !== lordPlayerId
+                  ? '等待主公选择武将'
                   : guozhan
                     ? '选择一组同势力双将'
                     : '选择一名武将'}

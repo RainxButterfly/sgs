@@ -251,6 +251,7 @@ export type GameEvent =
   | { type: 'equip'; playerId: number; slot: EquipSlot; card?: Card }
   | { type: 'skill'; playerId: number; name: string; text?: string }
   | { type: 'wuxieWindow'; ms: number; until?: number }
+  | { type: 'responseWindow'; playerId: number; name: string; ms: number; until?: number }
   | { type: 'reveal'; playerId?: number; cards: Card[]; label?: string }
   | {
       type: 'harvest';

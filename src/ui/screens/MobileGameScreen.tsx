@@ -220,7 +220,7 @@ export function MobileGameScreen() {
         <span className="m-turn">
           <b>{mine ? '轮到你' : `等待 ${current?.name ?? ''}`}</b>
           <em>
-            第 {game.state.turn} 回合 · {game.state.direction === 1 ? '顺时针' : '逆时针'} · {current?.heroName ?? ''} · {PHASE_NAME[game.state.phase]}
+            第 {game.state.turn} 回合 · {game.state.direction === 1 ? '顺时针' : '逆时针'} · {current ? visibleHeroNames(current, mode, current.id === humanId) : ''} · {PHASE_NAME[game.state.phase]}
           </em>
           {composition && <span className="m-composition">{composition}</span>}
         </span>
@@ -509,6 +509,23 @@ export function MobileGameScreen() {
             i
           </button>
         </div>
+        {mode === 'guozhan' && human.generalRevealed?.some((value) => !value) && (
+          <div className="m-reveal-row">
+            <span className="m-reveal-label">暗将</span>
+            {human.generalRevealed.map((revealed, index) =>
+              revealed ? null : (
+                <button
+                  key={index}
+                  type="button"
+                  className="m-reveal-btn"
+                  onClick={() => revealGeneral(index)}
+                >
+                  明置{index === 0 ? '主将' : '副将'}
+                </button>
+              ),
+            )}
+          </div>
+        )}
         <div className="m-self-stats">
           <span className="m-self-hp">{Math.max(0, human.hp)}/{human.maxHp}</span>
           <span className="m-self-limit">手牌 {human.hand.length}/{handLimit}</span>
@@ -530,22 +547,6 @@ export function MobileGameScreen() {
         <div className="m-self-skill-list">
           {humanSkills.length > 0 ? humanSkills.map((skill) => <span key={skill}>{skill}</span>) : <em>无技能</em>}
         </div>
-        {mode === 'guozhan' && human.generalRevealed?.some((value) => !value) && (
-          <span className="m-reveal-row">
-            {human.generalRevealed.map((revealed, index) =>
-              revealed ? null : (
-                <button
-                  key={index}
-                  type="button"
-                  className="m-reveal-btn"
-                  onClick={() => revealGeneral(index)}
-                >
-                  明置{index === 0 ? '主将' : '副将'}
-                </button>
-              ),
-            )}
-          </span>
-        )}
         {((wuxieWindow && wuxieDeadline) ||
           (pending?.playerId === human.id && pending.timeout && promptDeadline)) && (
           <CountdownRing
