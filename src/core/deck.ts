@@ -719,18 +719,6 @@ export const HEROES: HeroData[] = [
     quote: '江东子弟，何惧于天下！',
   },
   {
-    id: 'sunben',
-    name: '孙笨',
-    faction: 'wu',
-    gender: 'male',
-    hp: 4,
-    title: '那个男人',
-    skillIds: ['jiang', 'hunzi'],
-    lordSkillId: 'zhiba',
-    quote: '江东子弟，何惧于天下……算了，躺好。',
-    disabled: true,
-  },
-  {
     id: 'zhangzhaozhanghong',
     name: '张昭张纮',
     faction: 'wu',
@@ -902,5 +890,5 @@ export const HEROES: HeroData[] = [
   },
 ];
 
-export const PLAYABLE_HEROES = HEROES.filter((hero) => !hero.disabled);
+export const PLAYABLE_HEROES = [...HEROES];
 export const HERO_MAP = new Map(HEROES.map((h) => [h.id, h]));

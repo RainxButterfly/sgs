@@ -25,18 +25,33 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.11',
+    date: '2026-11-11',
+    title: '主菜单一屏锁定与测试组更新',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '修复主菜单会被上下、左右拖动到空白区域的问题：主菜单重新锁定为一屏，背景极光与浮字不再撑出滚动条；缩小窗口时内容仍可在卡片区内滚动查看，不会整页位移。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '关于页测试组名单加入孙笨，感谢参与测试与反馈。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.10',
     date: '2026-11-11',
-    title: '托管、测试工具与国战双将',
+    title: '托管、国战双将与规则核对',
     sections: [
       {
         kind: 'feature',
         items: [
           '新增 AI 托管：电脑端和手机端都能一键接管出牌、响应、弃牌和技能选择，适合临时离开；再次点击即可随时收回操作权，单机和联机都可用。',
-          '新增独立测试工具页与一人一码授权码：开发者按人数批量生成授权码，每码含唯一编号，首次解锁绑定本机，一台设备只能使用一个授权码；支持按编号或批次单独吊销，授权不匹配时游戏内仅警告并拒绝指令，不会关闭或影响对局。',
-          '游戏内按 Ctrl+Shift+D 或点击左下角测试授权徽章即可打开工具页；桌面端打开同源子窗口，与对局共享测试会话，可替换手牌、置顶牌堆、更换武将、设置体力与身份。',
-          '使用测试工具的对局不获得经验与等级，结算页会标注「测试对局」；正常对局不受影响。',
-          '新增测试武将孙笨，仅通过测试工具使用，不进入正常选将池。',
           '回合方向由房主在规则中选择，默认逆时针；单机与联机一致，桌号按所选方向编号。',
           '国战双将固定同势力，并尽量安排天然队友：电脑会优先补齐人类落单的势力，避免出现整场孤势力；联机选将时，未选玩家的候选会优先出现已选势力的队友。',
           '主公选将获得额外候选：主公会有 6 名候选武将，并保证至少两名带主公技；候选牌上标注「主公将」。电脑担任主公时也会优先选择主公将。',
@@ -1363,6 +1378,7 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
+const currentRelease = VERSIONS.find((entry) => entry.version === '0.9.11')!;
 const currentDev = VERSIONS.find((entry) => entry.version === '0.9.10')!;
 const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.9')!;
 const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.8')!;
@@ -1412,6 +1428,7 @@ const five = [
 ];
 
 export const CHANGELOG: ChangelogEntry[] = [
+  currentRelease,
   currentDev,
   currentPatch,
   previousPatch,

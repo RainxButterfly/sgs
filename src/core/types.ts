@@ -284,7 +284,6 @@ export interface GameIO {
 
 export interface HeroData {
   id: string;
-  disabled?: boolean;
   name: string;
   faction: Faction;
   gender: Gender;

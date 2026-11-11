@@ -240,7 +240,7 @@ button {
   align-items: flex-start;
   justify-content: center;
   padding: max(3vh, 18px) 4vw 4vh;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .menu-content {
@@ -17334,6 +17334,14 @@ button {
   width: min(1280px, 100%);
   margin: auto 0;
   align-items: center;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.menu-content::-webkit-scrollbar {
+  display: none;
 }
 
 .menu-left {

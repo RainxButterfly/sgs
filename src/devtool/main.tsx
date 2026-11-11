@@ -61,7 +61,7 @@ function ToolApp() {
   const [rows, setRows] = useState<DevCardSpec[]>([{ name: '杀', suit: 'spade', rank: 7 }]);
   const [heroSearch, setHeroSearch] = useState('');
   const [pickedHeroes, setPickedHeroes] = useState<string[]>([]);
-  const [heroId, setHeroId] = useState('sunben');
+  const [heroId, setHeroId] = useState('caocao');
   const [hp, setHp] = useState(4);
   const [role, setRole] = useState('rebel');
   const [sendError, setSendError] = useState('');
@@ -213,7 +213,7 @@ function ToolApp() {
       <section className="dt-panel">
         <h2>武将</h2>
         <div className="dt-hero-picker">
-          <input value={heroSearch} onChange={(e) => setHeroSearch(e.target.value)} placeholder="搜索武将，如 孙笨 / 曹操" />
+          <input value={heroSearch} onChange={(e) => setHeroSearch(e.target.value)} placeholder="搜索武将，如 曹操 / 关羽" />
           <div className="dt-hero-list">
             {heroList.map((hero) => (
               <label key={hero.id} className={pickedHeroes.includes(hero.id) ? 'on' : ''}>
@@ -227,7 +227,6 @@ function ToolApp() {
                   }
                 />
                 <span>{hero.name}</span>
-                {hero.disabled && <em>测试</em>}
               </label>
             ))}
           </div>
@@ -238,7 +237,7 @@ function ToolApp() {
           </button>
           <select value={heroId} onChange={(e) => setHeroId(e.target.value)}>
             {HEROES.map((hero) => (
-              <option key={hero.id} value={hero.id}>{hero.name}{hero.disabled ? '（测试）' : ''}</option>
+              <option key={hero.id} value={hero.id}>{hero.name}</option>
             ))}
           </select>
           <button type="button" className="dt-primary" onClick={() => send('setHero', { heroId })}>
