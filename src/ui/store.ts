@@ -16,6 +16,7 @@ import {
   type AppUpdateInfo,
 } from './update';
 import { loadBackgroundSettings, saveBackgroundSettings } from './background';
+import { applySoundSettings, getSoundSettings, playSound } from './sound';
 import { applyMatchXp, loadProfile, normalizePlayerName, saveProfile, type PlayerProfile, type XpGain } from './profile';
 import { scheduleDataSnapshot } from './dataStorage';
 import { addMatchRecord, localDateKey } from './history';
@@ -392,6 +393,8 @@ interface GameStore {
   aboutOpen: boolean;
   tutorialOpen: boolean;
   aiSpeed: number;
+  soundEnabled: boolean;
+  soundVolume: number;
   myRole: Role | null;
   firstPlayerId: number | null;
   profile: PlayerProfile;
@@ -446,6 +449,8 @@ interface GameStore {
   openTutorial: () => void;
   closeTutorial: () => void;
   setAiSpeed: (value: number) => void;
+  setSoundEnabled: (value: boolean) => void;
+  setSoundVolume: (value: number) => void;
   setBgImage: (image: string | null) => void;
   setBgDim: (dim: number) => void;
   setSelfCardSide: (side: 'left' | 'right') => void;
@@ -578,6 +583,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   aboutOpen: false,
   tutorialOpen: false,
   aiSpeed: loadAiSpeed(),
+  soundEnabled: getSoundSettings().enabled,
+  soundVolume: getSoundSettings().volume,
   myRole: null,
   firstPlayerId: null,
   profile: loadProfile(),
@@ -1409,6 +1416,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     get().lanHost?.setAiSpeed(next);
     set({ aiSpeed: next });
   },
+  setSoundEnabled: (value) => {
+    applySoundSettings({ ...getSoundSettings(), enabled: value });
+    set({ soundEnabled: value });
+  },
+  setSoundVolume: (value) => {
+    const volume = Math.max(0, Math.min(1, value));
+    applySoundSettings({ ...getSoundSettings(), volume });
+    set({ soundVolume: volume });
+  },
   setBgImage: (image) => {
     set({ bgImage: image });
     saveBackgroundSettings({ image, dim: get().bgDim });
@@ -1563,6 +1579,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     const turn = state.game?.state.turn ?? 0;
     const patch: Partial<GameStore> = { version: state.version + 1 };
+    if (ev.type === 'playCard') playSound('play');
+    else if (ev.type === 'respond') playSound('respond');
+    else if (ev.type === 'damage') playSound('damage');
+    else if (ev.type === 'heal') playSound('heal');
+    else if (ev.type === 'discard') playSound('discard');
+    else if (ev.type === 'gain') playSound('draw');
+    else if (ev.type === 'judge') playSound('judge');
+    else if (ev.type === 'skill') playSound('skill');
+    else if (ev.type === 'turn' && ev.playerId === state.humanId) playSound('turn');
     if (ev.type === 'harvest') {
       patch.harvest = {
         cards: ev.cards,

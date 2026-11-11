@@ -25,6 +25,10 @@ export function SettingsModal() {
   const profile = useGameStore((s) => s.profile);
   const aiSpeed = useGameStore((s) => s.aiSpeed);
   const setAiSpeed = useGameStore((s) => s.setAiSpeed);
+  const soundEnabled = useGameStore((s) => s.soundEnabled);
+  const soundVolume = useGameStore((s) => s.soundVolume);
+  const setSoundEnabled = useGameStore((s) => s.setSoundEnabled);
+  const setSoundVolume = useGameStore((s) => s.setSoundVolume);
   const setBgImage = useGameStore((s) => s.setBgImage);
   const setBgDim = useGameStore((s) => s.setBgDim);
   const setSelfCardSide = useGameStore((s) => s.setSelfCardSide);
@@ -330,6 +334,36 @@ export function SettingsModal() {
           ) : (
             <div className="bg-setting-hint">网页版由浏览器保存；桌面版和安卓版可以修改目录。</div>
           )}
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">音效</div>
+          <p className="settings-section-desc">
+            点击按钮、选牌、出牌、响应、受伤和回复时会播放轻量音效；关闭后完全静音。
+          </p>
+          <div className="bg-setting-row">
+            <span>音效开关</span>
+            <button
+              type="button"
+              className={`count-btn ${soundEnabled ? 'on' : ''}`}
+              onClick={() => setSoundEnabled(!soundEnabled)}
+            >
+              {soundEnabled ? '开启' : '关闭'}
+            </button>
+          </div>
+          <div className="bg-setting-row">
+            <span>音量</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={Math.round(soundVolume * 100)}
+              disabled={!soundEnabled}
+              onChange={(event) => setSoundVolume(Number(event.target.value) / 100)}
+            />
+            <b>{Math.round(soundVolume * 100)}%</b>
+          </div>
         </div>
 
         <div className="settings-section">

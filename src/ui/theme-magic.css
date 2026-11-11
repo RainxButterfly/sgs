@@ -3344,3 +3344,27 @@ html.modal-open .menu-fan-card .fan-stars,
 html.modal-open .menu-title::after {
   animation-play-state: paused !important;
 }
+
+html.theme-magic .lobby-chat {
+  border-color: var(--line);
+  background: linear-gradient(160deg, rgba(34, 20, 52, 0.72), rgba(12, 9, 22, 0.84));
+}
+
+html.theme-magic .lobby-chat-head {
+  border-bottom-color: var(--line);
+}
+
+html.theme-magic .lobby-chat-input {
+  border-top-color: var(--line);
+  background: rgba(18, 12, 28, 0.94);
+}
+
+html.theme-magic .lobby-chat-input input {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+html.theme-magic .lobby-chat-stickers {
+  border-top-color: var(--line);
+  background: rgba(16, 10, 26, 0.72);
+}

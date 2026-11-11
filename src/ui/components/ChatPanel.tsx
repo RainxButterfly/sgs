@@ -1,15 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGameSnapshot, useGameStore } from '../store';
-
-const STICKERS = [
-  '😀', '😄', '😂', '🤣', '😎', '😭', '😡', '🤔',
-  '👍', '👏', '🙏', '💪', '🎉', '🔥', '💀', '🍵',
-  '🐶', '🐱', '🐷', '🐔', '🌙', '⭐', '⚔️', '🛡️',
-];
-
-function isSticker(text: string): boolean {
-  return /^[\p{Extended_Pictographic}\s]+$/u.test(text) && [...text.trim()].length <= 4;
-}
+import { CHAT_STICKERS, isSticker } from '../stickers';
 
 export function ChatPanel() {
   const open = useGameStore((s) => s.chatOpen);
@@ -40,7 +31,9 @@ export function ChatPanel() {
   };
 
   return (
-    <aside className="chat-panel open">
+    <>
+      <button type="button" className="chat-scrim" aria-label="关闭聊天" onClick={close} />
+      <aside className="chat-panel open">
       <div className="chat-head">
         <span>房间聊天</span>
         <button type="button" className="btn ghost small" onClick={close}>
@@ -63,7 +56,7 @@ export function ChatPanel() {
       </div>
       {stickers && (
         <div className="chat-stickers">
-          {STICKERS.map((sticker) => (
+          {CHAT_STICKERS.map((sticker) => (
             <button
               key={sticker}
               type="button"
@@ -104,6 +97,7 @@ export function ChatPanel() {
           发送
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

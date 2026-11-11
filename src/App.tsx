@@ -31,6 +31,7 @@ import { SetupScreen } from './ui/screens/SetupScreen';
 import { SpectatorScreen } from './ui/screens/SpectatorScreen';
 import { TutorialModal } from './ui/components/TutorialModal';
 import { useIsMobile } from './ui/useIsMobile';
+import { installClickSound } from './ui/sound';
 
 export default function App() {
   const screen = useGameStore((s) => s.screen);
@@ -57,6 +58,8 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('modal-open', modalOpen);
   }, [modalOpen]);
+
+  useEffect(() => installClickSound(), []);
 
   useEffect(() => {
     void initDataStorage().then((restored) => {

@@ -3,6 +3,7 @@ import { toDataURL } from 'qrcode';
 import { HERO_MAP } from '../../core/deck';
 import { DEFAULT_RULES, ROLE_NAME, type Role } from '../../core/types';
 import { LanPickPanel } from '../components/LanPickPanel';
+import { LobbyChat } from '../components/LobbyChat';
 import { KickMenu } from '../components/KickMenu';
 import { NameChip } from '../components/NameChip';
 import { RulesEditor } from '../components/RulesEditor';
@@ -607,6 +608,7 @@ export function LobbyScreen() {
               </span>
               <i>查看</i>
             </button>
+            <LobbyChat />
             <div className="lobby-xp-card">
               <div className="lobby-xp-head">
                 <span>你的经验</span>

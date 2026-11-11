@@ -25,6 +25,29 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.7',
+    date: '2026-11-11',
+    title: '房间聊天、音效与卡面修复',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '联机大厅右侧新增房间聊天：房主、玩家和观战者共用同一份消息，支持发送文字和表情，不占用牌桌信息区。',
+          '表情面板扩充到 80 个，加入更多表情、手势、动物、武器和骰子等，聊天和牌桌都能使用。',
+          '新增轻量音效：按钮点击、出牌、响应、受伤、回复、摸牌、弃牌、判定、技能和轮到自己时都有提示音；设置里可以开关音效并调整音量。',
+          '电脑端手牌改为居中排列，大厅聊天填入右侧空白区域。',
+          '对局内聊天支持点击面板外的任意区域收起，和战报一样；右上角“收起”按钮继续保留。',
+        ],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '移动端禁止系统字体自动放大影响牌面，花色和点数使用固定尺寸竖排，避免字大后错位或遮住牌名。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.6',
     date: '2026-11-11',
     title: '响应杀、出牌顺序与安卓下载',
@@ -1248,13 +1271,14 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
-const currentDev = VERSIONS.find((entry) => entry.version === '0.9.6')!;
-const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.5')!;
-const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.4')!;
-const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.3')!;
-const minorBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
-const olderBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
-const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
+const currentDev = VERSIONS.find((entry) => entry.version === '0.9.7')!;
+const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.6')!;
+const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.5')!;
+const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.4')!;
+const minorBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
+const olderBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
+const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
+const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
 const dated = (entries: ChangelogEntry[], date: string): ChangelogEntry[] =>
   entries.map((entry) => ({ ...entry, date }));
 const eight = [
@@ -1300,6 +1324,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   minorBase,
   olderBase,
   oldestBase,
+  ancientBase,
   group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
   group('0.7.0~0.7.12', '2026-11-09', '联机、观战与规则完善', seven),
   group('0.6.0~0.6.9', '2026-11-08', '移动端、联机与规则完善', six),
