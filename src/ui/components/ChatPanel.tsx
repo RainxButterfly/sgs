@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGameSnapshot, useGameStore } from '../store';
 import { CHAT_STICKERS, isSticker } from '../stickers';
+import { chatFontLabel, loadChatFontScale, nextChatFontScale, saveChatFontScale, subscribeChatFontScale } from '../chatPrefs';
+import { nameTier } from '../profile';
 
 export function ChatPanel() {
   const open = useGameStore((s) => s.chatOpen);
@@ -12,6 +14,7 @@ export function ChatPanel() {
   const send = useGameStore((s) => s.sendChat);
   const [text, setText] = useState('');
   const [stickers, setStickers] = useState(false);
+  const [fontScale, setFontScale] = useState(loadChatFontScale);
   const listRef = useRef<HTMLDivElement>(null);
   const online = lanRole === 'host' || lanRole === 'client';
   const selfName = game?.state.players[humanId]?.name ?? '';
@@ -19,6 +22,8 @@ export function ChatPanel() {
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages.length, open]);
+
+  useEffect(() => subscribeChatFontScale(() => setFontScale(loadChatFontScale())), []);
 
   if (!open) return null;
 
@@ -33,7 +38,7 @@ export function ChatPanel() {
   return (
     <>
       <button type="button" className="chat-scrim" aria-label="关闭聊天" onClick={close} />
-      <aside className="chat-panel open">
+      <aside className="chat-panel open" style={{ '--chat-scale': fontScale } as React.CSSProperties}>
       <div className="chat-head">
         <span>房间聊天</span>
         <button type="button" className="btn ghost small" onClick={close}>
@@ -47,8 +52,13 @@ export function ChatPanel() {
         {messages.map((message) => {
           const mine = !!selfName && message.name === selfName;
           return (
-            <div key={message.id} className={`chat-message ${mine ? 'is-mine' : ''}`}>
-              <span className="chat-name">{mine ? '你' : message.name}</span>
+            <div
+              key={message.id}
+              className={`chat-message tier-${nameTier(message.level ?? 1)} ${mine ? 'is-mine' : ''}`}
+            >
+              <span className="chat-name">
+                {mine ? '你' : message.name} · Lv.{message.level ?? 1}
+              </span>
               <div className={`chat-bubble ${isSticker(message.text) ? 'is-sticker' : ''}`}>{message.text}</div>
             </div>
           );
@@ -72,6 +82,18 @@ export function ChatPanel() {
         </div>
       )}
       <div className="chat-input-row">
+        <button
+          type="button"
+          className="btn ghost small chat-font-btn"
+          title={`聊天字号：${chatFontLabel(fontScale)}`}
+          onClick={() => {
+            const next = nextChatFontScale(fontScale);
+            setFontScale(next);
+            saveChatFontScale(next);
+          }}
+        >
+          字·{chatFontLabel(fontScale)}
+        </button>
         <button
           type="button"
           className="btn ghost chat-sticker-btn"

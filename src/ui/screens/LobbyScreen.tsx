@@ -330,6 +330,57 @@ export function LobbyScreen() {
               </div>
             </div>
 
+            {bidding && !bidding.done && (
+              <div className="lobby-bid">
+                <div className="lobby-bid-head">
+                  <b>斗地主叫分</b>
+                  <span>
+                    最高 {bidding.highest || '—'} 分 · 轮到 {bidName(currentBidder ?? -1)}
+                  </span>
+                </div>
+                <div className="lobby-bid-players">
+                  {bidding.order.map((id) => {
+                    const score = bidding.bids[id];
+                    const state =
+                      score === undefined ? '等待' : score === 0 ? '不叫' : `${score} 分`;
+                    return (
+                      <div
+                        key={id}
+                        className={[
+                          'lobby-bid-player',
+                          id === currentBidder ? 'active' : '',
+                          id === bidding.highestBidder ? 'leader' : '',
+                        ].join(' ')}
+                      >
+                        <span>{bidName(id)}</span>
+                        <b>{state}</b>
+                      </div>
+                    );
+                  })}
+                </div>
+                {myBidTurn ? (
+                  <div className="lobby-bid-actions">
+                    <button type="button" className="btn ghost" onClick={() => bidLan(0)}>
+                      不叫
+                    </button>
+                    {[1, 2, 3].map((score) => (
+                      <button
+                        key={score}
+                        type="button"
+                        className={`btn ${score > bidding.highest ? 'primary' : 'ghost'}`}
+                        disabled={score <= bidding.highest}
+                        onClick={() => bidLan(score)}
+                      >
+                        {score} 分
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="lobby-bid-wait">等待 {bidName(currentBidder ?? -1)} 叫分…</div>
+                )}
+              </div>
+            )}
+
             {host ? (
               <>
                 <div className="room-row">
@@ -529,7 +580,7 @@ export function LobbyScreen() {
                       }
                       onClick={() => startLanPick(startCount)}
                     >
-                      开始选将
+                      {bidding ? '叫分中…' : '开始选将'}
                     </button>
                   </div>
                 </>

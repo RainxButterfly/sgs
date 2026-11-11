@@ -19263,3 +19263,161 @@ html {
   background: transparent;
   cursor: default;
 }
+
+/* 联机斗地主叫分 */
+.lobby-bid {
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid rgba(219, 181, 108, 0.28);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.lobby-bid-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.lobby-bid-head b {
+  color: var(--gold-bright);
+  font-family: var(--font-calligraphy);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+
+.lobby-bid-head span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.lobby-bid-players {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.lobby-bid-player {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 9px;
+  border: 1px solid rgba(219, 181, 108, 0.14);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.lobby-bid-player span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lobby-bid-player b {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lobby-bid-player.active {
+  border-color: rgba(238, 212, 154, 0.72);
+  background: rgba(219, 181, 108, 0.1);
+}
+
+.lobby-bid-player.leader b {
+  color: var(--gold-bright);
+}
+
+.lobby-bid-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.lobby-bid-wait {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+/* 聊天字号：由聊天框内按钮切换并持久化 */
+.chat-bubble {
+  font-size: calc(12px * var(--chat-scale, 1));
+}
+
+.chat-name {
+  font-size: calc(9.5px * var(--chat-scale, 1));
+}
+
+.chat-bubble.is-sticker {
+  font-size: calc(34px * var(--chat-scale, 1));
+}
+
+.chat-input-row input,
+.lobby-chat-input input {
+  font-size: calc(11.5px * var(--chat-scale, 1));
+}
+
+.chat-font-btn {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 3px 6px;
+  font-size: 10px;
+}
+
+/* 按等级区分的聊天气泡，深色底配浅色字保证可读 */
+.chat-message.tier-0 .chat-bubble:not(.is-sticker) {
+  border-color: rgba(219, 181, 108, 0.3);
+  background: #37322a;
+  color: #f8f1e3;
+}
+
+.chat-message.tier-1 .chat-bubble:not(.is-sticker) {
+  border-color: rgba(126, 214, 167, 0.45);
+  background: #1e3e32;
+  color: #d9ffe9;
+}
+
+.chat-message.tier-2 .chat-bubble:not(.is-sticker) {
+  border-color: rgba(126, 190, 255, 0.45);
+  background: #1c3850;
+  color: #dcf0ff;
+}
+
+.chat-message.tier-3 .chat-bubble:not(.is-sticker) {
+  border-color: rgba(190, 150, 255, 0.5);
+  background: #382952;
+  color: #eee1ff;
+}
+
+.chat-message.tier-4 .chat-bubble:not(.is-sticker) {
+  border-color: rgba(255, 211, 110, 0.5);
+  background: #49391f;
+  color: #ffefc8;
+}
+
+.chat-message.tier-5 .chat-bubble:not(.is-sticker) {
+  border-color: rgba(255, 140, 120, 0.5);
+  background: #4e2925;
+  color: #ffded5;
+}
+
+.chat-message.tier-6 .chat-bubble:not(.is-sticker) {
+  border-color: rgba(255, 190, 240, 0.55);
+  background: linear-gradient(135deg, #5a2140, #2c1a52 55%, #1b3550);
+  color: #fff3fb;
+}
+
+.chat-message.tier-1 .chat-name { color: #9fe0b2; }
+.chat-message.tier-2 .chat-name { color: #8cc9ff; }
+.chat-message.tier-3 .chat-name { color: #c7a6ff; }
+.chat-message.tier-4 .chat-name { color: #e3bd69; }
+.chat-message.tier-5 .chat-name { color: #ff9a86; }
+.chat-message.tier-6 .chat-name { color: #ffb7ef; }

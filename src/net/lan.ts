@@ -726,6 +726,7 @@ export class LanHostManager {
       name: this.hostName,
       text: value,
       at: Date.now(),
+      level: this.hostLevel,
       playerId: 0,
     };
     this.hooks.onChat(message);
@@ -782,6 +783,7 @@ export class LanHostManager {
         name: guest?.name ?? spectator?.name ?? '观战者',
         text: value,
         at: Date.now(),
+        level: guest?.level ?? spectator?.level ?? 1,
         playerId: guest?.playerId,
       };
       this.hooks.onChat(chat);

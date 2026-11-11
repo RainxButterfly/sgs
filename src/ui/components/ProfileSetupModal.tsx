@@ -12,14 +12,13 @@ export function isProfileInitialized(): boolean {
 }
 
 export function ProfileSetupModal() {
-  const profile = useGameStore((s) => s.profile);
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState(profile.name);
+  const [name, setName] = useState('');
 
   useEffect(() => {
     if (isProfileInitialized()) return;
     const timer = window.setTimeout(() => {
-      setName(useGameStore.getState().profile.name);
+      setName('');
       setOpen(true);
     }, 600);
     return () => window.clearTimeout(timer);
@@ -57,12 +56,12 @@ export function ProfileSetupModal() {
           联机座次、观战席和战绩都会使用这个昵称。之后可以在主菜单点「修改 ID」随时更换。
         </p>
         <label className="profile-init-field">
-          <span>固定 ID</span>
+          <span>游戏名</span>
           <input
             value={name}
             maxLength={12}
             autoFocus
-            placeholder="输入 1–12 个字符"
+            placeholder="请输入游戏名：例如星河一叶"
             onChange={(event) => setName(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') finish();

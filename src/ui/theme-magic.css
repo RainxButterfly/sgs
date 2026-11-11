@@ -3368,3 +3368,18 @@ html.theme-magic .lobby-chat-stickers {
   border-top-color: var(--line);
   background: rgba(16, 10, 26, 0.72);
 }
+
+html.theme-magic .lobby-bid {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+html.theme-magic .lobby-bid-player {
+  border-color: var(--line);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+html.theme-magic .lobby-bid-player.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

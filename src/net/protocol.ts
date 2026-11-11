@@ -76,6 +76,7 @@ export interface ChatMessage {
   name: string;
   text: string;
   at: number;
+  level?: number;
   playerId?: number;
 }
 

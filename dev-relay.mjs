@@ -26,12 +26,13 @@ wss.on('connection', (ws, req) => {
   const name = url.searchParams.get('name') || `玩家${id}`;
   const ip = (req.socket.remoteAddress ?? '').replace(/^::ffff:/, '');
   const spectate = url.searchParams.get('spectate') === '1';
-  peers.set(id, { ws, name, isHost, ip });
+  const level = Number(url.searchParams.get('level')) || 1;
+  peers.set(id, { ws, name, isHost, ip, level });
   if (isHost) hostId = id;
 
   send(ws, { server: 'welcome', id, role: isHost ? 'host' : 'guest', ip });
   if (!isHost && hostId && peers.has(hostId)) {
-    send(peers.get(hostId).ws, { server: 'join', id, name, ip, spectate });
+    send(peers.get(hostId).ws, { server: 'join', id, name, ip, level, spectate });
   }
 
   ws.on('message', (raw) => {

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../store';
 import { CHAT_STICKERS, isSticker } from '../stickers';
+import { chatFontLabel, loadChatFontScale, nextChatFontScale, saveChatFontScale, subscribeChatFontScale } from '../chatPrefs';
+import { nameTier } from '../profile';
 
 export function LobbyChat() {
   const messages = useGameStore((s) => s.chatMessages);
@@ -9,12 +11,15 @@ export function LobbyChat() {
   const send = useGameStore((s) => s.sendChat);
   const [text, setText] = useState('');
   const [stickers, setStickers] = useState(false);
+  const [fontScale, setFontScale] = useState(loadChatFontScale);
   const listRef = useRef<HTMLDivElement>(null);
   const online = lanRole === 'host' || lanRole === 'client';
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [messages.length]);
+
+  useEffect(() => subscribeChatFontScale(() => setFontScale(loadChatFontScale())), []);
 
   const submit = () => {
     const value = text.trim();
@@ -25,7 +30,7 @@ export function LobbyChat() {
   };
 
   return (
-    <section className="lobby-chat">
+    <section className="lobby-chat" style={{ '--chat-scale': fontScale } as React.CSSProperties}>
       <div className="lobby-chat-head">
         <b>房间聊天</b>
         <span>{online ? '和房间里的人聊聊' : '联机时可用'}</span>
@@ -35,8 +40,13 @@ export function LobbyChat() {
         {messages.slice(-40).map((message) => {
           const mine = message.name === profile.name;
           return (
-            <div key={message.id} className={`chat-message ${mine ? 'is-mine' : ''}`}>
-              <span className="chat-name">{mine ? '你' : message.name}</span>
+            <div
+              key={message.id}
+              className={`chat-message tier-${nameTier(message.level ?? 1)} ${mine ? 'is-mine' : ''}`}
+            >
+              <span className="chat-name">
+                {mine ? '你' : message.name} · Lv.{message.level ?? 1}
+              </span>
               <div className={`chat-bubble ${isSticker(message.text) ? 'is-sticker' : ''}`}>{message.text}</div>
             </div>
           );
@@ -60,6 +70,18 @@ export function LobbyChat() {
         </div>
       )}
       <div className="lobby-chat-input">
+        <button
+          type="button"
+          className="btn ghost small chat-font-btn"
+          title={`聊天字号：${chatFontLabel(fontScale)}`}
+          onClick={() => {
+            const next = nextChatFontScale(fontScale);
+            setFontScale(next);
+            saveChatFontScale(next);
+          }}
+        >
+          字·{chatFontLabel(fontScale)}
+        </button>
         <button
           type="button"
           className="btn ghost small"

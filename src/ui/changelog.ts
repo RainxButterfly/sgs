@@ -25,6 +25,28 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.8',
+    date: '2026-11-11',
+    title: '叫分修复、聊天等级与字号',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '修复联机斗地主点击「开始选将」后卡在大厅的问题：补回叫分面板，显示当前叫分人、最高分和每位玩家的选择，叫分结束后正常进入选将。',
+        ],
+      },
+      {
+        kind: 'feature',
+        items: [
+          '聊天气泡按玩家等级使用不同底色和文字颜色：白、青、蓝、紫、金、赤和星虹，深色底保证文字清晰。',
+          '聊天气泡增加等级标识，游戏内聊天和大厅聊天样式统一。',
+          '首次启动的游戏名输入框改为空白输入，使用「请输入游戏名：例如星河一叶」占位提示，不再预填默认昵称。',
+          '聊天框新增字号按钮，可在标准、大、特大和小之间循环切换，设置会保存在本机，重新打开后不会重置。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.7',
     date: '2026-11-11',
     title: '房间聊天、音效与卡面修复',
@@ -1271,14 +1293,15 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
-const currentDev = VERSIONS.find((entry) => entry.version === '0.9.7')!;
-const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.6')!;
-const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.5')!;
-const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.4')!;
-const minorBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
-const olderBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
-const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
-const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
+const currentDev = VERSIONS.find((entry) => entry.version === '0.9.8')!;
+const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.7')!;
+const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.6')!;
+const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.5')!;
+const minorBase = VERSIONS.find((entry) => entry.version === '0.9.4')!;
+const olderBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
+const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
+const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
+const earliestBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
 const dated = (entries: ChangelogEntry[], date: string): ChangelogEntry[] =>
   entries.map((entry) => ({ ...entry, date }));
 const eight = [
@@ -1325,6 +1348,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   olderBase,
   oldestBase,
   ancientBase,
+  earliestBase,
   group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
   group('0.7.0~0.7.12', '2026-11-09', '联机、观战与规则完善', seven),
   group('0.6.0~0.6.9', '2026-11-08', '移动端、联机与规则完善', six),
