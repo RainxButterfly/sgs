@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cardEffectText } from '../cardEffects';
 import { cardDisplayName, cardTypeText, playTargetText } from '../labels';
 import { useGameSnapshot, useGameStore } from '../store';
@@ -11,15 +11,31 @@ interface Props {
 export function GameRail({ onShowLog }: Props) {
   const { game } = useGameSnapshot();
   const lastPlay = useGameStore((s) => s.lastPlay);
+  const messages = useGameStore((s) => s.chatMessages);
+  const sendChat = useGameStore((s) => s.sendChat);
+  const lanRole = useGameStore((s) => s.lanRole);
   const feedRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
+  const [chatText, setChatText] = useState('');
   const lastLogId = game?.state.log[game.state.log.length - 1]?.id;
   useEffect(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
   }, [lastLogId]);
+  useEffect(() => {
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [messages.length]);
   if (!game) return null;
 
+  const online = lanRole === 'host' || lanRole === 'client';
   const playerName = (id: number) => game.state.players[id]?.name ?? `座位${id}`;
   const recent = game.state.log.slice(-16);
+  const recentChat = messages.slice(-6);
+  const send = () => {
+    const value = chatText.trim();
+    if (!value) return;
+    sendChat(value);
+    setChatText('');
+  };
 
   return (
     <aside className="game-rail">
@@ -66,6 +82,42 @@ export function GameRail({ onShowLog }: Props) {
               <span>{entry.text}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="rail-card rail-chat">
+        <div className="rail-title">
+          <b>聊天</b>
+          <span>{online ? '联机' : '单机'}</span>
+        </div>
+        <div className="rail-chat-list" ref={chatRef}>
+          {recentChat.length === 0 && (
+            <div className="rail-empty">{online ? '暂无消息' : '联机时才能聊天'}</div>
+          )}
+          {recentChat.map((message) => (
+            <div key={message.id} className="rail-chat-line">
+              <b>{message.name}</b>
+              <span>{message.text}</span>
+            </div>
+          ))}
+        </div>
+        <div className="rail-chat-input">
+          <input
+            value={chatText}
+            maxLength={200}
+            placeholder={online ? '输入消息…' : '联机时才能聊天'}
+            disabled={!online}
+            onChange={(event) => setChatText(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                send();
+              }
+            }}
+          />
+          <button type="button" disabled={!online || !chatText.trim()} onClick={send}>
+            发送
+          </button>
         </div>
       </section>
     </aside>

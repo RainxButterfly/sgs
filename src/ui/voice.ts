@@ -5,6 +5,7 @@
 
 import { getSoundSettings } from './sound';
 import { SKILL_VOICES, DIE_VOICES, CARD_VOICES } from './voiceManifest';
+import { HERO_MAP } from '../core/deck';
 
 const VOICE_DIR = '/assets/audio';
 
@@ -61,4 +62,30 @@ export function playCardVoice(pinyin: string | undefined, gender: 'male' | 'fema
   const name = gender === 'female' ? entry.female : entry.male;
   if (!name) return;
   play(`${VOICE_DIR}/card/${gender}/${name}.mp3`);
+}
+
+/** 该武将是否有语音（有阵亡语音或任一技能语音） */
+export function heroHasVoice(heroId: string | undefined): boolean {
+  if (!heroId) return false;
+  if (DIE_VOICES[heroId]) return true;
+  const hero = HERO_MAP.get(heroId);
+  return (hero?.skillIds ?? []).some((id) => (SKILL_VOICES[id]?.length ?? 0) > 0);
+}
+
+/** 试听武将语音：优先阵亡语音，其次第一个有配音的技能 */
+export function playHeroVoicePreview(heroId: string | undefined): void {
+  if (!heroId) return;
+  if (DIE_VOICES[heroId]) {
+    playDieVoice(heroId);
+    return;
+  }
+  const hero = HERO_MAP.get(heroId);
+  for (const id of hero?.skillIds ?? []) {
+    const list = SKILL_VOICES[id];
+    const name = list && pick(list);
+    if (name) {
+      play(`${VOICE_DIR}/skill/${name}.mp3`);
+      return;
+    }
+  }
 }

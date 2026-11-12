@@ -331,6 +331,29 @@ export function SettingsModal() {
         </div>
 
         <div className="settings-section">
+          <div className="settings-section-title">语音包</div>
+          <p className="settings-section-desc">
+            出牌、技能、阵亡的语音包；卡牌语音包在此设置，武将语音包在武将图鉴详情里切换。
+          </p>
+          <div className="bg-setting-row">
+            <span>卡牌语音包</span>
+            <div className="bg-scope-options">
+              {VOICE_PACKS.map((pack) => (
+                <button
+                  key={pack.id}
+                  type="button"
+                  className={`toggle-btn ${getCardVoicePack() === pack.id ? 'on' : ''}`}
+                  onClick={() => setCardVoicePack(pack.id)}
+                >
+                  {pack.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bg-setting-hint">当前仅有默认语音包，后续版本会提供更多语音包供切换。</div>
+        </div>
+
+        <div className="settings-section">
           <div className="settings-section-title">数据保存位置</div>
           <p className="settings-section-desc">
             对局记录、对局背景、等级经验和联机信息会备份到当前目录的数据快照中。
@@ -412,29 +435,6 @@ export function SettingsModal() {
             </button>
           </div>
           <div className="bg-setting-hint">手机端在受伤、濒死时会有震动反馈；桌面端无震动效果。</div>
-        </div>
-
-        <div className="settings-section">
-          <div className="settings-section-title">语音包</div>
-          <p className="settings-section-desc">
-            出牌、技能、阵亡的语音包；卡牌语音包在此设置，武将语音包在武将图鉴详情里切换。
-          </p>
-          <div className="bg-setting-row">
-            <span>卡牌语音包</span>
-            <div className="bg-scope-options">
-              {VOICE_PACKS.map((pack) => (
-                <button
-                  key={pack.id}
-                  type="button"
-                  className={`toggle-btn ${getCardVoicePack() === pack.id ? 'on' : ''}`}
-                  onClick={() => setCardVoicePack(pack.id)}
-                >
-                  {pack.name}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="bg-setting-hint">当前仅有默认语音包，后续版本会提供更多语音包供切换。</div>
         </div>
 
         <div className="settings-section">

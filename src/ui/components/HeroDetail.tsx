@@ -13,6 +13,7 @@ import {
 } from '../skins';
 import { useSkins } from './HeroPortrait';
 import { getHeroVoicePack, setHeroVoicePack, VOICE_PACKS } from '../voicePacks';
+import { heroHasVoice, playHeroVoicePreview } from '../voice';
 
 interface Props {
   heroId: string;
@@ -93,29 +94,33 @@ function SkinSection({ heroId }: { heroId: string }) {
   );
 }
 
-/** 武将语音包：当前默认一套，预留多包切换 */
-function VoicePackSection() {
+/** 武将语音包：当前默认一套，预留多包切换；无语音的武将显示「暂无」 */
+function VoicePackSection({ heroId }: { heroId: string }) {
   const current = getHeroVoicePack();
+  const hasVoice = heroHasVoice(heroId);
   return (
     <>
       <div className="detail-section-title">武将语音包</div>
-      <div className="detail-skins">
-        {VOICE_PACKS.map((pack) => (
-          <div
-            key={pack.id}
-            className={`detail-skin ${pack.id === current ? 'is-on' : ''}`}
-            role="button"
-            tabIndex={0}
-            onClick={() => setHeroVoicePack(pack.id)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') setHeroVoicePack(pack.id);
-            }}
-          >
-            <span className="detail-skin-name voice-pack-name">{pack.name}</span>
-            {pack.id === current && <span className="detail-skin-on">使用中</span>}
-          </div>
-        ))}
-      </div>
+      {!hasVoice ? (
+        <div className="voice-pack-empty">暂无</div>
+      ) : (
+        <div className="detail-voice-pack">
+          {VOICE_PACKS.map((pack) => (
+            <button
+              key={pack.id}
+              type="button"
+              className={`voice-pack-btn ${pack.id === current ? 'on' : ''}`}
+              onClick={() => {
+                setHeroVoicePack(pack.id);
+                playHeroVoicePreview(heroId);
+              }}
+            >
+              <span>{pack.name}</span>
+              {pack.id === current && <i className="voice-pack-on">使用中</i>}
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -231,7 +236,7 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
 
         <SkinSection heroId={hero.id} />
 
-        <VoicePackSection />
+        <VoicePackSection heroId={hero.id} />
 
         {player && (
           <>
