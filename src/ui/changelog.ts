@@ -25,8 +25,8 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
-    version: '0.9.13',
-    date: '2026-11-12',
+    version: '0.9.14',
+    date: '2026-11-13',
     title: '武将牌版式、立绘皮肤与掼蛋 2v2',
     sections: [
       {
@@ -72,7 +72,7 @@ const VERSIONS: ChangelogEntry[] = [
           '右下角自己的信息卡完整显示，无需滚动。',
           '卡牌改为方形牌面，牌名竖排、花色点数右上、范围右下，视觉更清晰。',
           '卡牌牌面改为浅色底、深色文字，花色红黑分明，图案不再发黑、不再裁切。',
-          '武将立绘在图鉴与皮肤缩略图中完整显示，双头武将两人都能看到。',
+          '武将立绘在图鉴与皮肤缩略图中填满整张卡，不再上下留白。',
           '牌桌侧栏新增常驻聊天框，不用点按钮也能看到消息并发送。',
           '聊天消息按玩家等级显示专属气泡，名字与等级显示在气泡上方，对局、大厅、掼蛋统一。',
           '对局侧栏与掼蛋聊天框支持表情包，去掉快捷文字按钮，输入区更宽敞。',
@@ -1480,7 +1480,7 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
-const latestRelease = VERSIONS.find((entry) => entry.version === '0.9.13')!;
+const latestRelease = VERSIONS.find((entry) => entry.version === '0.9.14')!;
 const currentRelease = VERSIONS.find((entry) => entry.version === '0.9.12')!;
 const currentDev = VERSIONS.find((entry) => entry.version === '0.9.11')!;
 const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.10')!;
