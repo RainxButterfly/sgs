@@ -3341,7 +3341,7 @@ const SKILLS: SkillDef[] = [
         effect: async (c) => {
           c.owner.flags.laishengUsed = 1;
           c.owner.flags.laishengArmed = 1;
-          c.game.log(`【${c.owner.name}】发动【来生】，将在下回合复活`, 'skill');
+          c.game.log(`【${c.owner.name}】发动【残躯】，将在下回合复活`, 'skill');
         },
       },
     ],

@@ -6,9 +6,9 @@
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(120% 90% at 50% 8%, rgba(72, 96, 78, 0.5), transparent 62%),
-    radial-gradient(90% 70% at 50% 110%, rgba(120, 78, 44, 0.32), transparent 66%),
-    linear-gradient(180deg, #131a16 0%, #0d120f 55%, #16110c 100%);
+    radial-gradient(120% 90% at 50% 8%, rgba(126, 94, 46, 0.44), transparent 62%),
+    radial-gradient(90% 70% at 50% 110%, rgba(150, 66, 44, 0.26), transparent 66%),
+    linear-gradient(180deg, #241c13 0%, #1a140e 55%, #241a10 100%);
   color: var(--ink);
   font-family: var(--font-body);
   overflow: hidden;
@@ -22,7 +22,7 @@
   gap: 16px;
   padding: 10px 18px;
   border-bottom: 1px solid rgba(219, 181, 108, 0.18);
-  background: rgba(10, 14, 12, 0.72);
+  background: rgba(30, 24, 16, 0.72);
   backdrop-filter: blur(6px);
   z-index: 3;
 }
@@ -97,7 +97,7 @@
   bottom: 6%;
   border-radius: 999px;
   border: 1px solid rgba(219, 181, 108, 0.1);
-  background: radial-gradient(60% 60% at 50% 46%, rgba(52, 76, 60, 0.16), transparent 72%);
+  background: radial-gradient(60% 60% at 50% 46%, rgba(126, 94, 50, 0.16), transparent 72%);
   pointer-events: none;
 }
 
@@ -107,7 +107,7 @@
   padding: 8px 12px;
   border-radius: 12px;
   border: 1px solid rgba(219, 181, 108, 0.22);
-  background: rgba(18, 24, 20, 0.72);
+  background: rgba(44, 35, 26, 0.72);
   text-align: center;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
@@ -163,7 +163,7 @@
   height: 20px;
   margin-left: -6px;
   border-radius: 3px;
-  background: linear-gradient(160deg, #2a3b31, #16211b);
+  background: linear-gradient(160deg, #3f3123, #1f170e);
   border: 1px solid rgba(219, 181, 108, 0.3);
 }
 
@@ -207,7 +207,7 @@
   padding: 14px 18px;
   border-radius: 16px;
   border: 1px dashed rgba(219, 181, 108, 0.22);
-  background: rgba(10, 14, 12, 0.42);
+  background: rgba(30, 23, 16, 0.42);
 }
 
 .gd-combo-label {
@@ -250,6 +250,175 @@
   pointer-events: none;
 }
 
+/* ---------- 顶栏按钮 / 侧栏面板 ---------- */
+
+.gd-top-btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(219, 181, 108, 0.34);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.gd-top-btn:hover {
+  color: var(--gold-bright);
+  border-color: var(--line-strong);
+}
+
+.gd-top-btn.on {
+  background: rgba(219, 181, 108, 0.16);
+  border-color: var(--line-strong);
+  color: var(--gold-bright);
+}
+
+.gd-sidepanel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(340px, 78vw);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(219, 181, 108, 0.28);
+  background: rgba(26, 20, 14, 0.96);
+  box-shadow: -18px 0 40px rgba(0, 0, 0, 0.5);
+  z-index: 11;
+  animation: gdPanelIn 0.24s ease;
+}
+
+.gd-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+@keyframes gdPanelIn {
+  from { transform: translateX(24px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.gd-sidepanel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(219, 181, 108, 0.2);
+  font-family: var(--font-calligraphy);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  color: var(--gold-bright);
+}
+
+.gd-sidepanel-close {
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.gd-sidepanel-close:hover {
+  color: var(--ink);
+}
+
+.gd-sidepanel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 14px;
+}
+
+.gd-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gd-log-line {
+  font-size: 12px;
+  line-height: 1.7;
+  color: rgba(205, 189, 162, 0.86);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.gd-log-empty {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 18px 8px;
+  text-align: center;
+}
+
+.gd-chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gd-chat-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gd-chat-name {
+  font-size: 11px;
+  color: var(--gold-bright);
+  letter-spacing: 0.04em;
+}
+
+.gd-chat-bubble {
+  align-self: flex-start;
+  max-width: 86%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border-top-left-radius: 3px;
+  background: rgba(219, 181, 108, 0.14);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.gd-chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(219, 181, 108, 0.2);
+}
+
+.gd-chat-input input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  background: rgba(12, 9, 6, 0.5);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.gd-chat-input input:focus {
+  border-color: var(--line-strong);
+}
+
+.gd-chat-input .gd-btn {
+  padding: 8px 16px;
+  font-size: 12.5px;
+}
+
 /* ---------- 手牌区 ---------- */
 
 .gd-me {
@@ -283,7 +452,7 @@
   position: relative;
   padding: 8px 18px 16px;
   border-top: 1px solid rgba(219, 181, 108, 0.18);
-  background: linear-gradient(180deg, rgba(10, 14, 12, 0.2), rgba(10, 14, 12, 0.82));
+  background: linear-gradient(180deg, rgba(30, 23, 16, 0.2), rgba(30, 23, 16, 0.84));
   z-index: 2;
 }
 
@@ -348,9 +517,9 @@
 
 .gd-card {
   position: relative;
-  width: 54px;
-  height: 76px;
-  margin-left: -16px;
+  width: 58px;
+  height: 82px;
+  margin-left: -14px;
   padding: 4px 5px;
   border-radius: 7px;
   border: 1px solid rgba(0, 0, 0, 0.28);
@@ -376,8 +545,8 @@
 }
 
 .gd-card.is-small {
-  width: 44px;
-  height: 62px;
+  width: 46px;
+  height: 66px;
   margin-left: 0;
   cursor: default;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
@@ -392,35 +561,35 @@
 }
 
 .gd-card-corner b {
-  font-size: 16px;
+  font-size: 21px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 .gd-card-corner i {
   font-style: normal;
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .gd-card.is-small .gd-card-corner b {
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .gd-card.is-small .gd-card-corner i {
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .gd-card-pip {
   position: absolute;
   right: 5px;
   bottom: 3px;
-  font-size: 22px;
+  font-size: 28px;
   line-height: 1;
   opacity: 0.32;
 }
 
 .gd-card.is-small .gd-card-pip {
-  font-size: 17px;
+  font-size: 20px;
   right: 4px;
 }
 
@@ -472,7 +641,7 @@
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(6, 8, 7, 0.72);
+  background: rgba(10, 7, 4, 0.72);
   backdrop-filter: blur(3px);
   z-index: 20;
   animation: gdFade 0.24s ease;
@@ -575,4 +744,209 @@
   .gd-actions { margin-bottom: 6px; gap: 7px; }
   .gd-hand { min-height: 78px; padding-top: 28px; row-gap: 18px; }
   .gd-toast { bottom: 230px; }
+  .gd-sidepanel { width: 100vw; }
+  .gd-top-btn { padding: 4px 10px; font-size: 11px; }
+}
+
+/* ---------- 星虹魔法主题适配 ---------- */
+html.theme-magic .gd-root {
+  background:
+    radial-gradient(120% 90% at 50% 8%, rgba(120, 82, 200, 0.3), transparent 62%),
+    radial-gradient(90% 70% at 50% 110%, rgba(255, 119, 207, 0.16), transparent 66%),
+    linear-gradient(180deg, #0d0916 0%, #080611 55%, #0f0a1a 100%);
+}
+html.theme-magic .gd-topbar,
+html.theme-magic .gd-bottom { background: rgba(16, 10, 26, 0.82); }
+html.theme-magic .gd-seat { background: rgba(30, 20, 48, 0.72); }
+html.theme-magic .gd-sidepanel { background: rgba(16, 10, 26, 0.96); }
+html.theme-magic .gd-seat-mini i { background: linear-gradient(160deg, #2c1d44, #170f28); }
+html.theme-magic .gd-center { background: rgba(20, 12, 32, 0.42); }
+html.theme-magic .gd-table::before { background: radial-gradient(60% 60% at 50% 46%, rgba(140, 100, 220, 0.16), transparent 72%); }
+
+/* ---------- 掼蛋聊天表情/等级 ---------- */
+.gd-chat-bubble.is-sticker {
+  font-size: 22px;
+  line-height: 1.2;
+  padding: 4px 8px;
+  background: transparent;
+}
+.gd-chat-stickers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(219, 181, 108, 0.2);
+}
+.gd-chat-sticker {
+  font-size: 22px;
+  line-height: 1;
+  padding: 5px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+.gd-chat-sticker:hover {
+  background: rgba(219, 181, 108, 0.14);
+  border-color: rgba(219, 181, 108, 0.3);
+}
+.gd-sticker-btn {
+  flex: 0 0 auto;
+  font-size: 12px;
+  padding: 7px 12px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.gd-sticker-btn:disabled { opacity: 0.5; }
+
+/* ---------- 掼蛋常驻聊天框（牌桌右下角） ---------- */
+.gd-chat-dock {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  width: min(300px, 34vw);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(219, 181, 108, 0.24);
+  border-radius: 10px;
+  background: rgba(20, 15, 10, 0.78);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.36);
+  overflow: hidden;
+  z-index: 4;
+}
+
+.gd-chat-dock-list {
+  flex: 1;
+  min-height: 0;
+  max-height: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  overflow-y: auto;
+}
+
+.gd-chat-dock-empty {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 10px 4px;
+  text-align: center;
+}
+
+/* dock 内复用全局等级气泡，微调字号以适配小空间 */
+.gd-chat-dock-list .chat-message {
+  gap: 1px;
+}
+
+.gd-chat-dock-list .chat-name {
+  font-size: 9px;
+}
+
+.gd-chat-dock-list .chat-bubble {
+  max-width: 92%;
+  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.gd-chat-dock-list .chat-bubble.is-sticker {
+  font-size: 24px;
+  padding: 0;
+}
+
+/* 掼蛋常驻框表情面板 */
+.gd-chat-dock-stickers {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 2px;
+  max-height: 96px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  border-top: 1px solid rgba(219, 181, 108, 0.18);
+  background: rgba(24, 19, 14, 0.45);
+}
+
+.gd-chat-dock-stickers button {
+  padding: 2px 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.gd-chat-dock-stickers button:hover {
+  background: rgba(219, 181, 108, 0.14);
+}
+
+.gd-chat-dock-sticker-btn {
+  flex: 0 0 auto;
+  padding: 5px 7px;
+  border: 1px solid rgba(219, 181, 108, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gd-chat-dock-sticker-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.gd-chat-dock-input {
+  display: flex;
+  gap: 6px;
+  padding: 7px 8px;
+  border-top: 1px solid rgba(219, 181, 108, 0.18);
+}
+
+.gd-chat-dock-input input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 9px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 6px;
+  background: rgba(12, 9, 6, 0.5);
+  color: var(--ink);
+  font: inherit;
+  font-size: 11.5px;
+  outline: none;
+}
+
+.gd-chat-dock-input input:focus {
+  border-color: var(--line-strong);
+}
+
+.gd-chat-dock-input button {
+  flex: 0 0 auto;
+  padding: 5px 12px;
+  border: 1px solid rgba(219, 181, 108, 0.4);
+  border-radius: 6px;
+  background: rgba(201, 163, 90, 0.16);
+  color: var(--gold-bright);
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+
+.gd-chat-dock-input button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 720px) {
+  .gd-chat-dock {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+  }
 }

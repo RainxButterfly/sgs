@@ -444,6 +444,9 @@ interface GameStore {
   cardChoices: string[];
   reorderTop: string[];
   modalMinimized: boolean;
+  /** 点击转化技按钮后进入的「选牌」态：只高亮可转化的牌 */
+  viewAsFilter: { skillId: string; as: string; eligibleCardIds: string[] } | null;
+  selectViewAsSkill: (skillId: string, as: string, eligibleCardIds: string[]) => void;
 
   initLocal: (count: number, heroId: string, rules?: Partial<CustomRules>) => void;
   prepareLocal: (count: number, rules?: Partial<CustomRules>, excludeHeroIds?: string[]) => void;
@@ -687,6 +690,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   cardChoices: [],
   reorderTop: [],
   modalMinimized: false,
+  viewAsFilter: null,
 
   initLocal: (count, heroId, rules) => {
     if (get().game) get().game?.stop?.();
@@ -2291,6 +2295,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             selected: null,
             selectedTargets: [],
             asChooser: null,
+            viewAsFilter: null,
             cardChoices: [],
             reorderTop: [],
             modalMinimized: false,
@@ -2313,6 +2318,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           : null,
         selectedTargets: [],
         asChooser: null,
+        viewAsFilter: null,
         cardChoices: [],
         reorderTop: [],
         modalMinimized: false,
@@ -2332,6 +2338,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         selected: null,
         selectedTargets: [],
         asChooser: null,
+        viewAsFilter: null,
         cardChoices: [],
         reorderTop: [],
         modalMinimized: false,
@@ -2347,6 +2354,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       selected: null,
       selectedTargets: [],
       asChooser: null,
+      viewAsFilter: null,
       cardChoices: [],
       reorderTop: [],
       modalMinimized: false,
@@ -2373,14 +2381,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   selectCard: (cardId) => {
-    const { pending, selected, asChooser } = get();
+    const { pending, selected, asChooser, viewAsFilter } = get();
     if (!pending?.cardOptions) return;
     if (selected?.cardId === cardId || asChooser?.cardId === cardId) {
       set({ selected: null, selectedTargets: [], asChooser: null });
       return;
     }
-    const options = pending.cardOptions.filter((o) => o.cardId === cardId);
+    let options = pending.cardOptions.filter((o) => o.cardId === cardId);
     if (!options.length) return;
+    // 处于「转化技选牌」态时，直接命中该技能对应的转化选项
+    if (viewAsFilter) {
+      const hit = options.find(
+        (o) => o.skillId === viewAsFilter.skillId && o.as === viewAsFilter.as,
+      );
+      if (hit) options = [hit];
+    }
     if (options.length === 1) {
       const option = options[0];
       set({
@@ -2391,6 +2406,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
     set({ asChooser: { cardId, options }, selected: null, selectedTargets: [] });
+  },
+
+  selectViewAsSkill: (skillId, as, eligibleCardIds) => {
+    set({
+      viewAsFilter: { skillId, as, eligibleCardIds },
+      selected: null,
+      selectedTargets: [],
+      asChooser: null,
+    });
   },
 
   chooseAs: (as, skillId) => {
@@ -2404,9 +2428,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
-  closeAsChooser: () => set({ asChooser: null, selected: null, selectedTargets: [] }),
+  closeAsChooser: () => set({ asChooser: null, selected: null, selectedTargets: [], viewAsFilter: null }),
 
-  clearSelection: () => set({ selected: null, selectedTargets: [], asChooser: null }),
+  clearSelection: () => set({ selected: null, selectedTargets: [], asChooser: null, viewAsFilter: null }),
 
   seatClick: (playerId) => {
     const { pending, selected, selectedTargets } = get();
@@ -2423,6 +2447,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
           (o.skillId ?? '') === (selected.skillId ?? ''),
       );
       if (!option) return;
+      // 两段式目标（如借刀杀人）：点击另一个「第一段目标」时，替换第一个目标
+      if (
+        option.targetAfter &&
+        option.validTargets.includes(playerId) &&
+        selectedTargets.length > 0 &&
+        selectedTargets[0] !== playerId
+      ) {
+        set({ selectedTargets: [playerId] });
+        return;
+      }
       const follow = option.targetAfter
         ? selectedTargets.length === 0
           ? option.validTargets

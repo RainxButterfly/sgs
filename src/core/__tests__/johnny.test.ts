@@ -34,7 +34,7 @@ describe('强尼银手', () => {
     expect(SKILL_MAP.get('duxing')?.locked).toBe(true);
   });
 
-  it('核爆：判定闪电时所有黑桃都命中（含点数 13 与 1）', () => {
+  it('烈火：判定闪电时所有黑桃都命中（含点数 13 与 1）', () => {
     const { game } = makeGame();
     const player = game.state.players[0];
     expect(player.skills).toContain('hebao');
@@ -50,7 +50,7 @@ describe('强尼银手', () => {
     expect(game.judgeResult(mk('club', 5), '闪电', player)).toBe(false);
   });
 
-  it('无核爆时闪电仍只判定黑桃 2~9', () => {
+  it('无烈火时闪电仍只判定黑桃 2~9', () => {
     const { game } = makeGame('caocao');
     const player = game.state.players[0];
     // @ts-expect-error
@@ -61,7 +61,7 @@ describe('强尼银手', () => {
     expect(game.judgeResult(mk('spade', 5), '闪电', player)).toBe(true);
   });
 
-  it('核爆：被闪电命中时弃置所有手牌并令全场受到雷电伤害', async () => {
+  it('烈火：被闪电命中时弃置所有手牌并令全场受到雷电伤害', async () => {
     const { game } = makeGame();
     const player = game.state.players[0];
     const others = game.state.players.slice(1);
@@ -81,7 +81,7 @@ describe('强尼银手', () => {
     expect(player.hp).toBe(player.maxHp - 3);
   });
 
-  it('来生：阵亡时设置待复活标记，且整局只触发一次', async () => {
+  it('残躯：阵亡时设置待复活标记，且整局只触发一次', async () => {
     const { game } = makeGame();
     const player = game.state.players[0];
     expect(player.skills).toContain('laisheng');
@@ -95,7 +95,7 @@ describe('强尼银手', () => {
     expect(player.flags.laishengArmed).toBe(0);
   });
 
-  it('来生：阵亡角色待复活时，回合推进能找到它', () => {
+  it('残躯：阵亡角色待复活时，回合推进能找到它', () => {
     const { game } = makeGame();
     const player = game.state.players[0];
     player.alive = false;
@@ -106,7 +106,7 @@ describe('强尼银手', () => {
     expect(game.state.current).toBe(player.id);
   });
 
-  it('独行：强尼技能不会进入随机获得技能池', () => {
+  it('武仕：强尼技能不会进入随机获得技能池', () => {
     // grantRandomSkills 的排除列表已包含 laisheng/hebao/duxing（见 skills.ts）
     expect(SKILL_MAP.has('duxing')).toBe(true);
     expect(SKILL_MAP.has('laisheng')).toBe(true);

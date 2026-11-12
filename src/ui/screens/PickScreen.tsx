@@ -4,6 +4,7 @@ import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME } from '../../core/types';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroDataHover, HoverInfo } from '../components/HoverInfo';
+import { HeroPortrait } from '../components/HeroPortrait';
 import { useGameStore } from '../store';
 
 export function PickScreen() {
@@ -242,6 +243,7 @@ export function PickScreen() {
                       className={`hero-card faction-${hero.faction} ${picked === id ? 'picked' : ''}`}
                       onClick={() => setPicked(id)}
                     >
+                      <HeroPortrait heroId={hero.id} className="pick-hero-portrait" />
                       <div className="hero-card-top">
                         <span className="faction-badge">{FACTION_NAME[hero.faction]}</span>
                         <span className="hero-card-name">{hero.name}</span>

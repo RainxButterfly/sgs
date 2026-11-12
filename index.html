@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#2a2219" />
+    <meta name="theme-color" content="#1a140e" />
     <meta name="author" content="星河一叶Roxy" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -12,9 +12,257 @@
     <link rel="apple-touch-icon" href="/icon-256.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>四国闪 · 星河</title>
+    <style>
+      /* 启动加载画面：JS bundle 加载前即渲染，避免黑屏 */
+      html, body { margin: 0; padding: 0; background: #120e0a; }
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background:
+          radial-gradient(120% 90% at 50% 8%, rgba(126, 94, 46, 0.38), transparent 60%),
+          radial-gradient(80% 60% at 50% 112%, rgba(150, 66, 44, 0.22), transparent 64%),
+          linear-gradient(180deg, #241c13 0%, #120e0a 58%, #1a120b 100%);
+        color: #e8dcc2;
+        font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+        transition: opacity 0.6s ease;
+      }
+      #boot-splash.boot-hide { opacity: 0; pointer-events: none; }
+      .boot-bg-stars {
+        position: absolute;
+        inset: 0;
+        background-image:
+          radial-gradient(1.4px 1.4px at 18% 24%, rgba(240,215,155,0.7), transparent 50%),
+          radial-gradient(1.2px 1.2px at 72% 16%, rgba(240,215,155,0.55), transparent 50%),
+          radial-gradient(1.5px 1.5px at 34% 62%, rgba(240,215,155,0.45), transparent 50%),
+          radial-gradient(1.1px 1.1px at 82% 58%, rgba(240,215,155,0.5), transparent 50%),
+          radial-gradient(1.3px 1.3px at 56% 80%, rgba(240,215,155,0.4), transparent 50%),
+          radial-gradient(1px 1px at 12% 82%, rgba(240,215,155,0.5), transparent 50%),
+          radial-gradient(1.4px 1.4px at 90% 34%, rgba(240,215,155,0.45), transparent 50%);
+        animation: bootTwinkle 3.2s ease-in-out infinite;
+      }
+      @keyframes bootTwinkle {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+      }
+      .boot-center {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 26px;
+      }
+      .boot-emblem {
+        position: relative;
+        width: 150px;
+        height: 150px;
+      }
+      .boot-spin {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        border-radius: 50%;
+      }
+      .boot-spin.a {
+        width: 138px; height: 138px;
+        margin: -69px 0 0 -69px;
+        border: 2px solid transparent;
+        border-top-color: rgba(240,215,155,0.95);
+        border-right-color: rgba(219,181,108,0.35);
+        animation: bootSpin 1.7s linear infinite;
+      }
+      .boot-spin.b {
+        width: 104px; height: 104px;
+        margin: -52px 0 0 -52px;
+        border: 1.5px dashed rgba(219,181,108,0.55);
+        animation: bootSpinRev 2.4s linear infinite;
+      }
+      .boot-spin.c {
+        width: 68px; height: 68px;
+        margin: -34px 0 0 -34px;
+        border: 2px solid rgba(240,215,155,0.6);
+        border-bottom-color: transparent;
+        border-left-color: transparent;
+        animation: bootSpin 1.05s linear infinite;
+      }
+      .boot-core {
+        position: absolute;
+        left: 50%; top: 50%;
+        width: 40px; height: 40px;
+        margin: -20px 0 0 -20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(160deg, #d9b46c, #9a6f34);
+        transform: rotate(45deg);
+        border-radius: 7px;
+        box-shadow: 0 0 22px rgba(240,215,155,0.6), inset 0 0 0 1px rgba(255,240,205,0.55);
+      }
+      .boot-core span {
+        transform: rotate(-45deg);
+        font-family: KaiTi, STKaiti, SimSun, serif;
+        font-size: 22px;
+        color: #241a10;
+        font-weight: 700;
+        line-height: 1;
+      }
+      @keyframes bootSpin { to { transform: rotate(360deg); } }
+      @keyframes bootSpinRev { to { transform: rotate(-360deg); } }
+      .boot-title {
+        font-family: KaiTi, STKaiti, "STKaiti", "Microsoft YaHei", serif;
+        font-size: 26px;
+        letter-spacing: 0.32em;
+        color: #f0d79b;
+        text-shadow: 0 0 18px rgba(240,215,155,0.35);
+      }
+      .boot-sub {
+        font-size: 12.5px;
+        letter-spacing: 0.18em;
+        color: rgba(205,189,162,0.72);
+      }
+      .boot-progress {
+        position: absolute;
+        right: 30px;
+        bottom: 26px;
+        z-index: 3;
+        width: 250px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .boot-progress-label {
+        flex: 0 0 auto;
+        font-size: 10px;
+        letter-spacing: 0.24em;
+        color: rgba(205,189,162,0.62);
+      }
+      .boot-progress-track {
+        flex: 1;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(219,181,108,0.16);
+        overflow: hidden;
+      }
+      .boot-progress-track i {
+        display: block;
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #9a6f34, #d9b46c, #f0d79b);
+        box-shadow: 0 0 10px rgba(240,215,155,0.7);
+        transition: width 0.18s ease;
+      }
+      .boot-progress-pct {
+        flex: 0 0 auto;
+        min-width: 34px;
+        text-align: right;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        color: #f0d79b;
+      }
+      @media (max-width: 720px) {
+        .boot-progress { right: 16px; bottom: 18px; width: 200px; }
+        .boot-title { font-size: 21px; letter-spacing: 0.22em; }
+        .boot-emblem { width: 120px; height: 120px; }
+        .boot-spin.a { width: 110px; height: 110px; margin: -55px 0 0 -55px; }
+        .boot-spin.b { width: 84px; height: 84px; margin: -42px 0 0 -42px; }
+        .boot-spin.c { width: 54px; height: 54px; margin: -27px 0 0 -27px; }
+        .boot-core { width: 34px; height: 34px; margin: -17px 0 0 -17px; }
+      }
+      @media (max-width: 480px) {
+        .boot-title { font-size: 18px; letter-spacing: 0.18em; }
+        .boot-sub { font-size: 11px; }
+        .boot-progress { left: 16px; right: 16px; width: auto; }
+        .boot-center { gap: 18px; }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+
+    <div id="boot-splash" aria-hidden="true">
+      <div class="boot-bg-stars"></div>
+      <div class="boot-center">
+        <div class="boot-emblem">
+          <div class="boot-spin a"></div>
+          <div class="boot-spin b"></div>
+          <div class="boot-spin c"></div>
+          <div class="boot-core"><span>星</span></div>
+        </div>
+        <div class="boot-title">四国闪 · 星河</div>
+        <div class="boot-sub">正在唤醒星河之力…</div>
+      </div>
+      <div class="boot-progress">
+        <span class="boot-progress-label">LOADING</span>
+        <div class="boot-progress-track"><i id="boot-bar"></i></div>
+        <span class="boot-progress-pct"><b id="boot-pct">0</b>%</span>
+      </div>
+    </div>
+
+    <script>
+      /* 启动加载控制：暴露给 React 侧更新进度、结束时淡出 */
+      (function () {
+        var splash = document.getElementById('boot-splash');
+        var bar = document.getElementById('boot-bar');
+        var pct = document.getElementById('boot-pct');
+        var target = 0;
+        var current = 0;
+        var raf = 0;
+        var finished = false;
+
+        function render() {
+          if (current < target) {
+            current += Math.max(1, Math.ceil((target - current) * 0.12));
+            if (current > target) current = target;
+          }
+          if (bar) bar.style.width = current + '%';
+          if (pct) pct.textContent = String(current);
+          if (current < target) raf = requestAnimationFrame(render);
+        }
+
+        function setProgress(p) {
+          if (finished) return;
+          var value = Math.max(0, Math.min(100, Math.round(p || 0)));
+          target = Math.max(target, value);
+          if (!raf) raf = requestAnimationFrame(render);
+        }
+
+        function finish() {
+          if (finished) return;
+          finished = true;
+          target = 100;
+          render();
+          window.setTimeout(function () {
+            if (splash) splash.classList.add('boot-hide');
+            window.setTimeout(function () {
+              if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+            }, 620);
+          }, 320);
+        }
+
+        window.__BOOT__ = { setProgress: setProgress, finish: finish };
+
+        /* JS bundle 加载期间缓慢推进一段假进度，避免进度条静止 */
+        var fake = 0;
+        var fakeTimer = window.setInterval(function () {
+          fake += Math.random() * 2.2 + 0.5;
+          if (fake > 13) {
+            fake = 13;
+            window.clearInterval(fakeTimer);
+          }
+          setProgress(fake);
+        }, 130);
+
+        /* 兜底：无论发生什么，15 秒后强制淡出，绝不卡死在黑屏 */
+        window.setTimeout(finish, 15000);
+      })();
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

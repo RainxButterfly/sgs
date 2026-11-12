@@ -40,11 +40,17 @@ export function GameScreen() {
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
   const [compactRing, setCompactRing] = useState(() => window.innerWidth < 1460);
+  const [dealt, setDealt] = useState(false);
 
   useEffect(() => {
     const onResize = () => setCompactRing(window.innerWidth < 1460);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDealt(true), 700);
+    return () => window.clearTimeout(timer);
   }, []);
 
   if (!game) {
@@ -99,7 +105,7 @@ export function GameScreen() {
       const pool = selectedOption.targetAfter
         ? selectedTargets.length === 0
           ? selectedOption.validTargets
-          : selectedOption.targetAfter[selectedTargets[0]] ?? []
+          : [...new Set([...selectedOption.validTargets, ...(selectedOption.targetAfter[selectedTargets[0]] ?? [])])]
         : selectedOption.validTargets;
       pool.forEach((id) => targetable.add(id));
       if (selectedOption.targetAfter) selectedTargets.forEach((id) => targetable.add(id));
@@ -133,7 +139,7 @@ export function GameScreen() {
       <TopBar logOpen={logOpen} onToggleLog={() => setLogOpen((v) => !v)} onExit={exit} />
       <div className="table-area">
         <div className="board-area">
-          <div className="ring">
+          <div className={`ring ${dealt ? 'is-dealt' : ''}`}>
             {opponents.map((player) => {
               const rel = tableRingIndex(player.seat, human.seat, n, game.state.direction);
               const [x, y] = seatLayout[Math.max(0, Math.min(m - 1, rel - 1))];

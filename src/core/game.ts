@@ -811,7 +811,7 @@ export class Game {
 
   private judgeResult(card: Card, reason: string, player?: PlayerState): boolean {
     if (reason.includes('闪电')) {
-      // 核爆：判定闪电时，所有黑桃花色都视为命中
+      // 烈火：判定闪电时，所有黑桃花色都视为命中
       if (player && this.hasSkill(player, 'hebao')) return card.suit === 'spade';
       return card.suit === 'spade' && card.rank >= 2 && card.rank <= 9;
     }
@@ -1439,6 +1439,30 @@ ${skill.desc}` : ''}`
       if (skill.active.oncePerTurn && (player.usedThisTurn[skill.id] ?? 0) > 0) continue;
       if (!skill.active.usable(this, player)) continue;
       out.push({ id: skill.id, name: skill.name, desc: skill.desc });
+    }
+    // 转化技：点击后高亮可转化的牌
+    for (const skill of this.skillsOf(player)) {
+      for (const rule of skill.viewAs ?? []) {
+        if (rule.usage !== 'play' && rule.usage !== 'both') continue;
+        if (rule.condition && !rule.condition(this, player)) continue;
+        const eligibleCardIds: string[] = [];
+        for (const card of player.hand) {
+          if (this.viewAsValid(player, card, rule.as, skill.id)) eligibleCardIds.push(card.id);
+        }
+        for (const card of Object.values(player.equips)) {
+          if (card && rule.fromEquip && this.viewAsValid(player, card, rule.as, skill.id)) {
+            eligibleCardIds.push(card.id);
+          }
+        }
+        if (eligibleCardIds.length === 0) continue;
+        out.push({
+          id: skill.id,
+          name: skill.name,
+          desc: skill.desc,
+          viewAs: rule.as,
+          eligibleCardIds,
+        });
+      }
     }
     return out;
   }
@@ -2271,13 +2295,34 @@ ${skill.desc}` : ''}`
     let ignoreArmor = opts.ignoreArmor ?? false;
     const excluded = new Set<string>();
     const responseWindow =
-      !player.isBot && name !== '无懈可击' ? Math.max(opts.windowMs ?? 0, 12000) : 0;
+      !player.isBot && name !== '无懈可击' ? Math.max(opts.windowMs ?? 0, 6000) : 0;
     let windowShown = false;
     for (let guard = 0; guard < 8; guard += 1) {
       const options = this.buildRespondOptions(player, name, ignoreArmor).filter(
         (o) => !excluded.has(o.cardId),
       );
       if (options.length === 0) {
+        if (!player.isBot && opts.canCancel !== false) {
+          // 人类玩家：即使没有可响应的牌，也弹出响应框，可立即「不出」，计时在下方手牌区
+          await this.io.ask({
+            id: this.askId(),
+            playerId: player.id,
+            kind: 'respond',
+            prompt: opts.prompt,
+            detail: opts.detail,
+            respondName: name,
+            cardOptions: [],
+            canCancel: true,
+            targetId: opts.targetId,
+            timeout: responseWindow || opts.timeout,
+            deadline: responseWindow
+              ? Date.now() + responseWindow
+              : opts.timeout
+                ? Date.now() + opts.timeout
+                : undefined,
+          });
+          return null;
+        }
         if (responseWindow > 0 && player.hand.length > 0) {
           if (!windowShown) {
             windowShown = true;

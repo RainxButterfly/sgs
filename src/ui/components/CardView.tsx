@@ -9,6 +9,7 @@ interface Props {
   selected?: boolean;
   disabled?: boolean;
   dimmed?: boolean;
+  highlighted?: boolean;
   onClick?: () => void;
   className?: string;
   style?: React.CSSProperties;
@@ -20,6 +21,7 @@ export function CardView({
   selected,
   disabled,
   dimmed,
+  highlighted,
   onClick,
   className,
   style,
@@ -40,6 +42,7 @@ export function CardView({
         selected ? 'card-selected' : '',
         disabled ? 'card-disabled' : '',
         dimmed ? 'card-dimmed' : '',
+        highlighted ? 'card-highlighted' : '',
         className ?? '',
       ].join(' ')}
       onClick={onClick}

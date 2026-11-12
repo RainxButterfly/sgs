@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './ui/components/ErrorBoundary';
 import { installDiagnostics } from './ui/diagnostics';
+import { bootBridge, preloadAssets } from './ui/preload';
 import './ui/styles.css';
 import './ui/theme-magic.css';
 
@@ -32,3 +33,9 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 );
+
+/* 启动预加载：驱动启动画面的进度条，加载完淡出（主界面在下方同步渲染） */
+const boot = bootBridge();
+void preloadAssets((pct) => boot?.setProgress(pct))
+  .then(() => boot?.finish())
+  .catch(() => boot?.finish());

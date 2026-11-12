@@ -72,9 +72,24 @@ export function HeroGallery() {
   const [detail, setDetail] = useState<string | null>(null);
   const [cardDetail, setCardDetail] = useState<Card | null>(null);
   const [cardGroups] = useState(buildCardGroups);
+  const [search, setSearch] = useState('');
 
-  const heroes = PLAYABLE_HEROES.filter((hero) => faction === 'all' || hero.faction === faction);
-  const cards = cardGroups.filter((group) => cardFilter === 'all' || group.card.type === cardFilter);
+  const q = search.trim();
+  const ql = q.toLowerCase();
+  const heroes = PLAYABLE_HEROES.filter(
+    (hero) =>
+      (faction === 'all' || hero.faction === faction) &&
+      (q === '' ||
+        hero.name.includes(q) ||
+        hero.id.includes(ql) ||
+        (hero.title ?? '').includes(q) ||
+        hero.skillIds.some((sid) => (SKILL_MAP.get(sid)?.name ?? '').includes(q))),
+  );
+  const cards = cardGroups.filter(
+    (group) =>
+      (cardFilter === 'all' || group.card.type === cardFilter) &&
+      (q === '' || group.key.includes(q) || group.card.name.includes(q)),
+  );
 
   return (
     <div className="gallery-screen">
@@ -126,6 +141,14 @@ export function HeroGallery() {
                 </button>
               ))}
               <span className="setup-hint">共 {heroes.length} 名</span>
+              <input
+                className="gallery-search"
+                type="text"
+                value={search}
+                placeholder="搜索武将名称 / 技能"
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="搜索武将"
+              />
             </div>
 
             <div className="hero-grid gallery-grid">
@@ -187,6 +210,14 @@ export function HeroGallery() {
                 </button>
               ))}
               <span className="setup-hint">共 {cards.length} 种</span>
+              <input
+                className="gallery-search"
+                type="text"
+                value={search}
+                placeholder="搜索卡牌名称"
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="搜索卡牌"
+              />
             </div>
 
             <div className="card-gallery-grid">

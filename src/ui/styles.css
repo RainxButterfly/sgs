@@ -2139,6 +2139,13 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   color: var(--gold-bright);
 }
 
+.prompt-actions .skill-btn.viewas-btn.on {
+  border-color: #ffd98a;
+  background: rgba(255, 217, 138, 0.16);
+  color: #ffe9bd;
+  box-shadow: 0 0 12px rgba(255, 200, 110, 0.4);
+}
+
 /* 手牌 */
 
 .hand-zone {
@@ -2318,6 +2325,18 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 .card-dimmed {
   filter: grayscale(0.18) brightness(0.94);
   opacity: 0.92;
+}
+
+/* 转化技选牌：可被转化的牌高亮提示 */
+.card-highlighted {
+  border-color: #ffd98a;
+  box-shadow: 0 0 0 2px rgba(255, 217, 138, 0.7), 0 0 18px rgba(255, 200, 110, 0.55);
+  animation: cardHighlightPulse 1.15s ease-in-out infinite;
+}
+
+@keyframes cardHighlightPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255, 217, 138, 0.72), 0 0 14px rgba(255, 200, 110, 0.45); }
+  50% { box-shadow: 0 0 0 2px rgba(255, 235, 190, 0.95), 0 0 26px rgba(255, 210, 120, 0.8); }
 }
 
 .card-sm {
@@ -4140,8 +4159,8 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   display: block;
   width: 100%;
   height: 92px;
-  background-size: cover;
-  background-position: center 18%;
+  background-size: contain;
+  background-position: center center;
   background-repeat: no-repeat;
 }
 
@@ -4349,6 +4368,30 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   gap: 8px;
   margin: 22px 0 16px;
   flex-wrap: wrap;
+}
+
+.gallery-search {
+  margin-left: auto;
+  min-width: 200px;
+  padding: 7px 12px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 6px;
+  background: rgba(16, 12, 8, 0.55);
+  color: var(--ink);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gallery-search::placeholder {
+  color: rgba(233, 205, 152, 0.45);
+}
+
+.gallery-search:focus {
+  border-color: var(--gold-bright);
+  background: rgba(24, 18, 10, 0.72);
+  box-shadow: 0 0 0 2px rgba(238, 212, 154, 0.22);
 }
 
 .gallery-grid {
@@ -4673,7 +4716,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .settings-grid .settings-section {
@@ -4681,15 +4724,17 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   padding: 13px 15px;
   border-radius: 9px;
   background: linear-gradient(170deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
+  display: flex;
+  flex-direction: column;
 }
 
-.settings-grid .settings-section:first-child,
-.settings-grid .settings-section:nth-child(4) {
+.settings-grid .settings-section .settings-actions {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.settings-grid .settings-section.span-full {
   grid-column: 1 / -1;
-}
-
-.settings-grid .settings-section:nth-child(4) {
-  order: -1;
 }
 
 .settings-grid .settings-section-title {
@@ -4709,8 +4754,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
     grid-template-columns: 1fr;
   }
 
-  .settings-grid .settings-section:first-child,
-  .settings-grid .settings-section:nth-child(4) {
+  .settings-grid .settings-section.span-full {
     grid-column: auto;
   }
 }
@@ -5031,11 +5075,11 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   --faction: var(--gold);
   position: relative;
   text-align: left;
-  padding: 10px 12px;
+  padding: 14px 14px 12px;
   border: 1px solid rgba(219, 181, 108, 0.26);
   border-top: 2px solid color-mix(in srgb, var(--faction) 72%, transparent);
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(64, 53, 39, 0.9), rgba(38, 31, 23, 0.94));
   color: var(--ink);
   cursor: pointer;
   overflow: hidden;
@@ -5089,8 +5133,8 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
 .lobby-hero-name {
   font-family: var(--font-calligraphy);
-  font-size: 18px;
-  letter-spacing: 0.06em;
+  font-size: 21px;
+  letter-spacing: 0.08em;
 }
 
 .lobby-hero-hp {
@@ -5101,14 +5145,16 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
 .lobby-hero-title {
   margin-top: 2px;
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
   color: var(--muted);
 }
 
 .lobby-hero-skills {
   margin-top: 5px;
   font-size: 12px;
+  line-height: 1.5;
   color: rgba(219, 181, 108, 0.95);
 }
 
@@ -7904,32 +7950,6 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
 .chat-sticker:hover {
   background: rgba(219, 181, 108, 0.14);
-}
-
-.chat-quick {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 0 8px;
-}
-
-.chat-quick-btn {
-  font-family: inherit;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(219, 181, 108, 0.4);
-  background: rgba(219, 181, 108, 0.1);
-  color: var(--ink, #f7efdd);
-  cursor: pointer;
-  transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
-}
-
-.chat-quick-btn:hover {
-  background: rgba(219, 181, 108, 0.24);
-  border-color: rgba(230, 195, 126, 0.72);
-  transform: translateY(-1px);
 }
 
 .chat-input-row {
@@ -16735,9 +16755,9 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 }
 
 .rail-feed {
-  flex: 1;
   min-height: 0;
-  max-height: 340px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -16795,12 +16815,18 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 
   .game-rail {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     width: 268px;
     flex: 0 0 268px;
     min-height: 0;
     gap: 8px;
+    overflow: hidden;
+  }
+
+  /* 联机时：最近动向 + 聊天 各占一半 */
+  .game-rail.has-chat {
+    grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .own-area {
@@ -16844,7 +16870,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
   .hand-cards {
     min-height: 0;
-    height: 128px;
+    height: 160px;
   }
 
   .aoe-panel {
@@ -16875,12 +16901,12 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 
   .hand-cards {
-    height: 108px;
+    height: 152px;
   }
 
   .card {
-    width: 70px;
-    height: 100px;
+    width: 64px;
+    height: 92px;
   }
 }
 
@@ -17027,37 +17053,80 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   box-shadow: 0 0 6px rgba(127, 190, 142, 0.45);
 }
 
-/* 牌桌侧栏聊天 */
+/* 牌桌侧栏聊天：与最新动向各占一半，互不挤压 */
 .rail-chat {
-  flex: 0 0 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .rail-chat-list {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  max-height: 110px;
-  min-height: 34px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
-.rail-chat-line {
-  display: flex;
-  gap: 6px;
-  align-items: baseline;
-  font-size: 10.5px;
+/* 侧栏聊天复用全局等级气泡，微调字号适配窄栏 */
+.rail-chat-list .chat-message {
+  gap: 1px;
+}
+
+.rail-chat-list .chat-name {
+  font-size: 9px;
+}
+
+.rail-chat-list .chat-bubble {
+  max-width: 92%;
+  padding: 4px 8px;
+  font-size: 11px;
   line-height: 1.4;
-  color: rgba(205, 189, 162, 0.88);
 }
 
-.rail-chat-line b {
+.rail-chat-list .chat-bubble.is-sticker {
+  font-size: 22px;
+  padding: 0;
+}
+
+/* 侧栏聊天表情面板 */
+.rail-chat-stickers {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 2px;
+  max-height: 88px;
+  overflow-y: auto;
+  padding: 5px 6px;
+  border-top: 1px solid rgba(219, 181, 108, 0.16);
+  background: rgba(24, 19, 14, 0.45);
+}
+
+.rail-chat-stickers button {
+  padding: 2px 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 17px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.rail-chat-stickers button:hover {
+  background: rgba(219, 181, 108, 0.14);
+}
+
+.rail-chat-sticker-btn {
   flex: 0 0 auto;
-  color: var(--gold-bright);
-  font-size: 10px;
-}
-
-.rail-chat-line span {
-  word-break: break-word;
+  padding: 5px 8px;
+  border: 1px solid rgba(219, 181, 108, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .rail-chat-input {
@@ -19405,9 +19474,10 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   flex: 0 0 auto;
 }
 
-/* 个人信息卡固定高度，保证技能、装备和手牌栏同时可见 */
+/* 个人信息卡固定高度，保证技能、装备和手牌栏同时可见，不因装备增减而撑高整行 */
 .own-area > .hero-panel {
-  min-height: 204px;
+  height: 224px;
+  min-height: 0;
 }
 
 .log-scrim {
@@ -19499,13 +19569,15 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-/* 图片卡面：方形牌、插画铺满整张、竖排牌名左上、花色点数右上、距离右下（与参考仓库一致） */
+/* 图片卡面：竖版牌（与基础牌面比例一致）、插画铺满、竖排牌名左上、花色点数右上、距离右下 */
 .card-art {
   padding: 0;
-  border-color: #c7a76a;
-  background: #171018;
-  width: 100px;
-  height: 100px;
+  border-color: #c3af82;
+  background:
+    radial-gradient(circle at 30% 10%, rgba(255, 255, 255, 0.55), transparent 45%),
+    linear-gradient(158deg, #f5ecd8 0%, #e9dcc0 55%, #dccaa5 100%);
+  width: 94px;
+  height: 132px;
 }
 
 .card-art .card-art-img {
@@ -19516,7 +19588,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  filter: brightness(1.12) contrast(1.03);
+  filter: brightness(1.08) saturate(1.05);
 }
 
 .card-art .card-corner-br {
@@ -19526,8 +19598,8 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 /* 竖排牌名：左上 */
 .card-art .card-body {
   position: absolute;
-  left: 5px;
-  top: 5px;
+  left: 6px;
+  top: 8px;
   right: auto;
   bottom: auto;
   z-index: 2;
@@ -19541,44 +19613,43 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   writing-mode: vertical-rl;
   -webkit-writing-mode: vertical-rl;
   white-space: nowrap;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 5px rgba(0, 0, 0, 0.7);
+  color: #47290f;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65), 0 0 4px rgba(255, 255, 255, 0.5);
   letter-spacing: 3px;
   max-width: none;
 }
 
-/* 花色点数：右上 */
+/* 花色点数：右上（红黑按花色） */
 .card-art .card-corner-tl {
   z-index: 2;
   left: auto;
-  right: 5px;
+  right: 6px;
   top: 5px;
-  padding: 1px 4px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 5px;
-  background: rgba(12, 9, 7, 0.62);
-  color: #fff !important;
-  font-size: 12px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 13px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 /* 距离/范围标记：右下 */
 .card-art .card-range-tag {
   position: absolute;
-  right: 5px;
+  right: 6px;
   bottom: 4px;
   z-index: 3;
   font-size: 12px;
   font-weight: 700;
-  color: #ffd98a;
-  text-shadow: 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.9);
+  color: #7a4a12;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
   letter-spacing: 0.03em;
   pointer-events: none;
 }
 
 .card-art::before {
   z-index: 2;
-  inset: 2px;
-  border-color: rgba(255, 255, 255, 0.18);
+  inset: 3px;
+  border-color: rgba(90, 65, 35, 0.25);
 }
 
 .card-art::after {
@@ -19587,8 +19658,8 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
 /* 尺寸档位 */
 .card-sm.card-art {
-  width: 68px;
-  height: 68px;
+  width: 64px;
+  height: 90px;
 }
 
 .card-sm.card-art .card-corner-tl {
@@ -19615,8 +19686,8 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 }
 
 .card-lg.card-art {
-  width: 140px;
-  height: 140px;
+  width: 112px;
+  height: 156px;
 }
 
 .card-lg.card-art .card-corner-tl {
@@ -21334,8 +21405,8 @@ video.game-bg.game-bg-video {
 .gallery-portrait {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center top;
+  background-size: contain;
+  background-position: center center;
   opacity: 0.32;
   pointer-events: none;
   -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.35) 58%, transparent 92%);
@@ -21345,6 +21416,23 @@ video.game-bg.game-bg-video {
 .gallery-card > *:not(.gallery-portrait) {
   position: relative;
   z-index: 1;
+}
+
+/* 单机选将卡片的武将立绘背景（与联机一致显示皮肤） */
+.hero-card:has(> .pick-hero-portrait) > :not(.pick-hero-portrait) {
+  position: relative;
+  z-index: 1;
+}
+
+.pick-hero-portrait {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 22%;
+  opacity: 0.55;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 55%, transparent 96%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.5) 55%, transparent 96%);
 }
 
 .gallery-card.has-skin {
@@ -21364,6 +21452,45 @@ video.game-bg.game-bg-video {
   justify-content: center;
   pointer-events: none;
   animation: playStage 1.56s cubic-bezier(0.22, 0.85, 0.3, 1) forwards;
+}
+
+/* 弃牌飞行动画：牌从座位飞向弃牌堆 */
+.discard-stage {
+  position: fixed;
+  z-index: 41;
+  width: 56px;
+  height: 78px;
+  margin: -39px 0 0 -28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: discardFly 0.92s cubic-bezier(0.3, 0.65, 0.3, 1) forwards;
+}
+
+.discard-stage .card {
+  width: 56px;
+  height: 78px;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.55);
+}
+
+.discard-stage .card .card-name {
+  font-size: 15px;
+  max-width: 44px;
+}
+
+@keyframes discardFly {
+  0% {
+    transform: translate3d(var(--fx-dx), var(--fx-dy), 0) rotate(var(--fx-rot, 0deg)) scale(0.72);
+    opacity: 0.15;
+  }
+  22% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.94);
+    opacity: 0;
+  }
 }
 
 .play-stage::before {
@@ -21554,8 +21681,8 @@ html body .seat.seat-card-v2 > .seat-skill-ring {
 
 html body :is(.game-screen, .spectator-screen) .seat.seat-card-v2 {
   --faction: #d9b46c;
-  --seat-art-h: 96px;
-  width: 126px;
+  --seat-art-h: 122px;
+  width: 148px;
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--faction) 62%, transparent);
   border-radius: 10px;
@@ -21566,7 +21693,6 @@ html body :is(.game-screen, .spectator-screen) .seat.seat-card-v2 {
   z-index: 5;
   transform: translate(-50%, -50%);
   transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease, border-color 0.22s ease;
-  animation: heroCardDeal 0.52s cubic-bezier(0.18, 0.9, 0.28, 1) both;
 }
 
 html body :is(.game-screen, .spectator-screen) .seat.seat-card-v2.faction-wei { --faction: #6f9bd8; }
@@ -21580,13 +21706,18 @@ html body :is(.game-screen, .spectator-screen) .seat.seat-card-v2.faction-qun { 
   100% { opacity: 1; transform: translate(-50%, -50%) translateY(0) scale(1) rotate(0); }
 }
 
-html body .ring .seat.seat-card-v2:nth-child(2) { animation-delay: 0.06s; }
-html body .ring .seat.seat-card-v2:nth-child(3) { animation-delay: 0.12s; }
-html body .ring .seat.seat-card-v2:nth-child(4) { animation-delay: 0.18s; }
-html body .ring .seat.seat-card-v2:nth-child(5) { animation-delay: 0.24s; }
-html body .ring .seat.seat-card-v2:nth-child(6) { animation-delay: 0.3s; }
-html body .ring .seat.seat-card-v2:nth-child(7) { animation-delay: 0.36s; }
-html body .ring .seat.seat-card-v2:nth-child(8) { animation-delay: 0.42s; }
+/* 发牌动画只在开局播放一次：取消选牌 / 出牌等重渲染不会重播 */
+html body .ring:not(.is-dealt) .seat.seat-card-v2 {
+  animation: heroCardDeal 0.52s cubic-bezier(0.18, 0.9, 0.28, 1) both;
+}
+
+html body .ring:not(.is-dealt) .seat.seat-card-v2:nth-child(2) { animation-delay: 0.06s; }
+html body .ring:not(.is-dealt) .seat.seat-card-v2:nth-child(3) { animation-delay: 0.12s; }
+html body .ring:not(.is-dealt) .seat.seat-card-v2:nth-child(4) { animation-delay: 0.18s; }
+html body .ring:not(.is-dealt) .seat.seat-card-v2:nth-child(5) { animation-delay: 0.24s; }
+html body .ring:not(.is-dealt) .seat.seat-card-v2:nth-child(6) { animation-delay: 0.3s; }
+html body .ring:not(.is-dealt) .seat.seat-card-v2:nth-child(7) { animation-delay: 0.36s; }
+html body .ring:not(.is-dealt) .seat.seat-card-v2:nth-child(8) { animation-delay: 0.42s; }
 
 /* ---------- 牌面 ---------- */
 html body .seat.seat-card-v2 .seat-art {
@@ -21616,7 +21747,7 @@ html body .seat.seat-card-v2 .seat-art-img {
 /* 内置牌面把人物头部/肩甲对准牌面中部，导入的立绘则从头顶起显示 */
 html body .seat.seat-card-v2 .seat-art-img.is-builtin { background-position: center 68%; }
 html body .own-area > .hero-panel .hero-panel-art.is-builtin { background-position: center 62%; }
-html body .gallery-portrait { background-position: center 22%; }
+html body .gallery-portrait { background-position: center center; }
 
 html body .seat.seat-card-v2:hover .seat-art-img { transform: scale(1.11); }
 
@@ -21731,9 +21862,9 @@ html body .seat.seat-card-v2 .seat-turn-tag {
   animation: turnTagBreathe 1.7s ease-in-out infinite;
 }
 
-/* 铁索连环（横置）：立绘横过来 + 斜向锁链 */
+/* 铁索连环：保持立绘直立，叠一条横向锁链（避免整张牌旋转像翻面） */
 html body .seat.seat-card-v2.seat-chained .seat-art-img {
-  transform: rotate(-90deg) scale(1.42);
+  transform: scale(1.03);
 }
 html body .seat.seat-card-v2.seat-chained .seat-art-shade {
   background:
@@ -21742,20 +21873,18 @@ html body .seat.seat-card-v2.seat-chained .seat-art-shade {
 }
 html body .seat.seat-card-v2 .seat-chain-line {
   position: absolute;
-  inset: -4px;
+  left: 0;
+  right: 0;
+  top: calc(var(--seat-art-h) / 2 - 9px);
+  height: 18px;
   z-index: 4;
   pointer-events: none;
-  background:
-    repeating-linear-gradient(
-      135deg,
-      rgba(214, 146, 64, 0.85) 0 3px,
-      rgba(52, 34, 18, 0.92) 3px 8px,
-      rgba(224, 162, 78, 0.85) 8px 11px,
-      transparent 11px 22px
-    );
-  opacity: 0.55;
-  mix-blend-mode: screen;
-  border-radius: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='18' viewBox='0 0 16 18'%3E%3Crect x='2' y='2' width='12' height='14' rx='5' fill='none' stroke='%23e8b05c' stroke-width='2.4'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: center;
+  background-size: 16px 18px;
+  opacity: 0.92;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7));
 }
 
 /* 翻面：立绘倒过来 + 灰化 */
@@ -21819,7 +21948,7 @@ html body .seat.seat-card-v2 .seat-plate .ambition-tag {
 html body .seat.seat-card-v2 .seat-detail {
   position: relative;
   padding: 4px 5px 5px;
-  height: 40px;
+  height: 64px;
   overflow: hidden;
   background: linear-gradient(180deg, #241d16, #14100b);
   border-top: 1px solid color-mix(in srgb, var(--faction) 42%, transparent);
@@ -21876,7 +22005,7 @@ html body .seat.seat-card-v2 .seat-skills {
   margin: 2px 0 0;
   padding: 0;
   min-height: 0;
-  max-height: 15px;
+  max-height: 18px;
   overflow: hidden;
 }
 
@@ -21891,7 +22020,7 @@ html body .seat.seat-card-v2 .mini-status,
 html body .seat.seat-card-v2 .mini-unyu,
 html body .seat.seat-card-v2 .seat-empty {
   flex: 0 0 auto;
-  font-size: 8.5px;
+  font-size: 9.5px;
   line-height: 1.5;
   padding: 0 4px;
   border-radius: 3px;

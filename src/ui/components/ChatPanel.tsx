@@ -102,20 +102,6 @@ export function ChatPanel() {
         >
           表情
         </button>
-        {online && (
-          <div className="chat-quick">
-            {['轮到你了', '手下留情', '再来一局', '打得不错', '我先走了'].map((phrase) => (
-              <button
-                key={phrase}
-                type="button"
-                className="chat-quick-btn"
-                onClick={() => send(phrase)}
-              >
-                {phrase}
-              </button>
-            ))}
-          </div>
-        )}
         <input
           value={text}
           maxLength={200}

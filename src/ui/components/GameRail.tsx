@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { cardEffectText } from '../cardEffects';
 import { cardDisplayName, cardTypeText, playTargetText } from '../labels';
 import { useGameSnapshot, useGameStore } from '../store';
+import { CHAT_STICKERS, isSticker } from '../stickers';
+import { nameTier } from '../profile';
 import { CardView } from './CardView';
 
 interface Props {
@@ -17,6 +19,7 @@ export function GameRail({ onShowLog }: Props) {
   const feedRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const [chatText, setChatText] = useState('');
+  const [stickers, setStickers] = useState(false);
   const lastLogId = game?.state.log[game.state.log.length - 1]?.id;
   useEffect(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
@@ -38,7 +41,7 @@ export function GameRail({ onShowLog }: Props) {
   };
 
   return (
-    <aside className="game-rail">
+    <aside className={`game-rail ${online ? 'has-chat' : ''}`}>
       <section className="rail-card rail-play">
         <div className="rail-title">
           <b>当前出牌</b>
@@ -85,41 +88,68 @@ export function GameRail({ onShowLog }: Props) {
         </div>
       </section>
 
-      <section className="rail-card rail-chat">
-        <div className="rail-title">
-          <b>聊天</b>
-          <span>{online ? '联机' : '单机'}</span>
-        </div>
-        <div className="rail-chat-list" ref={chatRef}>
-          {recentChat.length === 0 && (
-            <div className="rail-empty">{online ? '暂无消息' : '联机时才能聊天'}</div>
-          )}
-          {recentChat.map((message) => (
-            <div key={message.id} className="rail-chat-line">
-              <b>{message.name}</b>
-              <span>{message.text}</span>
+      {online && (
+        <section className="rail-card rail-chat">
+          <div className="rail-title">
+            <b>聊天</b>
+            <span>联机</span>
+          </div>
+          <div className="rail-chat-list" ref={chatRef}>
+            {recentChat.length === 0 && <div className="rail-empty">暂无消息</div>}
+            {recentChat.map((message) => (
+              <div key={message.id} className={`chat-message tier-${nameTier(message.level ?? 1)}`}>
+                <span className="chat-name">
+                  {message.name} · Lv.{message.level ?? 1}
+                </span>
+                <div className={`chat-bubble ${isSticker(message.text) ? 'is-sticker' : ''}`}>
+                  {message.text}
+                </div>
+              </div>
+            ))}
+          </div>
+          {stickers && (
+            <div className="rail-chat-stickers">
+              {CHAT_STICKERS.map((sticker) => (
+                <button
+                  key={sticker}
+                  type="button"
+                  onClick={() => {
+                    sendChat(sticker);
+                    setStickers(false);
+                  }}
+                >
+                  {sticker}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="rail-chat-input">
-          <input
-            value={chatText}
-            maxLength={200}
-            placeholder={online ? '输入消息…' : '联机时才能聊天'}
-            disabled={!online}
-            onChange={(event) => setChatText(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                send();
-              }
-            }}
-          />
-          <button type="button" disabled={!online || !chatText.trim()} onClick={send}>
-            发送
-          </button>
-        </div>
-      </section>
+          )}
+          <div className="rail-chat-input">
+            <button
+              type="button"
+              className="rail-chat-sticker-btn"
+              title="表情"
+              onClick={() => setStickers((v) => !v)}
+            >
+              😊
+            </button>
+            <input
+              value={chatText}
+              maxLength={200}
+              placeholder="输入消息…"
+              onChange={(event) => setChatText(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  send();
+                }
+              }}
+            />
+            <button type="button" disabled={!chatText.trim()} onClick={send}>
+              发送
+            </button>
+          </div>
+        </section>
+      )}
     </aside>
   );
 }

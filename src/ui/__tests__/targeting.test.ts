@@ -84,6 +84,32 @@ describe('卡牌单选', () => {
     expect(useGameStore.getState().selected).toBeNull();
   });
 
+  it('单选目标：点第二个角色应替换第一个（锦囊换目标）', () => {
+    useGameStore.setState({
+      humanId: 0,
+      pending: {
+        id: 9,
+        playerId: 0,
+        kind: 'play',
+        prompt: '出牌阶段',
+        canEnd: true,
+        cardOptions: [
+          { cardId: 'ss', as: '顺手牵羊', validTargets: [1, 2, 3], targetMin: 1, targetMax: 1 },
+        ],
+      },
+      selected: { cardId: 'ss', as: '顺手牵羊' },
+      selectedTargets: [],
+      asChooser: null,
+    });
+    const store = useGameStore.getState();
+    store.seatClick(1);
+    expect(useGameStore.getState().selectedTargets).toEqual([1]);
+    store.seatClick(2);
+    expect(useGameStore.getState().selectedTargets).toEqual([2]);
+    store.seatClick(3);
+    expect(useGameStore.getState().selectedTargets).toEqual([3]);
+  });
+
   it('单选弹窗点击另一张牌时替换选择', () => {
     useGameStore.setState({
       pending: {
@@ -93,10 +119,7 @@ describe('卡牌单选', () => {
         prompt: '弃置一张牌',
         min: 1,
         max: 1,
-        cards: [
-          { id: 'a' } as never,
-          { id: 'b' } as never,
-        ],
+        cards: [{ id: 'a' } as never, { id: 'b' } as never],
       },
     });
     const store = useGameStore.getState();
@@ -108,5 +131,37 @@ describe('卡牌单选', () => {
 
     store.toggleCardChoice('b');
     expect(useGameStore.getState().cardChoices).toEqual([]);
+  });
+
+  it('两段式目标：点另一个第一段目标应替换（借刀杀人换持刀者）', () => {
+    useGameStore.setState({
+      humanId: 0,
+      pending: {
+        id: 10,
+        playerId: 0,
+        kind: 'play',
+        prompt: '出牌阶段',
+        canEnd: true,
+        cardOptions: [
+          {
+            cardId: 'jd2',
+            as: '借刀杀人',
+            validTargets: [1, 4],
+            targetMin: 2,
+            targetMax: 2,
+            targetAfter: { 1: [2, 3], 4: [5] },
+          },
+        ],
+      },
+      selected: { cardId: 'jd2', as: '借刀杀人' },
+      selectedTargets: [],
+      asChooser: null,
+    });
+    const store = useGameStore.getState();
+    store.seatClick(1);
+    expect(useGameStore.getState().selectedTargets).toEqual([1]);
+    // 换成另一个持刀者 4
+    store.seatClick(4);
+    expect(useGameStore.getState().selectedTargets).toEqual([4]);
   });
 });

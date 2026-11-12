@@ -172,6 +172,10 @@ export interface SkillOption {
   id: string;
   name: string;
   desc: string;
+  /** 转化技：点击后高亮可转化的牌，值为转化为的牌名 */
+  viewAs?: string;
+  /** 该转化技当前可转化的牌 id（手牌或装备） */
+  eligibleCardIds?: string[];
 }
 
 export interface AskRequest {

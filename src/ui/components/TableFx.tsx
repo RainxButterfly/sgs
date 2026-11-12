@@ -102,3 +102,63 @@ export function TablePulse() {
 
   return null;
 }
+
+/** 弃牌动画：被拆掉 / 弃置的牌从座位飞向弃牌堆 */
+export function DiscardFly() {
+  const lastDiscard = useGameStore((s) => s.lastDiscard);
+  const screen = useGameStore((s) => s.screen);
+  const [flies, setFlies] = useState<Fly[]>([]);
+  const lastId = useRef(0);
+
+  useEffect(() => {
+    if (!lastDiscard || screen !== 'game') return;
+    if (lastDiscard.id === lastId.current) return;
+    lastId.current = lastDiscard.id;
+
+    const seat = document.querySelector(`[data-player-id="${lastDiscard.playerId}"]`);
+    const pile = document.querySelector('.table-piles');
+    const fromRect = seat?.getBoundingClientRect();
+    const toRect = pile?.getBoundingClientRect();
+    const fromX = fromRect ? fromRect.left + fromRect.width / 2 : window.innerWidth / 2;
+    const fromY = fromRect ? fromRect.top + fromRect.height / 2 : window.innerHeight * 0.42;
+    const toX = toRect ? toRect.left + toRect.width / 2 : window.innerWidth / 2;
+    const toY = toRect ? toRect.top + toRect.height / 2 : window.innerHeight * 0.55;
+
+    const cards = lastDiscard.cards.slice(0, 4);
+    setFlies(
+      cards.map((card, i) => ({
+        id: lastDiscard.id * 10 + i,
+        fromX: fromX + (i - (cards.length - 1) / 2) * 16,
+        fromY,
+        dx: toX - fromX,
+        dy: toY - fromY,
+        card,
+        rot: ((i * 41) % 50) - 25,
+      })),
+    );
+    const timer = window.setTimeout(() => setFlies([]), 1100);
+    return () => window.clearTimeout(timer);
+  }, [lastDiscard, screen]);
+
+  if (flies.length === 0) return null;
+  return (
+    <>
+      {flies.map((fly) => (
+        <div
+          key={fly.id}
+          className="discard-stage"
+          style={{
+            left: `${fly.fromX + fly.dx}px`,
+            top: `${fly.fromY + fly.dy}px`,
+            ['--fx-dx' as string]: `${-fly.dx}px`,
+            ['--fx-dy' as string]: `${-fly.dy}px`,
+            ['--fx-rot' as string]: `${fly.rot}deg`,
+          }}
+          aria-hidden="true"
+        >
+          <CardView card={fly.card} size="sm" />
+        </div>
+      ))}
+    </>
+  );
+}

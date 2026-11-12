@@ -88,3 +88,8 @@ export function defaultHeroArtUrl(heroId: string | undefined): string | null {
   if (!heroId || !HERO_ART_IDS.has(heroId)) return null;
   return `${HERO_ART_DIR}/${heroId}.jpg`;
 }
+
+/** 全部内置武将立绘地址（用于启动时预加载） */
+export function allHeroArtUrls(): string[] {
+  return [...HERO_ART_IDS].map((id) => `${HERO_ART_DIR}/${id}.jpg`);
+}

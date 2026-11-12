@@ -3,6 +3,9 @@ import '../guandan.css';
 import { LEVEL_NAME } from '../../core/guandan-match';
 import type { GdView } from '../../core/guandan-view';
 import { beats, enumerateCombos, type GdCard } from '../../core/guandan';
+import { useGameStore } from '../store';
+import { CHAT_STICKERS, isSticker } from '../stickers';
+import { nameTier } from '../profile';
 
 interface Face {
   rank: string;
@@ -87,6 +90,23 @@ export function GuandanBoard({
   const [toast, setToast] = useState('');
   const lastTurnKey = useRef('');
 
+  const [showLog, setShowLog] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [chatText, setChatText] = useState('');
+  const [stickers, setStickers] = useState(false);
+  const [dockStickers, setDockStickers] = useState(false);
+  const chatListRef = useRef<HTMLDivElement>(null);
+  const chatDockRef = useRef<HTMLDivElement>(null);
+  const chatMessages = useGameStore((s) => s.chatMessages);
+  const sendChat = useGameStore((s) => s.sendChat);
+  const lanRole = useGameStore((s) => s.lanRole);
+  const online = lanRole === 'host' || lanRole === 'client';
+
+  useEffect(() => {
+    if (chatListRef.current) chatListRef.current.scrollTop = chatListRef.current.scrollHeight;
+    if (chatDockRef.current) chatDockRef.current.scrollTop = chatDockRef.current.scrollHeight;
+  }, [chatMessages.length, showChat]);
+
   const myTurn = view.phase === 'play' && view.turn === view.yourSeat && view.yourSeat >= 0;
   const hand = view.hand;
 
@@ -140,6 +160,13 @@ export function GuandanBoard({
     setHintIndex((index) => index + 1);
   };
 
+  const submitChat = () => {
+    const value = chatText.trim();
+    if (!value || !online) return;
+    sendChat(value);
+    setChatText('');
+  };
+
   const seatAt = (seat: number) => view.seats.find((item) => item.seat === seat);
   const seatBox = (seat: number, cls: string) => {
     const info = seatAt(seat);
@@ -182,6 +209,26 @@ export function GuandanBoard({
           ← 退出
         </button>
         <div className="gd-title">掼蛋 · 2v2{subtitle ? <em>{subtitle}</em> : null}</div>
+        <button
+          type="button"
+          className={`gd-top-btn ${showLog ? 'on' : ''}`}
+          onClick={() => {
+            setShowLog((v) => !v);
+            setShowChat(false);
+          }}
+        >
+          战报
+        </button>
+        <button
+          type="button"
+          className={`gd-top-btn ${showChat ? 'on' : ''}`}
+          onClick={() => {
+            setShowChat((v) => !v);
+            setShowLog(false);
+          }}
+        >
+          聊天
+        </button>
         <div className="gd-levels">
           <span className="gd-round">本局打 {LEVEL_NAME[view.roundLevel]}</span>
           <span className="gd-team-a">甲队 {LEVEL_NAME[view.levels[0]]}</span>
@@ -235,6 +282,69 @@ export function GuandanBoard({
             <div key={`${i}-${line}`}>{line}</div>
           ))}
         </div>
+
+        <div className="gd-chat-dock">
+          <div className="gd-chat-dock-list" ref={chatDockRef}>
+            {chatMessages.length === 0 && (
+              <div className="gd-chat-dock-empty">
+                {online ? '暂无消息，打个招呼吧' : '单机模式无聊天'}
+              </div>
+            )}
+            {chatMessages.slice(-30).map((message) => (
+              <div key={message.id} className={`chat-message tier-${nameTier(message.level ?? 1)}`}>
+                <span className="chat-name">
+                  {message.name} · Lv.{message.level ?? 1}
+                </span>
+                <div className={`chat-bubble ${isSticker(message.text) ? 'is-sticker' : ''}`}>
+                  {message.text}
+                </div>
+              </div>
+            ))}
+          </div>
+          {dockStickers && (
+            <div className="gd-chat-dock-stickers">
+              {CHAT_STICKERS.map((sticker) => (
+                <button
+                  key={sticker}
+                  type="button"
+                  onClick={() => {
+                    sendChat(sticker);
+                    setDockStickers(false);
+                  }}
+                >
+                  {sticker}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="gd-chat-dock-input">
+            <button
+              type="button"
+              className="gd-chat-dock-sticker-btn"
+              disabled={!online}
+              title="表情"
+              onClick={() => setDockStickers((v) => !v)}
+            >
+              😊
+            </button>
+            <input
+              value={chatText}
+              maxLength={200}
+              placeholder={online ? '说点什么…' : '联机时才能聊天'}
+              disabled={!online}
+              onChange={(event) => setChatText(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  submitChat();
+                }
+              }}
+            />
+            <button type="button" disabled={!online || !chatText.trim()} onClick={submitChat}>
+              发送
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="gd-bottom">
@@ -286,6 +396,18 @@ export function GuandanBoard({
       </div>
 
       {toast && <div className="gd-toast">{toast}</div>}
+
+      {(showLog || showChat) && (
+        <button
+          type="button"
+          className="gd-scrim"
+          aria-label="收起面板"
+          onClick={() => {
+            setShowLog(false);
+            setShowChat(false);
+          }}
+        />
+      )}
 
       {view.phase === 'roundOver' && view.lastResult && (
         <div className="gd-overlay">
@@ -346,6 +468,102 @@ export function GuandanBoard({
             </div>
           </div>
         </div>
+      )}
+
+      {showLog && (
+        <aside className="gd-sidepanel">
+          <div className="gd-sidepanel-head">
+            <span>战报</span>
+            <button type="button" className="gd-sidepanel-close" onClick={() => setShowLog(false)}>
+              ×
+            </button>
+          </div>
+          <div className="gd-sidepanel-body gd-log-list">
+            {view.log.length === 0 && <div className="gd-log-empty">暂无记录</div>}
+            {view.log.map((line, i) => (
+              <div key={`${i}-${line}`} className="gd-log-line">
+                {line}
+              </div>
+            ))}
+          </div>
+        </aside>
+      )}
+
+      {showChat && (
+        <aside className="gd-sidepanel">
+          <div className="gd-sidepanel-head">
+            <span>房间聊天</span>
+            <button type="button" className="gd-sidepanel-close" onClick={() => setShowChat(false)}>
+              ×
+            </button>
+          </div>
+          <div className="gd-sidepanel-body gd-chat-list" ref={chatListRef}>
+            {chatMessages.length === 0 && (
+              <div className="gd-log-empty">
+                {online ? '还没有人说话，打个招呼吧。' : '单机模式没有其他玩家，联机时可以使用聊天。'}
+              </div>
+            )}
+            {chatMessages.map((message) => (
+              <div key={message.id} className="gd-chat-line">
+                <span className="gd-chat-name">
+                  {message.name} · Lv.{message.level ?? 1}
+                </span>
+                <span className={`gd-chat-bubble ${isSticker(message.text) ? 'is-sticker' : ''}`}>
+                  {message.text}
+                </span>
+              </div>
+            ))}
+          </div>
+          {stickers && online && (
+            <div className="gd-chat-stickers">
+              {CHAT_STICKERS.map((sticker) => (
+                <button
+                  key={sticker}
+                  type="button"
+                  className="gd-chat-sticker"
+                  onClick={() => {
+                    sendChat(sticker);
+                    setStickers(false);
+                  }}
+                >
+                  {sticker}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="gd-chat-input">
+            <button
+              type="button"
+              className="gd-sticker-btn"
+              disabled={!online}
+              title="表情"
+              onClick={() => setStickers((v) => !v)}
+            >
+              表情
+            </button>
+            <input
+              value={chatText}
+              maxLength={200}
+              placeholder={online ? '输入消息…' : '联机时才能聊天'}
+              disabled={!online}
+              onChange={(event) => setChatText(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  submitChat();
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="gd-btn primary"
+              disabled={!online || !chatText.trim()}
+              onClick={submitChat}
+            >
+              发送
+            </button>
+          </div>
+        </aside>
       )}
     </div>
   );

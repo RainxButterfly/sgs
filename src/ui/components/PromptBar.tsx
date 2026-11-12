@@ -8,6 +8,7 @@ export function PromptBar() {
   const pending = useGameStore((s) => s.pending);
   const selected = useGameStore((s) => s.selected);
   const selectedTargets = useGameStore((s) => s.selectedTargets);
+  const viewAsFilter = useGameStore((s) => s.viewAsFilter);
   const humanId = useGameStore((s) => s.humanId);
   const wuxieWindow = useGameStore((s) => s.wuxieWindow);
   const wuxieDeadline = useGameStore((s) => s.wuxieDeadline);
@@ -63,6 +64,8 @@ export function PromptBar() {
   if (pending.kind === 'play') {
     const cardOptions = pending.cardOptions ?? [];
     const skills = pending.skillOptions ?? [];
+    const activeSkills = skills.filter((s) => !s.viewAs);
+    const viewAsSkills = skills.filter((s) => s.viewAs);
     const own = game.state.players[humanId];
     const handIds = new Set(own?.hand.map((card) => card.id) ?? []);
     const equipOptions = cardOptions.filter((item) => !handIds.has(item.cardId));
@@ -86,7 +89,11 @@ export function PromptBar() {
             {pending.prompt}
             {autoPlay && <span className="prompt-auto-tag">AI 托管中</span>}
             <span className="prompt-sub">
-              {cardOptions.length === 0 ? '无可用手牌' : '点击手牌出牌，可点击其他角色选择目标'}
+              {viewAsFilter
+                ? `已选【${SKILL_MAP.get(viewAsFilter.skillId)?.name ?? viewAsFilter.skillId}】，点击高亮的手牌转化为【${viewAsFilter.as}】`
+                : cardOptions.length === 0
+                  ? '无可用手牌'
+                  : '点击手牌出牌，可点击其他角色选择目标'}
             </span>
           </div>
           <div className="prompt-status">
@@ -146,8 +153,8 @@ export function PromptBar() {
               {item.label ?? `${SKILL_MAP.get(item.skillId ?? '')?.name ?? '转化'}·${item.as}`}
             </button>
           ))}
-          {skills.length > 0 && <span className="prompt-skill-label">技能</span>}
-          {skills.map((skill) => (
+          {activeSkills.length > 0 && <span className="prompt-skill-label">技能</span>}
+          {activeSkills.map((skill) => (
             <button
               key={skill.id}
               type="button"
@@ -158,6 +165,23 @@ export function PromptBar() {
               {skill.name}
             </button>
           ))}
+          {viewAsSkills.length > 0 && <span className="prompt-skill-label">转化</span>}
+          {viewAsSkills.map((skill) => {
+            const on = viewAsFilter?.skillId === skill.id && viewAsFilter?.as === skill.viewAs;
+            return (
+              <button
+                key={`${skill.id}-${skill.viewAs}`}
+                type="button"
+                className={`btn ghost skill-btn viewas-btn ${on ? 'on' : ''}`}
+                title={skill.desc}
+                onClick={() =>
+                  useGameStore.getState().selectViewAsSkill(skill.id, skill.viewAs ?? '', skill.eligibleCardIds ?? [])
+                }
+              >
+                {skill.name}·{skill.viewAs}
+              </button>
+            );
+          })}
           {selected && (
             <button type="button" className="btn ghost" onClick={() => useGameStore.getState().clearSelection()}>
               取消选择

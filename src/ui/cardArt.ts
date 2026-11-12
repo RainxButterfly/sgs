@@ -98,12 +98,17 @@ export function cardArtUrl(cardName: string): string | null {
   return `${ART_DIR}/${art}.png`;
 }
 
+/** 全部内置卡牌图地址（用于启动时预加载） */
+export function allCardArtUrls(): string[] {
+  return Object.values(CARD_ART).map((name) => `${ART_DIR}/${name}.png`);
+}
+
 /** 卡牌语音拼音文件名（用于语音包），无对应语音返回 null */
 export function cardVoicePinyin(cardName: string): string | null {
   return CARD_ART[cardName] ?? null;
 }
 
-/** 卡牌右下角距离/范围标记：马匹「+1 / -1」、武器攻击范围数字（与参考仓库一致） */
+/** 卡牌右下角距离/范围标记：马匹「+1 / -1」、武器攻击范围数字 */
 export function cardRangeText(card: Card): string | null {
   if (card.equipSlot === 'horsePlus') return '+1';
   if (card.equipSlot === 'horseMinus') return '-1';

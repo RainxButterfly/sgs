@@ -43,8 +43,8 @@ describe('普通响应窗口', () => {
     expect(delay).not.toHaveBeenCalled();
   });
 
-  it('有牌但无匹配时仍保留计时防止信息泄露', async () => {
-    const { game, events, delay, player } = setup();
+  it('有牌但无匹配时改为弹响应框（可立即不出）', async () => {
+    const { game, events, ask, player } = setup();
     player.hand = [{ id: 'sha', name: '杀', suit: 'spade', rank: 7, type: 'basic' }];
     const result = await (game as unknown as {
       askRespond: (
@@ -56,8 +56,8 @@ describe('普通响应窗口', () => {
     expect(result).toBeNull();
     expect(
       events.some((event) => event.type === 'responseWindow' && event.name === '闪'),
-    ).toBe(true);
-    expect(delay).toHaveBeenCalled();
+    ).toBe(false);
+    expect(ask).toHaveBeenCalled();
   });
 
   it('响应窗口覆盖人类玩家的响应超时', async () => {
@@ -74,6 +74,6 @@ describe('普通响应窗口', () => {
     }).askRespond(player, '闪', { prompt: '请打出一张闪' });
     expect(ask).toHaveBeenCalled();
     const request = ask.mock.calls[0]?.[0] as { timeout?: number } | undefined;
-    expect(request?.timeout).toBe(12000);
+    expect(request?.timeout).toBe(6000);
   });
 });

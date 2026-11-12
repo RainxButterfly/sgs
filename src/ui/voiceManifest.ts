@@ -442,6 +442,58 @@ export const SKILL_VOICES: Record<string, string[]> = {
   "jujian": [
     "jujian1",
     "jujian2"
+  ],
+  "jijiang": [
+    "jijiang11",
+    "jijiang12"
+  ],
+  "kongcheng": [
+    "kongcheng11",
+    "kongcheng12"
+  ],
+  "huangtian": [
+    "huangtian21",
+    "huangtian22"
+  ],
+  "huoshou": [
+    "huoshou11",
+    "huoshou12"
+  ],
+  "juxiang": [
+    "juxiang11",
+    "juxiang12"
+  ],
+  "shensu": [
+    "shensu11",
+    "shensu12"
+  ],
+  "songwei": [
+    "songwei21",
+    "songwei22"
+  ],
+  "duanliang": [
+    "duanliang11",
+    "duanliang12"
+  ],
+  "baonue": [
+    "baonue21",
+    "baonue22"
+  ],
+  "huashen": [
+    "huashen21",
+    "huashen22"
+  ],
+  "longdan": [
+    "sblongdan1",
+    "sblongdan2"
+  ],
+  "qicai": [
+    "reqicai1",
+    "reqicai2"
+  ],
+  "gongqi": [
+    "sbgongqi1",
+    "sbgongqi2"
   ]
 };
 

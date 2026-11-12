@@ -7,7 +7,7 @@ import { AboutModal } from './ui/components/AboutModal';
 import { AoePanel } from './ui/components/AoePanel';
 import { ChangelogModal } from './ui/components/ChangelogModal';
 import { ClickSparkles } from './ui/components/ClickSparkles';
-import { PlayFly, TablePulse } from './ui/components/TableFx';
+import { DiscardFly, PlayFly, TablePulse } from './ui/components/TableFx';
 import { DamageFeedback } from './ui/components/DamageFeedback';
 import { DevNotice } from './ui/components/DevNotice';
 import { StartProtection } from './ui/components/StartProtection';
@@ -188,6 +188,7 @@ export default function App() {
       <DevNotice />
       <StartProtection />
       <PlayFly />
+      <DiscardFly />
       <TablePulse />
       <ClickSparkles />
     </div>

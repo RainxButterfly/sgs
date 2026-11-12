@@ -235,7 +235,7 @@ export function SettingsModal() {
 
         <div className="settings-grid">
 
-        <div className="settings-section">
+        <div className="settings-section span-full">
           <div className="settings-section-title">壁纸</div>
           <p className="settings-section-desc">选择图片或动态视频作为壁纸，GIF 和视频会直接播放，只保存在本机。</p>
           <div
@@ -353,7 +353,7 @@ export function SettingsModal() {
           <div className="bg-setting-hint">当前仅有默认语音包，后续版本会提供更多语音包供切换。</div>
         </div>
 
-        <div className="settings-section">
+        <div className="settings-section span-full">
           <div className="settings-section-title">数据保存位置</div>
           <p className="settings-section-desc">
             对局记录、对局背景、等级经验和联机信息会备份到当前目录的数据快照中。
@@ -369,7 +369,7 @@ export function SettingsModal() {
               <div className="settings-actions">
                 {!isAndroidApp() && (
                   <button type="button" className="btn ghost" disabled={dirBusy} onClick={() => void browseDir()}>
-                    {dirBusy ? '处理中…' : '浏览文件夹…'}
+                    {dirBusy ? '处理中…' : '浏览文件夹'}
                   </button>
                 )}
                 <button
@@ -467,7 +467,7 @@ export function SettingsModal() {
           </div>
         </div>
 
-        <div className="settings-section">
+        <div className="settings-section span-full">
           <div className="settings-section-title">版本与更新</div>
           <p className="settings-section-desc">
             当前版本 v{appVersion}。查看每个版本新增的功能、修复的问题和体验优化。
