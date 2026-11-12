@@ -5,6 +5,7 @@ import { FACTION_NAME, ROLE_NAME, type Role } from '../../core/types';
 import type { LobbyPlayer } from '../../net/protocol';
 import { HeroDetailModal } from './HeroDetail';
 import { HeroDataHover, HeroPairHover, HoverInfo } from './HoverInfo';
+import { isPickHeroVisible } from '../pickReveal';
 
 interface Props {
   players: LobbyPlayer[];
@@ -103,7 +104,12 @@ export function LanPickPanel({
               lordPlayerId != null
                 ? player.playerId === lordPlayerId
                 : hasLord && index === turnAnchor;
-            const showHero = player.connId === me.connId || revealed || (!landlord && isLord);
+            const showHero = isPickHeroVisible({
+              isSelf: player.connId === me.connId,
+              revealed: !!revealed,
+              isLord,
+              landlord: !!landlord,
+            });
             const selectedIds = playerHeroIds(player);
             const hero = player.heroId && showHero ? HERO_MAP.get(player.heroId) : undefined;
             return (
