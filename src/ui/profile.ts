@@ -1,7 +1,7 @@
 import { scheduleDataSnapshot } from './dataStorage';
 import { loadHistory, markHistoryProfileCounted } from './history';
 
-export type MatchMode = 'identity' | 'duel' | 'landlord' | 'guozhan' | 'custom';
+export type MatchMode = 'identity' | 'duel' | 'landlord' | 'guozhan' | '2v2' | 'custom';
 export type MatchResult = 'win' | 'lose' | 'draw';
 
 export interface PlayerProfile {
@@ -36,12 +36,14 @@ const MODE_BASE: Record<MatchMode, number> = {
   duel: 35,
   landlord: 45,
   guozhan: 80,
+  '2v2': 60,
   custom: 40,
 };
 
 const MODE_LABEL: Record<MatchMode, string> = {
   identity: '身份场',
   duel: '1v1 单挑',
+  '2v2': '2v2 竞技',
   landlord: '斗地主',
   guozhan: '国战',
   custom: '自定义',

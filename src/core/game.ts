@@ -38,8 +38,9 @@ const ROLE_DIST: Record<number, Role[]> = {
   8: ['lord', 'loyalist', 'loyalist', 'rebel', 'rebel', 'rebel', 'rebel', 'traitor'],
 };
 
-export function buildRoles(count: number, mode: 'identity' | 'duel' | 'landlord' | 'guozhan'): Role[] {
+export function buildRoles(count: number, mode: 'identity' | 'duel' | 'landlord' | 'guozhan' | '2v2'): Role[] {
   if (mode === 'duel') return ['lord', 'rebel'];
+  if (mode === '2v2') return ['loyalist', 'rebel', 'rebel', 'loyalist'];
   if (mode === 'landlord') return ['lord', 'rebel', 'rebel'];
   if (mode === 'guozhan') return Array.from({ length: count }, () => 'rebel' as Role);
   return (ROLE_DIST[count] ?? ROLE_DIST[8]).slice();
@@ -101,6 +102,7 @@ export class Game {
   private askSeq = 0;
   private logSeq = 0;
   private stopped = false;
+  private team2v2FirstDrawUsed = false;
   private wuxieWindowPending = false;
   private extraTurnPlayerId: number | null = null;
 
@@ -114,12 +116,13 @@ export class Game {
     if (mode === 'duel' && count !== 2) throw new Error('1v1 对局需要 2 名玩家');
     if (mode === 'landlord' && count !== 3) throw new Error('斗地主需要 3 名玩家');
     if (mode === 'guozhan' && count < 4) throw new Error('国战需要至少 4 名玩家');
+    if (mode === '2v2' && count !== 4) throw new Error('2v2 对局需要 4 名玩家');
     let roles: Role[];
     if (setup.roles?.length === count) {
       roles = setup.roles.slice();
     } else {
       roles = buildRoles(count, mode);
-      this.shuffle(roles);
+      if (mode !== '2v2') this.shuffle(roles);
     }
 
     const guozhanCounts: Record<string, number> = { wei: 0, shu: 0, wu: 0, qun: 0 };
@@ -250,7 +253,9 @@ export class Game {
     this.shuffle(deck);
 
     const initialCurrent =
-      mode === 'duel' || mode === 'guozhan'
+      mode === '2v2'
+        ? 0
+        : mode === 'duel' || mode === 'guozhan'
         ? Math.floor(this.random() * players.length)
         : Math.max(0, players.findIndex((p) => p.role === 'lord'));
     this.state = {
@@ -270,6 +275,10 @@ export class Game {
     };
 
     for (const p of players) this.drawRaw(p, rules.initialHand);
+    if (mode === '2v2' && players[3]) {
+      this.drawRaw(players[3], 1);
+      this.log(`【${players[3].name}】4号位开局额外摸一张牌（手牌 ${rules.initialHand + 1} 张）`, 'system');
+    }
     for (const p of players) {
       if (p.heroIds && p.heroIds.length > 1) {
         const totalHp = p.heroIds.reduce((sum, id) => sum + (HERO_MAP.get(id)?.hp ?? 0), 0);
@@ -284,6 +293,8 @@ export class Game {
         this.log(`【${p.name}】选择了武将【${p.heroName}】`, 'system');
       } else if (mode === 'landlord') {
         this.log(`【${p.name}】以${p.role === 'lord' ? '地主' : '农民'}身份登场，选择武将【${p.heroName}】`, 'system');
+      } else if (mode === '2v2') {
+        this.log(`【${p.name}】以【${p.role === 'loyalist' ? '甲队' : '乙队'}】身份登场，选择武将【${p.heroName}】`, 'system');
       } else if (p.role === 'lord') {
         this.log(`【${p.name}】以主公身份登场，选择武将【${p.heroName}】`, 'system');
       } else if (rules.revealRoles) {
@@ -2922,6 +2933,19 @@ ${skill.desc}` : ''}`
     player.pojun = [];
     for (const c of cards) this.toDiscard(c);
     this.emit({ type: 'death', playerId: player.id, role: player.role });
+
+    // 2v2：阵亡后提示队伍态势，方便队友判断
+    if (this.state.rules.mode === '2v2') {
+      const teamName = player.role === 'loyalist' ? '甲队' : '乙队';
+      const mates = this.players.filter(
+        (p) => p.alive && p.role === player.role && p.id !== player.id,
+      );
+      if (mates.length === 1) {
+        this.log(`【${player.name}】阵亡，${teamName}只剩【${mates[0].name}】一人`, 'system');
+      } else if (mates.length === 0) {
+        this.log(`【${player.name}】阵亡，${teamName}已无人在场`, 'system');
+      }
+    }
     const deathRole =
       this.state.rules.mode === 'landlord'
         ? player.role === 'lord'
@@ -2987,6 +3011,14 @@ ${skill.desc}` : ''}`
         const winner = factions[0];
         this.endGame(winner, `${FACTION_NAME[winner]}势力扫平群雄，取得了国战的胜利！`);
       }
+      return;
+    }
+    if (this.state.rules.mode === '2v2') {
+      const teamA = alive.filter((p) => p.role === 'loyalist').length;
+      const teamB = alive.filter((p) => p.role === 'rebel').length;
+      if (teamA === 0 && teamB === 0) this.endGame('draw', '同归于尽，不分胜负。');
+      else if (teamB === 0) this.endGame('loyalist', '乙队全员阵亡，甲队（1、4号位）取得胜利！');
+      else if (teamA === 0) this.endGame('rebel', '甲队全员阵亡，乙队（2、3号位）取得胜利！');
       return;
     }
     if (this.state.rules.mode === 'duel' || this.state.players.length === 2) {
@@ -3153,7 +3185,17 @@ ${skill.desc}` : ''}`
     };
     await this.trigger('drawPhase', { player, data });
     if (data.skip) return;
-    const count = Number(data.drawCount ?? 2);
+    let count = Number(data.drawCount ?? 2);
+    if (
+      this.state.rules.mode === '2v2' &&
+      player.id === 0 &&
+      this.state.turn === 1 &&
+      !this.team2v2FirstDrawUsed
+    ) {
+      count = Math.min(count, 1);
+      this.team2v2FirstDrawUsed = true;
+      this.log(`【${player.name}】1号位首回合摸牌阶段只摸一张牌`, 'system');
+    }
     if (count > 0) this.drawCards(player, count, '摸牌阶段');
   }
 
@@ -3219,6 +3261,7 @@ ${skill.desc}` : ''}`
       await this.trigger('phaseEnd', { player, data: { phase } });
       if (this.state.over) return;
     }
+    await this.resolveFangquan(player);
     await this.trigger('turnEnd', { player, data: {} });
     for (const owner of this.players) {
       if (!owner.pojun?.length) continue;
@@ -3228,6 +3271,28 @@ ${skill.desc}` : ''}`
       this.log(`【${owner.name}】收回了破军牌`, 'system');
     }
     for (const owner of this.players) this.resetTurnFlags(owner);
+  }
+
+  /** 放权：回合末弃一张手牌，令其他角色获得额外回合 */
+  private async resolveFangquan(player: PlayerState): Promise<void> {
+    if (!player.flags.fangquanPending) return;
+    player.flags.fangquanPending = 0;
+    if (!player.alive) return;
+    if (player.hand.length === 0) {
+      this.log(`【${player.name}】无手牌可弃，放权未能授予额外回合`, 'skill');
+      return;
+    }
+    const cost = await this.askCards(player, player.hand, 1, 1, '放权：弃置一张手牌', undefined, true);
+    if (!cost.length) return;
+    const target = await this.askPlayer(
+      player,
+      this.players.filter((p) => p.alive && p.id !== player.id),
+      '放权：选择一名其他角色获得额外回合',
+    );
+    if (!target) return;
+    await this.discardCards(player, cost, '放权');
+    this.grantExtraTurn(target);
+    this.log(`【${player.name}】放权，弃置一张手牌，令【${target.name}】获得一个额外回合`, 'skill');
   }
 
   grantExtraTurn(player: PlayerState): void {

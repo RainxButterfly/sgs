@@ -3,6 +3,9 @@ import { Game, buildRoles } from '../core/game';
 import { HEROES, HERO_MAP, PLAYABLE_HEROES } from '../core/deck';
 import { planBotFactions, takeFactionPair } from '../core/guozhan';
 import { safeBotAction } from '../core/smartBot';
+import { GuandanMatch } from '../core/guandan-match';
+import { buildGdView } from '../core/guandan-view';
+import type { GdView } from '../core/guandan-view';
 import type { AskRequest, Faction, GameAction, GameEvent, GameIO, GameState, Role } from '../core/types';
 import { recordDiagnostic } from '../ui/diagnostics';
 import { DEFAULT_RULES, type CustomRules } from '../core/types';import type { LandlordBidState } from './protocol';
@@ -160,6 +163,7 @@ interface HostHooks {
   onChat: (message: ChatMessage) => void;
   onProp: (message: PropMessage) => void;
   onSpectators: (spectators: SpectatorInfo[]) => void;
+  onGuandan: (view: GdView) => void;
   onError: (message: string) => void;
   onClosed: () => void;
 }
@@ -196,11 +200,23 @@ export class LanHostManager {
   private closed = false;
   aiSpeed = 420;
   private readonly hostLevel: number;
+  /** 房型：三国杀 or 掼蛋 */
+  readonly kind: 'sgs' | 'guandan';
+  gd: GuandanMatch | null = null;
+  private gdTimer: number | null = null;
 
-  constructor(info: RoomInfo, hostName: string, hooks: HostHooks, aiSpeed = 420, hostLevel = 1) {
+  constructor(
+    info: RoomInfo,
+    hostName: string,
+    hooks: HostHooks,
+    aiSpeed = 420,
+    hostLevel = 1,
+    kind: 'sgs' | 'guandan' = 'sgs',
+  ) {
     this.info = info;
     this.hostName = hostName;
     this.hooks = hooks;
+    this.kind = kind;
     this.hostLevel = Math.max(1, Math.min(99, Math.round(hostLevel) || 1));
     this.aiSpeed = Math.max(0, Math.min(1200, aiSpeed));
     this.hostChoices = this.rollChoices();
@@ -306,6 +322,12 @@ export class LanHostManager {
       this.hostHeroIds.length > 0 &&
       this.guests.every((guest) => guest.heroIds.length > 0);
     const lordSeat = this.lordPlayerId == null && this.lordBotHero ? this.roles?.indexOf('lord') : undefined;
+    // 座次编号以主公为 1 号位：主播时主公可能不在 0 号位
+    const turnAnchor = (() => {
+      if (!this.roles) return 0;
+      const index = this.roles.indexOf('lord');
+      return index >= 0 ? index : 0;
+    })();
     return {
       room: {
         ip: this.info.ip,
@@ -316,7 +338,14 @@ export class LanHostManager {
       },
       hostName: this.hostName,
       players,
-      maxPlayers: this.rules.mode === 'duel' ? 2 : this.rules.mode === 'landlord' ? 3 : 8,
+      maxPlayers:
+        this.kind === 'guandan'
+          ? 4
+          : this.rules.mode === 'duel'
+            ? 2
+            : this.rules.mode === 'landlord'
+              ? 3
+              : 8,
       seatCount: this.plannedCount,
       mode: this.mode,
       rules: { ...this.rules },
@@ -329,6 +358,8 @@ export class LanHostManager {
       spectators: this.spectators.map((spectator) => ({ ...spectator })),
       bidding: this.bidding ? { ...this.bidding, bids: { ...this.bidding.bids }, order: [...this.bidding.order] } : null,
       fillBots: this.fillBots,
+      guandan: this.kind === 'guandan',
+      turnAnchor,
     };
   }
 
@@ -350,7 +381,105 @@ export class LanHostManager {
   }
 
   private maxSeats(): number {
-    return this.rules.mode === 'duel' ? 2 : this.rules.mode === 'landlord' ? 3 : 8;
+    return this.rules.mode === 'duel' ? 2 : this.rules.mode === 'landlord' ? 3 : this.rules.mode === '2v2' ? 4 : 8;
+  }
+
+  /* ---------------- 掼蛋 ---------------- */
+
+  private gdSeatName(seat: number): string {
+    if (seat === 0) return this.hostName;
+    const guest = this.guests.find((item) => item.playerId === seat);
+    return guest?.name ?? `电脑${seat}`;
+  }
+
+  private gdSeatIsBot(seat: number): boolean {
+    if (seat === 0) return false;
+    const guest = this.guests.find((item) => item.playerId === seat);
+    return !guest || !guest.connected;
+  }
+
+  /** 开一场掼蛋（房主点「开始牌局」） */
+  beginGuandan(): void {
+    if (this.kind !== 'guandan') return;
+    this.started = true;
+    this.gd = new GuandanMatch({ names: [0, 1, 2, 3].map((seat) => this.gdSeatName(seat)) });
+    this.refreshLobby();
+    this.broadcastGd();
+    this.pumpGd();
+  }
+
+  private broadcastGd(): void {
+    if (!this.gd) return;
+    this.hooks.onGuandan(buildGdView(this.gd, 0));
+    for (const guest of this.guests) {
+      this.sendTo(guest.connId, { t: 'gd', view: buildGdView(this.gd, guest.playerId) });
+    }
+  }
+
+  /** 轮到电脑座位时自动走一步 */
+  private pumpGd(): void {
+    if (this.gdTimer !== null) {
+      window.clearTimeout(this.gdTimer);
+      this.gdTimer = null;
+    }
+    const match = this.gd;
+    if (!match || match.phase !== 'play') return;
+    if (!this.gdSeatIsBot(match.turn)) return;
+    this.gdTimer = window.setTimeout(() => {
+      this.gdTimer = null;
+      const current = this.gd;
+      if (!current || current.phase !== 'play') return;
+      const seat = current.turn;
+      const move = current.botMove(seat);
+      if (move) current.play(seat, move);
+      else {
+        const result = current.pass(seat);
+        if (!result.ok) {
+          const card = current.seats[seat].hand[0];
+          if (card) current.play(seat, [card]);
+        }
+      }
+      this.broadcastGd();
+      this.pumpGd();
+    }, Math.max(120, this.aiSpeed));
+  }
+
+  /** 房主自己的操作 */
+  hostGdPlay(ids: string[]): void {
+    this.applyGd(0, 'play', ids);
+  }
+
+  hostGdPass(): void {
+    this.applyGd(0, 'pass');
+  }
+
+  /** 房主推进：下一局 / 重开一场 */
+  hostGdNext(restart: boolean): void {
+    if (!this.gd) return;
+    if (restart) {
+      this.beginGuandan();
+      return;
+    }
+    if (this.gd.phase === 'roundOver') {
+      this.gd.nextRound();
+      this.broadcastGd();
+      this.pumpGd();
+    }
+  }
+
+  private applyGd(seat: number, act: 'play' | 'pass', ids?: string[]): void {
+    const match = this.gd;
+    if (!match || match.phase !== 'play' || match.turn !== seat) return;
+    if (act === 'play') {
+      const wanted = new Set(ids ?? []);
+      const cards = match.seats[seat].hand.filter((card) => wanted.has(card.id));
+      if (!cards.length) return;
+      match.play(seat, cards);
+    } else {
+      match.pass(seat);
+    }
+    this.broadcastGd();
+    this.pumpGd();
   }
 
   private refreshGuestIds(): void {
@@ -482,7 +611,7 @@ export class LanHostManager {
     let roles = buildRoles(total, gameMode);
     if (gameMode === 'landlord' && forcedLordId != null) {
       roles = Array.from({ length: total }, (_, index) => (index === forcedLordId ? 'lord' : 'rebel'));
-    } else {
+    } else if (gameMode !== '2v2') {
       for (let i = roles.length - 1; i > 0; i -= 1) {
         const j = Math.floor(Math.random() * (i + 1));
         [roles[i], roles[j]] = [roles[j], roles[i]];
@@ -936,6 +1065,12 @@ export class LanHostManager {
       return;
     }
     if (!guest) return;
+    if (message.t === 'gdAction') {
+      if (message.act === 'play' || message.act === 'pass') {
+        this.applyGd(guest.playerId, message.act, message.ids);
+      }
+      return;
+    }
     if (message.t === 'action') {
       const pending = this.pending.get(guest.playerId);
       if (!pending) return;
@@ -1023,6 +1158,15 @@ export class LanHostManager {
     this.hostChoices = this.rollChoices();
     for (const guest of this.guests) {
       guest.choices = this.rollChoices();
+    }
+    if (this.rules.mode === '2v2') {
+      // 队友共享选将池：房主(1号位)+3号位一组，2号位+3号位…按 1/4 与 2/3 分队
+      const seat3 = this.guests.find((guest) => guest.playerId === 3);
+      if (seat3) seat3.choices = [...this.hostChoices];
+      const [seat2, seat3b] = this.guests;
+      if (seat2 && seat3b && seat2.playerId === 1 && seat3b.playerId === 2) {
+        seat3b.choices = [...seat2.choices];
+      }
     }
   }
 
@@ -1288,6 +1432,7 @@ interface ClientHooks {
   onSpectateAsk?: (request: AskRequest | null) => void;
   onChat: (message: ChatMessage) => void;
   onProp: (message: PropMessage) => void;
+  onGuandan?: (view: GdView) => void;
   onError: (message: string) => void;
   onKicked?: (reason: string) => void;
   onVersionMismatch?: (message: string) => void;
@@ -1367,6 +1512,9 @@ export class LanClientManager {
       case 'spectators':
         this.hooks.onSpectators(message.spectators);
         break;
+      case 'gd':
+        this.hooks.onGuandan?.(message.view);
+        break;
       case 'state':
         this.hooks.onState(message.state);
         break;
@@ -1407,6 +1555,11 @@ export class LanClientManager {
 
   sendAction(action: GameAction): void {
     this.relay.send({ t: 'action', action } satisfies GuestPayload);
+  }
+
+  /** 掼蛋：出牌 / 过牌上行 */
+  sendGdAction(act: 'play' | 'pass', ids?: string[]): void {
+    this.relay.send({ t: 'gdAction', act, ids } satisfies GuestPayload);
   }
 
   pickHero(heroId: string): void {

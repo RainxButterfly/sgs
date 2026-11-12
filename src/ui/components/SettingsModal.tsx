@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { isAndroidApp, isTauri } from '../../net/lan';
-import { prepareBackgroundImage } from '../background';
+import { prepareBackgroundMedia } from '../background';
+import { clearSkins, importSkinFiles, skinHeroNames, subscribeSkins } from '../skins';
 import { applyDataDir, pickDataDir, readDataDirInfo, writeDataSnapshot } from '../dataStorage';
 import { formatDiagnostics } from '../diagnostics';
 import { levelTitle, profileProgress, xpForLevel } from '../profile';
@@ -30,12 +31,32 @@ export function SettingsModal() {
   const setSoundEnabled = useGameStore((s) => s.setSoundEnabled);
   const setSoundVolume = useGameStore((s) => s.setSoundVolume);
   const setBgImage = useGameStore((s) => s.setBgImage);
+  const setBgVideo = useGameStore((s) => s.setBgVideo);
   const setBgDim = useGameStore((s) => s.setBgDim);
+  const bgKind = useGameStore((s) => s.bgKind);
+  const bgVideoUrl = useGameStore((s) => s.bgVideoUrl);
   const bgScope = useGameStore((s) => s.bgScope);
   const setBgScope = useGameStore((s) => s.setBgScope);
   const setSelfCardSide = useGameStore((s) => s.setSelfCardSide);
   const fileRef = useRef<HTMLInputElement>(null);
+  const skinRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [skinNote, setSkinNote] = useState('');
+  const [skinList, setSkinList] = useState<string[]>(() => skinHeroNames());
+
+  useEffect(() => subscribeSkins(() => setSkinList(skinHeroNames())), []);
+
+  const pickSkins = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    const result = await importSkinFiles(Array.from(files));
+    setSkinList(skinHeroNames());
+    setSkinNote(
+      result.skipped.length
+        ? `新增 ${result.added} 张，${result.skipped.length} 个文件名没对上武将`
+        : `新增 ${result.added} 张`,
+    );
+  };
+
   const [error, setError] = useState<string | null>(null);
   const [dataDir, setDataDir] = useState('');
   const [defaultDir, setDefaultDir] = useState('');
@@ -143,7 +164,9 @@ export function SettingsModal() {
     setBusy(true);
     setError(null);
     try {
-      setBgImage(await prepareBackgroundImage(file));
+      const media = await prepareBackgroundMedia(file);
+      if (media.kind === 'video') setBgVideo();
+      else setBgImage(media.src);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -227,33 +250,24 @@ export function SettingsModal() {
         <div className="settings-grid">
 
         <div className="settings-section">
-          <div className="settings-section-title">对局背景</div>
-          <p className="settings-section-desc">选择一张喜欢的图片作为对局桌面背景，只保存在本机。</p>
+          <div className="settings-section-title">壁纸</div>
+          <p className="settings-section-desc">选择图片或动态视频作为壁纸，GIF 和视频会直接播放，只保存在本机。</p>
           <div
             className="bg-preview"
-            style={{ backgroundImage: `url(${bgImage ?? defaultBg})` }}
+            style={bgKind === 'image' ? { backgroundImage: `url(${bgImage ?? defaultBg})` } : undefined}
           >
+            {bgKind === 'video' && bgVideoUrl && (
+              <video className="bg-preview-video" src={bgVideoUrl} autoPlay loop muted playsInline />
+            )}
             <div className="bg-preview-shade" style={{ opacity: bgDim / 100 }} />
-            <span className="bg-preview-label">预览</span>
+            <span className="bg-preview-label">预览{bgKind === 'video' ? ' · 动态' : ''}</span>
           </div>
-          <div className="bg-setting-row">
-            <span>背景遮罩</span>
-            <input
-              type="range"
-              min={0}
-              max={90}
-              value={bgDim}
-              onChange={(e) => setBgDim(Number(e.target.value))}
-            />
-            <b>{bgDim}%</b>
-          </div>
-          <div className="bg-setting-hint">遮罩越深，桌面文字和卡牌越清晰。</div>
           <div className="bg-setting-row">
             <span>应用范围</span>
             <div className="bg-scope-options">
               {([
                 ['game', '仅对局'],
-                ['menu', '仅主菜单'],
+                ['menu', '非对局界面'],
                 ['all', '全部界面'],
               ] as const).map(([value, label]) => (
                 <button
@@ -267,18 +281,33 @@ export function SettingsModal() {
               ))}
             </div>
           </div>
-          <div className="bg-setting-hint">选择自定义壁纸应用到哪些界面；未选中的界面使用默认背景。</div>
+          <div className="bg-setting-hint">
+            「非对局界面」包含主菜单、大厅、图鉴、设置等；选「仅对局」时其它界面保持默认背景。
+            动态壁纸（视频）只在主菜单与对局里播放。
+          </div>
+          <div className="bg-setting-row">
+            <span>背景遮罩</span>
+            <input
+              type="range"
+              min={0}
+              max={90}
+              value={bgDim}
+              onChange={(e) => setBgDim(Number(e.target.value))}
+            />
+            <b>{bgDim}%</b>
+          </div>
+          <div className="bg-setting-hint">遮罩越深，桌面文字和卡牌越清晰。动态壁纸支持 MP4/WebM（不超过 40MB）。</div>
           {error && <div className="net-error">{error}</div>}
           <div className="settings-actions">
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/*,video/mp4,video/webm"
               hidden
               onChange={(e) => void pick(e.target.files?.[0])}
             />
             <button type="button" className="btn ghost" onClick={() => fileRef.current?.click()} disabled={busy}>
-              {busy ? '处理中…' : '选择图片'}
+              {busy ? '处理中…' : '选择图片 / 视频'}
             </button>
             <button
               type="button"
@@ -287,10 +316,46 @@ export function SettingsModal() {
                 setBgImage(null);
                 setError(null);
               }}
-              disabled={!bgImage}
+              disabled={!bgImage && bgKind !== 'video'}
             >
               恢复默认
             </button>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">武将皮肤</div>
+          <p className="settings-section-desc">
+            每位武将默认都有一张程序绘制的牌面。想换成自己的立绘，可批量导入图片覆盖，
+            文件名用武将 id 或中文名即可（如 caocao.jpg、曹操.png、caocao_少年.png）。
+            只保存在本机，会显示在对局座位与图鉴里。
+          </p>
+          <input
+            ref={skinRef}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(e) => void pickSkins(e.target.files)}
+          />
+          <div className="settings-actions">
+            <button type="button" className="btn ghost" onClick={() => skinRef.current?.click()}>
+              导入立绘
+            </button>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => void clearSkins().then(() => setSkinNote('已清空全部皮肤'))}
+              disabled={!skinList.length}
+            >
+              清空皮肤
+            </button>
+          </div>
+          <div className="bg-setting-hint">
+            {skinList.length
+              ? `已用自定义立绘覆盖 ${skinList.length} 位：${skinList.join('、')}`
+              : '未导入自定义立绘，当前全部使用内置牌面。'}
+            {skinNote ? ` · ${skinNote}` : ''}
           </div>
         </div>
 

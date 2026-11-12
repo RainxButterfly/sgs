@@ -25,6 +25,11 @@ export function PickScreen() {
   const pairHp = pairHeroes.reduce((sum, hero) => sum + hero.hp, 0);
   const pairSkills = [...new Set(pairHeroes.flatMap((hero) => hero.skillIds))];
   const gameMode = preGame.rules?.mode ?? 'identity';
+  // 座次编号以主公为 1 号位（无主公的模式按 0 号位起算）
+  const lordIndex = preGame.roles.indexOf('lord');
+  const seatAnchor = lordIndex >= 0 ? lordIndex : 0;
+  const seatTotal = 1 + preGame.bots.length;
+  const seatNo = (index: number) => ((index - seatAnchor + seatTotal) % seatTotal) + 1;
   const bid = preGame.bid;
   const bidPending = !!bid && !bid.done;
   const myRole =
@@ -113,7 +118,9 @@ export function PickScreen() {
           <section className="pick-seats">
             <div className="room-card-title">座次与武将</div>
             <div className="pick-seat is-human">
-              <span className="pick-seat-label">你 · 1号位</span>
+              <span className="pick-seat-label">
+                {preGame.roles[0] === 'lord' ? '主公' : '你'} · {seatNo(0)}号位
+              </span>
               <span className="pick-seat-hero">
                 {selectedPair
                   ? `${HERO_MAP.get(selectedPair.primary)?.name ?? ''} / ${HERO_MAP.get(selectedPair.secondary)?.name ?? ''}`
@@ -137,7 +144,9 @@ export function PickScreen() {
               const showHero = gameMode === 'landlord' ? !isLord : isLord;
               return (
                 <div key={bot.name + bot.heroId} className={`pick-seat ${isLord ? 'is-lord' : ''}`}>
-                  <span className="pick-seat-label">电脑 · {index + 2}号位</span>
+                  <span className="pick-seat-label">
+                    {preGame.roles[index + 1] === 'lord' ? '主公' : '电脑'} · {seatNo(index + 1)}号位
+                  </span>
                   <span className="pick-seat-hero">
                     {showHero ? (hero?.name ?? '随机') : '未亮将'}
                   </span>

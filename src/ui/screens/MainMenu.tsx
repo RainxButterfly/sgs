@@ -25,7 +25,10 @@ export function MainMenu() {
   const bgImage = useGameStore((s) => s.bgImage);
   const bgScope = useGameStore((s) => s.bgScope);
   const bgDim = useGameStore((s) => s.bgDim);
+  const bgKind = useGameStore((s) => s.bgKind);
+  const bgVideoUrl = useGameStore((s) => s.bgVideoUrl);
   const menuBg = effectiveBackground(bgImage, bgScope, 'menu');
+  const menuVideo = bgKind === 'video' && bgVideoUrl && (bgScope === 'all' || bgScope === 'menu');
   const setUiPalette = useGameStore((s) => s.setUiPalette);
   const setUiTheme = useGameStore((s) => s.setUiTheme);
   const [editingName, setEditingName] = useState(false);
@@ -54,7 +57,13 @@ export function MainMenu() {
   return (
     <div className="menu-screen">
       <div className="ink-bg" />
-      {menuBg && (
+      {menuVideo && bgVideoUrl && (
+        <>
+          <video className="menu-custom-bg" src={bgVideoUrl} autoPlay loop muted playsInline />
+          <div className="menu-custom-bg-shade" style={{ opacity: bgDim / 100 }} />
+        </>
+      )}
+      {!menuVideo && menuBg && (
         <>
           <div className="menu-custom-bg" style={{ backgroundImage: `url(${menuBg})` }} />
           <div className="menu-custom-bg-shade" style={{ opacity: bgDim / 100 }} />
@@ -247,6 +256,17 @@ export function MainMenu() {
             <button
               type="button"
               className="menu-action"
+              onClick={() => useGameStore.setState({ screen: 'guandan' })}
+            >
+              <span className="menu-action-icon" aria-hidden="true">🃏</span>
+              <span className="menu-action-copy">
+                <b>掼蛋 2v2</b>
+                <small>GUANDAN · 两副牌 · 对家为队友</small>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="menu-action"
               onClick={() => useGameStore.setState({ screen: 'gallery' })}
             >
               <span className="menu-action-icon" aria-hidden="true">📖</span>
@@ -274,7 +294,7 @@ export function MainMenu() {
             <span>
               <b>160</b> 张牌
             </span>
-            <span>身份 · 1v1 · 斗地主 · 国战</span>
+            <span>身份 · 1v1 · 斗地主 · 国战 · 掼蛋</span>
           </div>
           <div className="menu-author">
             作者 星河一叶Roxy · 维护邮箱 ck_xuv@vip.qq.com

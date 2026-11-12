@@ -12,6 +12,11 @@ interface Props {
   host: boolean;
   guozhan: boolean;
   landlord?: boolean;
+  team?: boolean;
+  /** 主公在 players 里的下标，用于把主公显示成 1 号位 */
+  turnAnchor?: number;
+  /** 本模式是否存在主公（身份场 / 斗地主） */
+  hasLord?: boolean;
   startCount: number;
   code: string;
   lordPlayerId?: number | null;
@@ -24,12 +29,18 @@ interface Props {
   onCancel: () => void;
 }
 
+const TEAM_MATE_SEAT = [3, 2, 1, 0];
+const teamName = (playerId: number) => (playerId === 0 || playerId === 3 ? '甲队' : '乙队');
+
 export function LanPickPanel({
   players,
   me,
   host,
   guozhan: guozhanMode,
   landlord,
+  team,
+  turnAnchor = 0,
+  hasLord = false,
   startCount,
   code,
   lordPlayerId,
@@ -56,6 +67,14 @@ export function LanPickPanel({
   const lordReady = !lordPlayerId || !!lordHeroId;
   const canPick = lordReady || me.playerId === lordPlayerId;
   const lordBotHero = lordPlayerId == null && lordHeroId ? HERO_MAP.get(lordHeroId) : undefined;
+  // 座次编号按「全部座位」取模，电脑位也要排进去
+  const seatTotal = Math.max(1, players.length + emptySlots);
+  const seatNo = (index: number) => ((index - turnAnchor + seatTotal) % seatTotal) + 1;
+
+  const matePicks = team
+    ? (players.find((player) => player.playerId === TEAM_MATE_SEAT[me.playerId])?.heroIds ?? [])
+    : [];
+  const teamTaken = new Set(team ? matePicks : []);
 
   return (
     <div className="lan-pick">
@@ -79,9 +98,12 @@ export function LanPickPanel({
       <div className="pick-layout">
         <section className="pick-seats">
           <div className="room-card-title">座次与武将</div>
-          {players.map((player) => {
-            const isLord = lordPlayerId != null && player.playerId === lordPlayerId;
-            const showHero = player.connId === me.connId || revealed || (landlord ? !isLord : isLord);
+          {players.map((player, index) => {
+            const isLord =
+              lordPlayerId != null
+                ? player.playerId === lordPlayerId
+                : hasLord && index === turnAnchor;
+            const showHero = player.connId === me.connId || revealed || (!landlord && isLord);
             const selectedIds = playerHeroIds(player);
             const hero = player.heroId && showHero ? HERO_MAP.get(player.heroId) : undefined;
             return (
@@ -90,7 +112,9 @@ export function LanPickPanel({
                 className={`pick-seat ${player.connId === me.connId ? 'is-human' : ''} ${isLord ? 'is-lord' : ''}`}
               >
                 <span className="pick-seat-label">
-                  {isLord ? (landlord ? '地主' : '主公') : player.isHost ? '房主' : '玩家'} · {player.playerId + 1}号位
+                  {isLord ? (landlord ? '地主' : '主公') : player.isHost ? '房主' : '玩家'} · {seatNo(index)}号位
+                  {player.connId === me.connId && <span className="pick-seat-me">你</span>}
+                  {team && <span className="pick-seat-team">{teamName(player.playerId)}</span>}
                 </span>
                 <span className="pick-seat-hero">
                   {selectedIds.length
@@ -120,14 +144,16 @@ export function LanPickPanel({
             const isBotLord = !lordPlayerId && !!lordBotHero && lordSeat === seatIndex;
             return (
               <div key={`empty-${index}`} className={`pick-seat ${isBotLord ? 'is-lord' : ''}`}>
-                <span className="pick-seat-label">{isBotLord ? (landlord ? '地主' : '主公') : '电脑'} · {seatIndex + 1}号位</span>
+                <span className="pick-seat-label">{isBotLord ? (landlord ? '地主' : '主公') : '电脑'} · {seatNo(seatIndex)}号位</span>
                 <span className="pick-seat-hero">{isBotLord ? lordBotHero?.name : '自动补足'}</span>
                 <span className="pick-seat-tag">{isBotLord ? '电脑' : '空位'}</span>
               </div>
             );
           })}
           <div className="pick-seat-note">
-            {guozhan
+            {team
+              ? '1、4号位为甲队，2、3号位为乙队；队友共享候选池，不能重复选将。'
+              : guozhan
               ? '国战为双将模式，主将与副将必须属于同一势力。'
               : revealed
                 ? '全部选择完成，所有武将已亮出。'
@@ -167,8 +193,9 @@ export function LanPickPanel({
               if (!heroes.length) return null;
               const first = heroes[0];
               const taken =
-                ids.includes(lordHeroId ?? '') &&
-                !ids.every((id) => playerHeroIds(me).includes(id));
+                (ids.includes(lordHeroId ?? '') &&
+                  !ids.every((id) => playerHeroIds(me).includes(id))) ||
+                ids.some((id) => teamTaken.has(id));
               const picked =
                 me.heroIds?.length === ids.length &&
                 ids.every((id) => me.heroIds?.includes(id));

@@ -11,6 +11,8 @@ import {
 import { cardEffectText } from '../cardEffects';
 import { CardView } from '../components/CardView';
 import { HeroDetailModal } from '../components/HeroDetail';
+import { useSkins } from '../components/HeroPortrait';
+import { portraitFor } from '../portrait';
 import { cardDisplayName, cardTypeText, SUIT_CHAR } from '../labels';
 import { useGameStore } from '../store';
 
@@ -62,6 +64,7 @@ function buildCardGroups(): CardGroup[] {
 }
 
 export function HeroGallery() {
+  useSkins();
   const [tab, setTab] = useState<GalleryTab>('heroes');
   const [faction, setFaction] = useState<'all' | Faction>('all');
   const [cardFilter, setCardFilter] = useState<CardFilter>('all');
@@ -128,9 +131,14 @@ export function HeroGallery() {
                 <button
                   key={hero.id}
                   type="button"
-                  className={`hero-card gallery-card faction-${hero.faction}`}
+                  className={`hero-card gallery-card has-skin faction-${hero.faction}`}
                   onClick={() => setDetail(hero.id)}
                 >
+                  <span
+                    className="gallery-portrait"
+                    style={{ backgroundImage: `url("${portraitFor(hero.id)}")` }}
+                    aria-hidden="true"
+                  />
                   <div className="hero-card-top">
                     <span className="faction-badge">{FACTION_NAME[hero.faction]}</span>
                     <span className="hero-card-name">{hero.name}</span>

@@ -1,12 +1,31 @@
+# 依赖与构建产物
 node_modules/
 dist/
 src-tauri/target/
-shots/
+release/
+
+# 文档与本地临时文件
+docs/
 *.log
+shots/
+.workbuddy/
 .DS_Store
 Thumbs.db
 
-release/
+# 本地交接文档、界面样张与素材草稿（不属于发布产物）
+HANDOFF.md
+images/
+preview/
 
+# 更新签名私钥/公钥文件（公钥已写入 tauri.conf.json，密钥不入库）
 src-tauri/updater.key
 src-tauri/updater.key.pub
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 编辑器
+.vscode/
+.idea/

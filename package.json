@@ -1,7 +1,8 @@
 {
   "name": "siguoshan",
-  "private": true,
   "version": "0.9.12",
+  "license": "GPL-3.0-only",
+  "private": true,
   "type": "module",
   "author": "星河一叶Roxy <ck_xuv@vip.qq.com>",
   "scripts": {

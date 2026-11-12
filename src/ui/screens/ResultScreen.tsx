@@ -25,7 +25,13 @@ export function ResultScreen() {
   if (!human) return null;
   const mode = game.state.players.length === 2 ? 'duel' : game.state.rules.mode;
   const humanWon =
-    mode === 'guozhan'
+    mode === '2v2'
+      ? result.winner === 'loyalist'
+        ? human.role === 'loyalist'
+        : result.winner === 'rebel'
+          ? human.role === 'rebel'
+          : false
+      : mode === 'guozhan'
       ? result.winner === human.faction
       : mode === 'landlord'
         ? (result.winner === 'lord' && human.role === 'lord') ||
@@ -34,7 +40,13 @@ export function ResultScreen() {
           (result.winner === 'rebel' && human.role === 'rebel') ||
           (result.winner === 'traitor' && human.role === 'traitor');
   const winnerLabel =
-    mode === 'guozhan' && result.winner in FACTION_NAME
+    mode === '2v2'
+      ? result.winner === 'loyalist'
+        ? '甲队获胜'
+        : result.winner === 'rebel'
+          ? '乙队获胜'
+          : '对局结束'
+      : mode === 'guozhan' && result.winner in FACTION_NAME
       ? `${FACTION_NAME[result.winner as keyof typeof FACTION_NAME]}势力获胜`
       : mode === 'landlord'
         ? result.winner === 'lord'
@@ -44,6 +56,7 @@ export function ResultScreen() {
           ? '单挑获胜'
           : WINNER_LABEL[result.winner] ?? '对局结束';
   const roleLabel = (role: typeof human.role) => {
+    if (mode === '2v2') return role === 'loyalist' ? '甲队' : '乙队';
     if (mode === 'guozhan' || mode === 'duel') return '';
     if (mode === 'landlord') return role === 'lord' ? '地主' : '农民';
     return ROLE_NAME[role];

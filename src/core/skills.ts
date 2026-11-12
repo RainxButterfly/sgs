@@ -2260,27 +2260,14 @@ const SKILLS: SkillDef[] = [
   {
     id: 'fangquan',
     name: '放权',
-    desc: '出牌阶段限一次，你可以跳过出牌阶段，弃置一张手牌，令一名其他角色获得一个额外回合。',
+    desc: '出牌阶段限一次，你可以跳过出牌阶段，并于回合结束时弃置一张手牌，令一名其他角色获得一个额外回合。',
     active: {
       oncePerTurn: true,
       usable: (_game, owner) => owner.hand.length > 0,
       run: async (game, owner) => {
-        const cost = await game.askCards(
-          owner,
-          owner.hand,
-          1,
-          1,
-          '放权：选择一张手牌作为费用',
-          undefined,
-          true,
-        );
-        if (!cost.length) return;
-        const target = await game.askPlayer(owner, others(game, owner), '放权：选择一名其他角色');
-        if (!target) return;
-        await game.discardCards(owner, cost, '放权');
-        game.grantExtraTurn(target);
         owner.flags.fangquanSkip = 1;
-        game.log(`【${owner.name}】放权，令【${target.name}】获得一个额外回合`, 'skill');
+        owner.flags.fangquanPending = 1;
+        game.log(`【${owner.name}】发动【放权】，跳过出牌阶段`, 'skill');
       },
     },
   },

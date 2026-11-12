@@ -27,11 +27,12 @@ export function LanScreen() {
   const [address, setAddress] = useState(preset?.address ?? (desktop ? '' : '127.0.0.1:8787'));
   const [code, setCode] = useState(preset?.code ?? (desktop ? '' : 'DEV'));
   const [spectate, setSpectate] = useState(false);
+  const [guandan, setGuandan] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const create = async () => {
     setBusy(true);
-    await createLanRoom(createName);
+    await createLanRoom(createName, guandan ? 'guandan' : 'sgs');
     setBusy(false);
   };
 
@@ -73,8 +74,19 @@ export function LanScreen() {
                 <span>你的名字</span>
                 <input value={createName} maxLength={12} onChange={(e) => setCreateName(e.target.value)} />
               </label>
+              <label className="lan-spectate-toggle">
+                <input
+                  type="checkbox"
+                  checked={guandan}
+                  onChange={(e) => setGuandan(e.target.checked)}
+                />
+                <span>
+                  <b>掼蛋牌局</b>
+                  <em>四人两队，对家为队友，两副牌。空位由电脑补足。</em>
+                </span>
+              </label>
               <button type="button" className="btn primary" disabled={busy} onClick={create}>
-                创建房间
+                {guandan ? '创建掼蛋房' : '创建房间'}
               </button>
             </section>
           ) : (

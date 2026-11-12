@@ -12,6 +12,7 @@ import { CountdownRing } from '../components/CountdownRing';
 import { DiscardModal } from '../components/DiscardModal';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroHover, HoverInfo } from '../components/HoverInfo';
+import { HeroPortrait } from '../components/HeroPortrait';
 import { Hand } from '../components/Hand';
 import { LogPanel } from '../components/LogPanel';
 import { GameModals } from '../components/Modals';
@@ -83,6 +84,8 @@ export function MobileGameScreen() {
   const revealGeneral = useGameStore((s) => s.revealGeneral);
   const bgImage = useGameStore((s) => s.bgImage);
   const bgScope = useGameStore((s) => s.bgScope);
+  const bgKind = useGameStore((s) => s.bgKind);
+  const bgVideoUrl = useGameStore((s) => s.bgVideoUrl);
   const bgDim = useGameStore((s) => s.bgDim);
   const openChat = useGameStore((s) => s.openChat);
   const chatUnread = useGameStore((s) => s.chatUnread);
@@ -230,7 +233,11 @@ export function MobileGameScreen() {
 
   return (
     <div className={`mobile-game self-card-${selfCardSide} ${prompting ? 'is-prompting' : ''}`}>
-      <div className="game-bg" style={{ backgroundImage: `url(${effectiveBackground(bgImage, bgScope, 'game') ?? defaultBg})` }} />
+      {bgKind === 'video' && bgVideoUrl && (bgScope === 'all' || bgScope === 'game') ? (
+        <video className="game-bg game-bg-video" src={bgVideoUrl} autoPlay loop muted playsInline />
+      ) : (
+        <div className="game-bg" style={{ backgroundImage: `url(${effectiveBackground(bgImage, bgScope, 'game') ?? defaultBg})` }} />
+      )}
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
 
       <header className="m-topbar">
@@ -331,6 +338,11 @@ export function MobileGameScreen() {
               data-player-id={player.id}
               onClick={() => useGameStore.getState().seatClick(player.id)}
             >
+              <HeroPortrait
+                heroId={hero?.id}
+                hidden={!factionKnown(player, mode)}
+                className="m-seat-portrait"
+              />
               {(() => {
                 const bubble = speechBubbles.find((item) => item.playerId === player.id);
                 return bubble ? <div className="m-seat-speech">{bubble.text}</div> : null;

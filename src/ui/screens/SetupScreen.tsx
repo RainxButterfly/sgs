@@ -3,7 +3,7 @@ import { DEFAULT_RULES, type CustomRules } from '../../core/types';
 import { useGameStore } from '../store';
 import { RulesEditor } from '../components/RulesEditor';
 
-type SetupMode = 'identity' | 'duel' | 'landlord' | 'guozhan' | 'custom';
+type SetupMode = 'identity' | 'duel' | 'landlord' | 'guozhan' | '2v2' | 'custom';
 
 export function SetupScreen() {
   const [count, setCount] = useState(8);
@@ -16,8 +16,10 @@ export function SetupScreen() {
       ? [2]
       : mode === 'landlord'
         ? [3]
-        : mode === 'guozhan'
-          ? [4, 5, 6, 7, 8]
+        : mode === '2v2'
+          ? [4]
+          : mode === 'guozhan'
+            ? [4, 5, 6, 7, 8]
           : mode === 'custom'
             ? [2, 3, 4, 5, 6, 7, 8]
             : [5, 6, 7, 8];
@@ -26,15 +28,19 @@ export function SetupScreen() {
       ? 2
       : mode === 'landlord'
         ? 3
-        : mode === 'guozhan'
-          ? Math.max(4, count)
+        : mode === '2v2'
+          ? 4
+          : mode === 'guozhan'
+            ? Math.max(4, count)
           : mode === 'custom'
             ? Math.max(2, count)
             : Math.max(5, count);
   const roleHint =
     mode === 'duel'
       ? '1v1 单挑 · 双方没有身份，不额外增加体力'
-      : mode === 'landlord'
+      : mode === '2v2'
+        ? '1、4号位一队，2、3号位一队 · 队友共享选将池、手牌互通'
+        : mode === 'landlord'
         ? '地主 1 · 农民 2 · 3 人对局'
         : mode === 'guozhan'
           ? '魏 · 蜀 · 吴 · 群 · 阵营团战，存活到最后的势力获胜'
@@ -56,7 +62,9 @@ export function SetupScreen() {
           ? '斗地主'
           : mode === 'guozhan'
             ? '国战'
-            : '自定义';
+            : mode === '2v2'
+              ? '2v2 竞技'
+              : '自定义';
 
   return (
     <div className="setup-screen">
@@ -88,6 +96,7 @@ export function SetupScreen() {
               ['duel', '1v1'],
               ['landlord', '斗地主'],
               ['guozhan', '国战'],
+              ['2v2', '2v2 竞技'],
               ['custom', '自定义'],
             ] as const).map(([id, label]) => (
               <button
@@ -98,6 +107,7 @@ export function SetupScreen() {
                   setMode(id);
                   if (id === 'duel') setCount(2);
                   else if (id === 'landlord') setCount(3);
+                  else if (id === '2v2') setCount(4);
                   else if (id === 'guozhan') setCount(Math.max(4, Math.min(count, 8)));
                   else if (id === 'identity') setCount(Math.max(5, Math.min(count, 8)));
                   else setCount(Math.max(2, Math.min(count, 8)));

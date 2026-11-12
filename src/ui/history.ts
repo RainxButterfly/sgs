@@ -16,7 +16,7 @@ export interface MatchRecord {
   id: string;
   dateKey: string;
   playedAt: string;
-  mode: 'identity' | 'duel' | 'landlord' | 'guozhan';
+  mode: 'identity' | 'duel' | 'landlord' | 'guozhan' | '2v2';
   modeLabel: string;
   playerCount: number;
   result: 'win' | 'lose' | 'draw';

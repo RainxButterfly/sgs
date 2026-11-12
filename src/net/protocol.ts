@@ -1,4 +1,5 @@
 import type { AskRequest, Card, CustomRules, GameAction, GameEvent, GameState, PlayerState, Role } from '../core/types';
+import type { GdView } from '../core/guandan-view';
 
 export interface RoomInfo {
   ip: string;
@@ -63,6 +64,10 @@ export interface LobbyState {
   spectators?: SpectatorInfo[];
   bidding?: LandlordBidState | null;
   fillBots?: boolean;
+  /** 掼蛋房：不走选将，直接开牌局 */
+  guandan?: boolean;
+  /** 座次显示的锚点：主公在 players 里的下标（默认 0） */
+  turnAnchor?: number;
 }
 
 export type ServerEvent =
@@ -105,6 +110,7 @@ export type HostPayload =
   | { t: 'prop'; message: PropMessage }
   | { t: 'kicked'; reason: string }
   | { t: 'versionMismatch'; message: string }
+  | { t: 'gd'; view: GdView }
   | { t: 'error'; message: string };
 
 export type GuestPayload =
@@ -117,6 +123,7 @@ export type GuestPayload =
   | { t: 'pickHero'; heroId: string }
   | { t: 'chat'; text: string }
   | { t: 'prop'; targetId: number; prop: string }
+  | { t: 'gdAction'; act: 'play' | 'pass' | 'next' | 'restart'; ids?: string[] }
   | { t: 'leave' };
 
 function hiddenCard(playerId: number, index: number): Card {
@@ -129,15 +136,15 @@ function hiddenCard(playerId: number, index: number): Card {
   };
 }
 
-function redactPlayer(player: PlayerState, viewerId: number, over: boolean): PlayerState {
+function redactPlayer(player: PlayerState, viewerId: number, over: boolean, mate = false, teamMode = false): PlayerState {
   const isSelf = player.id === viewerId;
-  const hand = isSelf
+  const hand = isSelf || mate
     ? player.hand
     : Array.from({ length: player.hand.length }, (_, i) => hiddenCard(player.id, i));
   return {
     ...player,
     hand,
-    role: over || isSelf || player.roleRevealed || !player.alive ? player.role : 'rebel',
+    role: over || isSelf || player.roleRevealed || !player.alive || teamMode ? player.role : 'rebel',
     flags: isSelf ? player.flags : {},
   };
 }
@@ -154,15 +161,22 @@ export function spectateState(state: GameState): GameState {
   };
 }
 
+// 2v2：1、4号位一队，2、3号位一队；队友手牌互通
+export const TEAM_MATE_SEAT = [3, 2, 1, 0];
+
 export function redactState(state: GameState, viewerId: number): GameState {
   const roleCounts: Record<Role, number> = { lord: 0, loyalist: 0, rebel: 0, traitor: 0 };
   for (const player of state.players) {
     if (player.alive) roleCounts[player.role] += 1;
   }
+  const teamMode = state.rules.mode === '2v2';
+  const mateId = TEAM_MATE_SEAT[viewerId];
   return {
     ...state,
     seed: 0,
-    players: state.players.map((p) => redactPlayer(p, viewerId, state.over)),
+    players: state.players.map(
+      (p) => redactPlayer(p, viewerId, state.over, teamMode && p.id === mateId, teamMode),
+    ),
     deck: [],
     discard: state.discard,
     deckCount: state.deck.length,

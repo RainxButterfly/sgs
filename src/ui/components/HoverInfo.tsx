@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { GameMode, HeroData, PlayerState } from '../../core/types';
 import { FACTION_NAME } from '../../core/types';
@@ -13,9 +13,18 @@ interface Props {
   as?: 'span' | 'div';
 }
 
+interface CardPos {
+  left: number;
+  top: number;
+  /** 已完成一次实测定位，不再重复测量 */
+  placed?: boolean;
+}
+
 export function HoverInfo({ content, children, className, as = 'span' }: Props) {
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+  const [pos, setPos] = useState<CardPos | null>(null);
   const hideTimer = useRef<number | null>(null);
+  const anchor = useRef<DOMRect | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
   const Tag = as;
 
   const cancelHide = () => {
@@ -30,18 +39,32 @@ export function HoverInfo({ content, children, className, as = 'span' }: Props) 
   };
   useEffect(() => cancelHide, []);
 
+  // 卡片渲染后按真实高度定位：能放下就贴着触发点，放不下就翻到触发点上方
+  useLayoutEffect(() => {
+    if (!pos || pos.placed) return;
+    const card = cardRef.current;
+    const rect = anchor.current;
+    if (!card || !rect) return;
+    const margin = 8;
+    const viewport = window.innerHeight;
+    const height = Math.min(card.offsetHeight, viewport * 0.7);
+    let top = rect.top;
+    if (rect.top + height > viewport - margin) top = rect.top - height - 7;
+    top = Math.max(margin, Math.min(top, Math.max(margin, viewport - height - margin)));
+    setPos({ left: pos.left, top, placed: true });
+  }, [pos]);
+
   const show = (event: React.SyntheticEvent<HTMLElement>) => {
     cancelHide();
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     const rect = event.currentTarget.getBoundingClientRect();
-    const width = 330;
+    anchor.current = rect;
+    const width = Math.min(330, window.innerWidth - 16);
     const left =
       rect.left > window.innerWidth / 2
         ? Math.max(8, rect.left - width - 12)
         : Math.min(window.innerWidth - width - 8, rect.right + 12);
-    const maxCard = window.innerHeight * 0.7;
-    const top = Math.max(8, Math.min(rect.top, window.innerHeight - maxCard - 8));
-    setPos({ left, top });
+    setPos({ left, top: rect.top });
   };
 
   return (
@@ -56,8 +79,9 @@ export function HoverInfo({ content, children, className, as = 'span' }: Props) 
       {pos &&
         createPortal(
           <div
+            ref={cardRef}
             className="hover-card"
-            style={{ left: pos.left, top: pos.top }}
+            style={{ left: pos.left, top: pos.top, width: Math.min(330, window.innerWidth - 16) }}
             onMouseEnter={cancelHide}
             onMouseLeave={scheduleHide}
           >

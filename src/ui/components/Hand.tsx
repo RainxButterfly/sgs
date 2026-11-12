@@ -33,11 +33,22 @@ export function Hand({ player, pending, selectedCardId, onSelect, onClearSelecti
       </div>
       <div className="hand-cards">
         {cards.length === 0 && <div className="hand-empty">暂无手牌</div>}
-        {cards.map((card) => {
+        {cards.map((card, index) => {
           const canUse = playable.has(card.id);
+          // 弧形手牌：中间高、两边低，牌数越多每张的倾角越小
+          const mid = (cards.length - 1) / 2;
+          const offset = index - mid;
+          const step = Math.min(2.6, 30 / Math.max(cards.length, 1));
+          // 中间的牌略高，两边的牌回落，形成弧形
+          const spread = mid > 0 ? Math.abs(offset) / mid : 0;
+          const fanStyle = {
+            ['--fan-rot' as string]: `${(offset * step).toFixed(2)}deg`,
+            ['--fan-lift' as string]: `${(-(1 - spread) * 8).toFixed(1)}px`,
+          } as React.CSSProperties;
           return (
             <CardView
               key={card.id}
+              style={fanStyle}
               card={card}
               selected={selectedCardId === card.id}
               dimmed={interactive && !canUse}

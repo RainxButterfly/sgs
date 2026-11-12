@@ -17,7 +17,8 @@ import {
   installAppUpdate,
   type AppUpdateInfo,
 } from './update';
-import { loadBackgroundSettings, saveBackgroundSettings, type BackgroundScope } from './background';
+import { loadBackgroundSettings, saveBackgroundSettings, loadBackgroundVideo, clearBackgroundVideo, type BackgroundScope } from './background';
+import type { GdView } from '../core/guandan-view';
 import { applySoundSettings, getSoundSettings, playSound } from './sound';
 import { applyMatchXp, loadProfile, normalizePlayerName, saveProfile, type PlayerProfile, type XpGain } from './profile';
 import { scheduleDataSnapshot } from './dataStorage';
@@ -35,7 +36,7 @@ import type {
   Role,
 } from '../core/types';
 
-type Screen = 'menu' | 'setup' | 'pick' | 'lan' | 'lobby' | 'gallery' | 'game' | 'result';
+type Screen = 'menu' | 'setup' | 'pick' | 'lan' | 'lobby' | 'gallery' | 'game' | 'result' | 'guandan';
 
 interface PreGame {
   count: number;
@@ -409,6 +410,10 @@ interface GameStore {
   bgImage: string | null;
   bgDim: number;
   bgScope: BackgroundScope;
+  /** 当前壁纸类型：静态图或动态视频 */
+  bgKind: 'image' | 'video';
+  /** 动态壁纸播放地址（IndexedDB 里的视频） */
+  bgVideoUrl: string | null;
   selfCardSide: 'left' | 'right';
   uiTheme: 'classic' | 'magic';
   uiPalette: UiPalette;
@@ -443,9 +448,14 @@ interface GameStore {
   bidLocal: (score: number) => void;
   backToMenu: () => void;
   restart: () => void;
-  createLanRoom: (name: string) => Promise<void>;
+  createLanRoom: (name: string, kind?: 'sgs' | 'guandan') => Promise<void>;
   joinLanRoom: (address: string, code: string, name: string, spectate?: boolean) => Promise<void>;
   startLanGame: (count: number) => void;
+  beginLanGuandan: () => void;
+  guandanView: GdView | null;
+  gdPlay: (ids: string[]) => void;
+  gdPass: () => void;
+  gdNextRound: (restart: boolean) => void;
   startLanPick: (count: number) => void;
   setLanCount: (count: number) => void;
   cancelLanPick: () => void;
@@ -480,6 +490,7 @@ interface GameStore {
   setSoundEnabled: (value: boolean) => void;
   setSoundVolume: (value: number) => void;
   setBgImage: (image: string | null) => void;
+  setBgVideo: () => void;
   setBgDim: (dim: number) => void;
   setBgScope: (scope: BackgroundScope) => void;
   setSelfCardSide: (side: 'left' | 'right') => void;
@@ -586,6 +597,7 @@ const io: GameIO = {
 
 export const useGameStore = create<GameStore>((set, get) => ({
   screen: 'menu',
+  guandanView: null,
   game: null,
   preGame: null,
   humanId: 0,
@@ -645,6 +657,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   bgImage: initialBackground.image,
   bgDim: initialBackground.dim,
   bgScope: initialBackground.scope,
+  bgKind: initialBackground.kind ?? 'image',
+  bgVideoUrl: null,
   selfCardSide: loadSelfCardSide(),
   uiTheme: loadUiTheme(),
   uiPalette: loadUiPalette(),
@@ -749,7 +763,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     const mode = rules?.mode ?? 'identity';
     const roles = buildRoles(count, mode);
-    if (mode !== 'landlord') {
+    if (mode !== 'landlord' && mode !== '2v2') {
       for (let i = roles.length - 1; i > 0; i -= 1) {
         const j = Math.floor(Math.random() * (i + 1));
         [roles[i], roles[j]] = [roles[j], roles[i]];
@@ -1082,7 +1096,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ screen: 'setup', game: null, preGame: null, result: null, pending: null, version: get().version + 1 });
   },
 
-  createLanRoom: async (name) => {
+  createLanRoom: async (name, kind = 'sgs') => {
     get().lanClient?.close();
     get().lanHost?.close();
     sessionMarked = false;
@@ -1107,6 +1121,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
           lobby: get().lobby ? { ...get().lobby!, spectators } : null,
           version: get().version + 1,
         }),
+        onGuandan: (view) =>
+          set({
+            guandanView: view,
+            screen: 'guandan',
+            lobby: null,
+            pending: null,
+            result: null,
+            version: get().version + 1,
+          }),
         onGame: (game) =>
           set({
             game,
@@ -1135,7 +1158,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }),
         onError: (message) => set({ netError: message }),
         onClosed: () => set({ netError: '房间连接已断开，请返回重试', lanHost: null }),
-      }, get().aiSpeed, get().profile.level);
+      }, get().aiSpeed, get().profile.level, kind);
       clearSavedLanSession();
       set({
         savedLanSession: null,
@@ -1185,7 +1208,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({
           lobby,
           spectators: lobby.spectators ?? [],
-          screen: 'lobby',
+          screen: get().guandanView ? 'guandan' : 'lobby',
           result: null,
           pending: null,
           game: null,
@@ -1218,6 +1241,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
           flash: null,
           flashes: [],
           damageNotice: null,
+          version: get().version + 1,
+        }),
+      onGuandan: (view) =>
+        set({
+          guandanView: view,
+          screen: 'guandan',
+          result: null,
+          pending: null,
           version: get().version + 1,
         }),
       onRole: (role) => set({ myRole: role }),
@@ -1403,6 +1434,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   startLanGame: (count) => {
     get().lanHost?.startGame(count);
+  },
+
+  beginLanGuandan: () => {
+    get().lanHost?.beginGuandan();
+  },
+
+  gdPlay: (ids) => {
+    const { lanRole, lanHost, lanClient } = get();
+    if (lanRole === 'host') lanHost?.hostGdPlay(ids);
+    else lanClient?.sendGdAction('play', ids);
+  },
+
+  gdPass: () => {
+    const { lanRole, lanHost, lanClient } = get();
+    if (lanRole === 'host') lanHost?.hostGdPass();
+    else lanClient?.sendGdAction('pass');
+  },
+
+  gdNextRound: (restart) => {
+    get().lanHost?.hostGdNext(restart);
   },
 
   startLanPick: (count) => {
@@ -1618,17 +1669,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ soundVolume: volume });
   },
   setBgImage: (image) => {
-    set({ bgImage: image });
-    saveBackgroundSettings({ image, dim: get().bgDim, scope: get().bgScope });
+    set({ bgImage: image, bgKind: 'image', bgVideoUrl: null });
+    void clearBackgroundVideo();
+    saveBackgroundSettings({ image, dim: get().bgDim, scope: get().bgScope, kind: 'image' });
+  },
+  setBgVideo: () => {
+    void loadBackgroundVideo().then((blob) => {
+      if (!blob) return;
+      set({ bgImage: null, bgKind: 'video', bgVideoUrl: URL.createObjectURL(blob) });
+      saveBackgroundSettings({ image: null, dim: get().bgDim, scope: get().bgScope, kind: 'video' });
+    });
   },
   setBgDim: (dim) => {
     const next = Math.min(90, Math.max(0, Math.round(dim)));
     set({ bgDim: next });
-    saveBackgroundSettings({ image: get().bgImage, dim: next, scope: get().bgScope });
+    saveBackgroundSettings({
+      image: get().bgImage,
+      dim: next,
+      scope: get().bgScope,
+      kind: get().bgKind,
+    });
   },
   setBgScope: (scope) => {
     set({ bgScope: scope });
-    saveBackgroundSettings({ image: get().bgImage, dim: get().bgDim, scope });
+    saveBackgroundSettings({
+      image: get().bgImage,
+      dim: get().bgDim,
+      scope,
+      kind: get().bgKind,
+    });
   },
   setSelfCardSide: (side) => {
     saveSelfCardSide(side);
@@ -1660,6 +1729,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     clearSavedLanSession();
     resolveAsk = null;
     set({
+      guandanView: null,
       savedLanSession: null,
       chatMessages: [],
       chatOpen: false,
@@ -1820,6 +1890,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     else if (ev.type === 'judge') playSound('judge');
     else if (ev.type === 'skill') playSound('skill');
     else if (ev.type === 'turn' && ev.playerId === state.humanId) playSound('turn');
+    else if (ev.type === 'dying') playSound('dying');
     if (ev.type === 'harvest') {
       patch.harvest = {
         cards: ev.cards,
@@ -2054,10 +2125,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
           const finishedState = current.game?.state ?? finished.state;
           const human = finishedState.players[current.humanId];
           if (!human) return;
-          const mode: 'identity' | 'duel' | 'landlord' | 'guozhan' =
+          const mode: 'identity' | 'duel' | 'landlord' | 'guozhan' | '2v2' =
             finishedState.players.length === 2 ? 'duel' : finishedState.rules.mode;
           const humanWon =
-            mode === 'guozhan'
+            mode === '2v2'
+              ? ev.winner === 'draw'
+                ? false
+                : ev.winner === human.role
+              : mode === 'guozhan'
               ? ev.winner === human.faction
               : mode === 'landlord'
                 ? (ev.winner === 'lord' && human.role === 'lord') ||
@@ -2077,7 +2152,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
                 ? '斗地主'
                 : mode === 'guozhan'
                   ? '国战'
-                  : '身份场';
+                  : mode === '2v2'
+                    ? '2v2 竞技'
+                    : '身份场';
           const firstPlayer =
             current.firstPlayerId !== null ? finishedState.players[current.firstPlayerId] : undefined;
           const lobbyLevels = new Map<number, number>();
@@ -2383,6 +2460,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       prop: message.prop,
     };
     set({ propThrows: [...state.propThrows, item].slice(-12) });
+    playSound(message.prop === 'flower' ? 'flower' : 'egg');
     setTimeout(() => {
       set({ propThrows: get().propThrows.filter((p) => p.id !== item.id) });
     }, 2600);
@@ -2498,4 +2576,11 @@ if (typeof window !== 'undefined') {
       joinPreset: { address: window.location.host, code: room.toUpperCase() },
     });
   }
+}
+
+// 动态壁纸：启动时从 IndexedDB 取回视频并生成播放地址
+if (typeof window !== 'undefined' && useGameStore.getState().bgKind === 'video') {
+  void loadBackgroundVideo().then((blob) => {
+    if (blob) useGameStore.setState({ bgVideoUrl: URL.createObjectURL(blob) });
+  }); // bgVideoUrl 水合
 }

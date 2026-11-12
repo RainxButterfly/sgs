@@ -4,7 +4,7 @@ export type EquipSlot = 'weapon' | 'armor' | 'horsePlus' | 'horseMinus';
 export type Gender = 'male' | 'female';
 export type Faction = 'wei' | 'shu' | 'wu' | 'qun';
 export type Role = 'lord' | 'loyalist' | 'rebel' | 'traitor';
-export type GameMode = 'identity' | 'duel' | 'landlord' | 'guozhan';
+export type GameMode = 'identity' | 'duel' | 'landlord' | 'guozhan' | '2v2';
 export type Element = 'fire' | 'thunder';
 export type Phase = 'prepare' | 'judge' | 'draw' | 'play' | 'discard' | 'finish';
 

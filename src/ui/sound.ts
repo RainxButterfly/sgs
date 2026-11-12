@@ -10,7 +10,11 @@ export type SoundName =
   | 'judge'
   | 'skill'
   | 'win'
-  | 'lose';
+  | 'lose'
+  | 'egg'
+  | 'flower'
+  | 'dying'
+  | 'shuffle';
 
 interface SoundSettings {
   enabled: boolean;
@@ -116,6 +120,43 @@ function noise(ctx: AudioContext, duration: number, level: number, frequency: nu
   source.start(now);
 }
 
+function v(base: number): number {
+  return base * (1 + (Math.random() - 0.5) * 0.05);
+}
+
+/** 带扫频的噪声：像纸牌划过桌面 */
+function swoosh(
+  ctx: AudioContext,
+  duration: number,
+  level: number,
+  from: number,
+  to: number,
+  delay = 0,
+): void {
+  const now = ctx.currentTime + delay;
+  const length = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i += 1) {
+    const t = i / length;
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 1.8);
+  }
+  const source = ctx.createBufferSource();
+  const filter = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+  source.buffer = buffer;
+  filter.type = 'bandpass';
+  filter.Q.value = 1.1;
+  filter.frequency.setValueAtTime(from, now);
+  filter.frequency.exponentialRampToValueAtTime(Math.max(120, to), now + duration);
+  gain.gain.setValueAtTime(level, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(master ?? ctx.destination);
+  source.start(now);
+}
+
 export function playSound(name: SoundName): void {
   if (!settings.enabled || settings.volume <= 0) return;
   const now = performance.now();
@@ -134,41 +175,73 @@ export function playSound(name: SoundName): void {
       tone(ctx, 920, 720, 0.035, 'sine', 0.12);
       break;
     case 'play':
-      noise(ctx, 0.09, 0.08, 1700);
-      tone(ctx, 300, 180, 0.12, 'triangle', 0.16);
+      // 甩牌：纸面摩擦 + 落桌轻响
+      swoosh(ctx, 0.16, 0.11, v(2600), v(900));
+      tone(ctx, v(210), v(150), 0.1, 'triangle', 0.15, 0.06);
       break;
     case 'respond':
-      tone(ctx, 760, 1040, 0.075, 'sine', 0.14);
+      swoosh(ctx, 0.11, 0.08, v(3000), v(1500));
+      tone(ctx, v(880), v(1180), 0.08, 'sine', 0.12, 0.03);
       break;
     case 'damage':
-      tone(ctx, 150, 62, 0.2, 'sine', 0.26);
-      noise(ctx, 0.1, 0.08, 700);
+      // 闷响 + 短促金属尾音
+      tone(ctx, v(150), 58, 0.22, 'sine', 0.28);
+      tone(ctx, v(88), 44, 0.3, 'sine', 0.2, 0.01);
+      noise(ctx, 0.1, 0.09, v(720));
+      tone(ctx, v(1400), v(900), 0.06, 'square', 0.05, 0.02);
       break;
     case 'heal':
-      tone(ctx, 660, 660, 0.12, 'sine', 0.14);
-      tone(ctx, 990, 990, 0.16, 'sine', 0.12, 0.08);
+      [660, 880, 1320].forEach((freq, i) => tone(ctx, v(freq), v(freq), 0.16, 'sine', 0.12 - i * 0.02, i * 0.07));
       break;
     case 'draw':
-      noise(ctx, 0.055, 0.05, 3200);
+      swoosh(ctx, 0.08, 0.055, v(4200), v(2400));
       break;
     case 'discard':
-      noise(ctx, 0.075, 0.06, 1400);
+      swoosh(ctx, 0.1, 0.06, v(1800), v(700));
+      break;
+    case 'shuffle':
+      for (let i = 0; i < 4; i += 1) swoosh(ctx, 0.07, 0.05, v(3200), v(1400), i * 0.055);
       break;
     case 'turn':
-      tone(ctx, 880, 880, 0.22, 'sine', 0.1);
-      tone(ctx, 1320, 1320, 0.18, 'sine', 0.06, 0.05);
+      // 轮到自己：上扬双音 + 轻尾音，比单短音更容易被注意到
+      tone(ctx, 660, 660, 0.16, 'triangle', 0.16);
+      tone(ctx, 990, 990, 0.16, 'triangle', 0.15, 0.15);
+      tone(ctx, 1320, 1320, 0.3, 'sine', 0.1, 0.3);
+      break;
+    case 'egg':
+      noise(ctx, 0.07, 0.13, 2400);
+      tone(ctx, 220, 90, 0.13, 'square', 0.1, 0.02);
+      break;
+    case 'flower':
+      tone(ctx, 720, 1080, 0.16, 'sine', 0.1);
+      tone(ctx, 1080, 1440, 0.18, 'sine', 0.06, 0.08);
       break;
     case 'judge':
-      tone(ctx, 240, 240, 0.12, 'triangle', 0.14);
+      // 翻牌：卡片离手的脆响 + 一点回音
+      swoosh(ctx, 0.09, 0.09, v(3600), v(1800));
+      tone(ctx, v(1180), v(760), 0.1, 'triangle', 0.12, 0.01);
+      tone(ctx, v(590), v(590), 0.18, 'sine', 0.05, 0.07);
       break;
     case 'skill':
-      tone(ctx, 520, 780, 0.12, 'sine', 0.12);
+      // 技能：上挑 + 泛音
+      tone(ctx, v(520), v(820), 0.16, 'sine', 0.13);
+      tone(ctx, v(1040), v(1240), 0.22, 'triangle', 0.07, 0.05);
+      swoosh(ctx, 0.2, 0.05, v(2200), v(5200));
+      break;
+    case 'dying':
+      // 濒死：两声低沉心跳
+      tone(ctx, 62, 42, 0.26, 'sine', 0.3);
+      tone(ctx, 58, 40, 0.3, 'sine', 0.24, 0.34);
       break;
     case 'win':
-      [523, 659, 784, 1047].forEach((freq, index) => tone(ctx, freq, freq, 0.22, 'triangle', 0.13, index * 0.11));
+      [523, 659, 784, 1047].forEach((freq, index) =>
+        tone(ctx, freq, freq, 0.26, 'triangle', 0.13, index * 0.11),
+      );
+      tone(ctx, 1568, 1568, 0.4, 'sine', 0.06, 0.44);
       break;
     case 'lose':
-      tone(ctx, 320, 160, 0.45, 'sine', 0.14);
+      tone(ctx, 320, 150, 0.5, 'sine', 0.15);
+      tone(ctx, 240, 110, 0.6, 'sine', 0.1, 0.08);
       break;
   }
 }

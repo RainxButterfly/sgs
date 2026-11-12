@@ -1,6 +1,6 @@
 # 四国闪 · 星河
 
-四国闪桌面对战程序。标准包 + 军争篇 160 张牌，57 名武将，可以单机，也可以和朋友在局域网或手机上一起玩。
+四国闪桌面对战程序。标准包 + 军争篇 160 张牌，71 名武将，可以单机，也可以和朋友在局域网或手机上一起玩。
 
 ## 下载
 
@@ -24,7 +24,7 @@ https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/upd
 
 ## 内容
 
-- 标准包 + 军争篇 160 张牌，57 名武将（标准包 25 名 + 风火林山 32 名）
+- 标准包 + 军争篇 160 张牌，71 名武将（标准包 25 名、风火林山 32 名，另有 14 名扩展武将）
 - 军争篇：酒、火杀、雷杀、火攻、铁索连环、兵粮寸断、藤甲、白银狮子、古锭刀、朱雀羽扇、骅骝
 - 属性伤害与铁索传导、酒增伤、兵粮判定、藤甲/白银等装备效果
 - 身份场、1v1、斗地主、国战、自定义对局
@@ -86,22 +86,12 @@ https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/main/upd
 
 建议把程序解压到桌面、文档等可写目录，不要放在 `Program Files`。
 
-发布步骤见 [docs/RELEASE.md](docs/RELEASE.md)。
-
-## 开发
-
-```bash
-npm install
-npm run dev
-npm run desktop
-npm run desktop:build:portable
-```
-
-构建桌面版需要 Rust、Tauri 和 WebView2。安卓原生包需要 Android SDK、NDK 与 JDK 17，步骤见 [docs/ANDROID.md](docs/ANDROID.md)。
-
 ## 作者
 
-星河一叶Roxy  
-ck_xuv@vip.qq.com
+星河一叶Roxy（StarLeaf · Roxy）
 
 https://github.com/RainxButterfly/sgs
+
+开发与测试组成员的完整名单，见程序内「关于」面板。
+
+本项目按 GNU General Public License v3.0 发布。

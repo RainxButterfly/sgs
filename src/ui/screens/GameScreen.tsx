@@ -34,6 +34,8 @@ export function GameScreen() {
   const bgImage = useGameStore((s) => s.bgImage);
   const bgDim = useGameStore((s) => s.bgDim);
   const bgScope = useGameStore((s) => s.bgScope);
+  const bgKind = useGameStore((s) => s.bgKind);
+  const bgVideoUrl = useGameStore((s) => s.bgVideoUrl);
   const selectedCardId = selected?.cardId;
   const [logOpen, setLogOpen] = useState(false);
   const [detailPlayer, setDetailPlayer] = useState<number | null>(null);
@@ -122,7 +124,11 @@ export function GameScreen() {
 
   return (
     <div className={`game-screen self-card-${selfCardSide}`}>
-      <div className="game-bg" style={{ backgroundImage: `url(${effectiveBackground(bgImage, bgScope, 'game') ?? defaultBg})` }} />
+      {bgKind === 'video' && bgVideoUrl && (bgScope === 'all' || bgScope === 'game') ? (
+        <video className="game-bg game-bg-video" src={bgVideoUrl} autoPlay loop muted playsInline />
+      ) : (
+        <div className="game-bg" style={{ backgroundImage: `url(${effectiveBackground(bgImage, bgScope, 'game') ?? defaultBg})` }} />
+      )}
       <div className="game-bg-shade" style={{ opacity: bgDim / 100 }} />
       <TopBar logOpen={logOpen} onToggleLog={() => setLogOpen((v) => !v)} onExit={exit} />
       <div className="table-area">
@@ -164,7 +170,7 @@ export function GameScreen() {
               );
             })}
           </div>
-          <div className="seat-position" style={{ left: '50%', top: '55%' }}>
+          <div className="seat-position" style={{ left: '50%', top: '60%' }}>
             <TableCenter />
           </div>
           <TablePiles />

@@ -7,6 +7,7 @@ import { AboutModal } from './ui/components/AboutModal';
 import { AoePanel } from './ui/components/AoePanel';
 import { ChangelogModal } from './ui/components/ChangelogModal';
 import { ClickSparkles } from './ui/components/ClickSparkles';
+import { PlayFly, TablePulse } from './ui/components/TableFx';
 import { DamageFeedback } from './ui/components/DamageFeedback';
 import { DevNotice } from './ui/components/DevNotice';
 import { StartProtection } from './ui/components/StartProtection';
@@ -22,6 +23,7 @@ import { UpdateModal } from './ui/components/UpdateModal';
 import { loadSavedLanSession, useGameStore } from './ui/store';
 import { backfillProfileFromHistory, loadProfile } from './ui/profile';
 import { GameScreen } from './ui/screens/GameScreen';
+import { GuandanScreen } from './ui/screens/GuandanScreen';
 import { HeroGallery } from './ui/screens/HeroGallery';
 import { IdentityMarkModal } from './ui/components/IdentityMarkModal';
 import { LanScreen } from './ui/screens/LanScreen';
@@ -63,6 +65,24 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('modal-open', modalOpen);
   }, [modalOpen]);
+
+  /* 自定义壁纸：主界面之外的界面统一走 .ink-bg 这一层 */
+  const bgImage = useGameStore((s) => s.bgImage);
+  const bgDim = useGameStore((s) => s.bgDim);
+  const bgScope = useGameStore((s) => s.bgScope);
+  const bgKind = useGameStore((s) => s.bgKind);
+  useEffect(() => {
+    const root = document.documentElement;
+    const otherScreen = screen !== 'menu' && screen !== 'game' && screen !== 'guandan';
+    const usable = bgKind === 'image' && !!bgImage && (bgScope === 'menu' || bgScope === 'all');
+    if (usable && otherScreen) {
+      root.style.setProperty('--wallpaper-image', `url("${bgImage}")`);
+      root.style.setProperty('--wallpaper-dim', String(Math.min(0.9, bgDim / 100)));
+      root.classList.add('has-wallpaper');
+    } else {
+      root.classList.remove('has-wallpaper');
+    }
+  }, [screen, bgImage, bgDim, bgScope, bgKind]);
 
   useEffect(() => installClickSound(), []);
 
@@ -133,6 +153,7 @@ export default function App() {
         ) : (
           <GameScreen />
         ))}
+      {screen === 'guandan' && <GuandanScreen />}
       {screen === 'result' && <ResultScreen />}
       {gameError && (
         <div className="fatal-error">
@@ -166,6 +187,8 @@ export default function App() {
       <ProfileSetupModal />
       <DevNotice />
       <StartProtection />
+      <PlayFly />
+      <TablePulse />
       <ClickSparkles />
     </div>
   );

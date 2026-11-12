@@ -15,6 +15,7 @@ export function LobbyScreen() {
   const lanRole = useGameStore((s) => s.lanRole);
   const netError = useGameStore((s) => s.netError);
   const startLanGame = useGameStore((s) => s.startLanGame);
+  const beginLanGuandan = useGameStore((s) => s.beginLanGuandan);
   const startLanPick = useGameStore((s) => s.startLanPick);
   const cancelLanPick = useGameStore((s) => s.cancelLanPick);
   const setLanRules = useGameStore((s) => s.setLanRules);
@@ -128,7 +129,15 @@ export function LobbyScreen() {
   const rules = lobby.rules ?? DEFAULT_RULES;
   const gameMode = rules.mode ?? 'identity';
   const minPlayers =
-    gameMode === 'duel' ? 2 : gameMode === 'landlord' ? 3 : gameMode === 'guozhan' ? 4 : mode === 'custom' ? 2 : 5;
+    gameMode === 'duel'
+      ? 2
+      : gameMode === 'landlord'
+        ? 3
+        : gameMode === 'guozhan' || gameMode === '2v2'
+          ? 4
+          : mode === 'custom'
+            ? 2
+            : 5;
   const counts =
     gameMode === 'duel'
       ? [2]
@@ -264,6 +273,9 @@ export function LobbyScreen() {
               host={host}
               guozhan={gameMode === 'guozhan'}
               landlord={gameMode === 'landlord'}
+              team={gameMode === '2v2'}
+              turnAnchor={lobby.turnAnchor ?? 0}
+              hasLord={gameMode === 'identity' || gameMode === 'landlord'}
               startCount={pickCount}
               code={lobby.room.code}
               lordPlayerId={lobby.lordPlayerId}
@@ -467,7 +479,34 @@ export function LobbyScreen() {
               </>
             )}
 
-            <div className={`room-config ${host ? '' : 'room-config-readonly'}`}>
+            {lobby?.guandan && (
+              <div className={`room-config ${host ? '' : 'room-config-readonly'}`}>
+                <div className="room-config-head">
+                  <span className="setup-label">对局配置</span>
+                  <em>掼蛋 2v2 · 4 人</em>
+                </div>
+                <div className="room-config-hint">
+                  1、3 号位为甲队，2、4 号位为乙队，对家即队友。两副牌 108 张，打到 A 双下即胜；空位由电脑补足。
+                </div>
+                <div className="start-row">
+                  <span className="start-hint">
+                    在座 {players.length} 人{fillBots ? ' · 空位补电脑' : ''}
+                  </span>
+                  {host ? (
+                    <button type="button" className="btn primary big" onClick={() => beginLanGuandan()}>
+                      开始牌局
+                    </button>
+                  ) : (
+                    <span>等待房主开始牌局…</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div
+              className={`room-config ${host ? '' : 'room-config-readonly'}`}
+              style={lobby?.guandan ? { display: 'none' } : undefined}
+            >
               <div className="room-config-head">
                 <span className="setup-label">对局配置</span>
                 <em>
@@ -496,6 +535,7 @@ export function LobbyScreen() {
                           ['duel', '1v1'],
                           ['landlord', '斗地主'],
                           ['guozhan', '国战'],
+                          ['2v2', '2v2 竞技'],
                           ['custom', '自定义'],
                         ] as const).map(([id, label]) => {
                           const active =
@@ -514,6 +554,20 @@ export function LobbyScreen() {
                                 else if (id === 'identity')
                                   setLanRules('standard', { ...DEFAULT_RULES, military: rules.military, mode: 'identity' });
                                 else setLanRules('custom', { ...rules, mode: id });
+                                // 固定人数的模式顺手把人数拨回去，免得标题写着 8 人实际只有 3 人
+                                const fixedCount =
+                                  id === 'duel'
+                                    ? 2
+                                    : id === 'landlord'
+                                      ? 3
+                                      : id === '2v2'
+                                        ? 4
+                                        : id === 'guozhan'
+                                          ? 4
+                                          : id === 'identity'
+                                            ? 5
+                                            : 0;
+                                if (fixedCount) setLanCount(fixedCount);
                               }}
                             >
                               {label}

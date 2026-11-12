@@ -4,6 +4,7 @@ import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../
 import { cardSuitText, equipSlotText, factionKnown, isRedCard, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
 import { useGameSnapshot } from '../store';
 import { EquipHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
+import { HeroPortrait } from './HeroPortrait';
 
 interface Flash {
   id: number;
@@ -78,6 +79,7 @@ export function HeroPanel({
       }`}
       data-player-id={player.id}
     >
+      <HeroPortrait heroId={player.heroId} hidden={!showFaction} className="hero-panel-art" />
       {speech && <div className="seat-speech hero-speech">{speech.text}</div>}
       {!player.alive && <span className="hero-dead-badge">阵亡</span>}
       {displayFlashes.map((item, index) => (

@@ -19,9 +19,19 @@ interface Props {
   dimmed?: boolean;
   onClick?: () => void;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function CardView({ card, size = 'md', selected, disabled, dimmed, onClick, className }: Props) {
+export function CardView({
+  card,
+  size = 'md',
+  selected,
+  disabled,
+  dimmed,
+  onClick,
+  className,
+  style,
+}: Props) {
   const red = isRedCard(card);
   const art = CARD_ART[card.name];
   return (
@@ -41,6 +51,7 @@ export function CardView({ card, size = 'md', selected, disabled, dimmed, onClic
       ].join(' ')}
       onClick={onClick}
       disabled={disabled}
+      style={style}
       title={`${cardDisplayName(card)} ${SUIT_CHAR[card.suit]}${rankText(card.rank)}${cardEffectText(card) ? `
 ${cardEffectText(card)}` : ''}`}
     >
