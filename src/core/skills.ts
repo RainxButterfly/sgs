@@ -3330,6 +3330,34 @@ const SKILLS: SkillDef[] = [
       },
     ],
   },
+  {
+    id: 'laisheng',
+    name: '残躯',
+    desc: '限定技，每局游戏一次，当你阵亡后，下回合以 1 点体力复活并摸两张牌。',
+    triggers: [
+      {
+        event: 'death',
+        when: (c) => c.owner.id === c.player.id && !c.owner.flags.laishengUsed,
+        effect: async (c) => {
+          c.owner.flags.laishengUsed = 1;
+          c.owner.flags.laishengArmed = 1;
+          c.game.log(`【${c.owner.name}】发动【来生】，将在下回合复活`, 'skill');
+        },
+      },
+    ],
+  },
+  {
+    id: 'hebao',
+    name: '烈火',
+    desc: '锁定技，当你判定闪电时，所有黑桃花色都视为命中；当你被闪电命中时，弃置所有手牌并视为全场所有角色都受到闪电命中。',
+    locked: true,
+  },
+  {
+    id: 'duxing',
+    name: '武仕',
+    desc: '锁定技，没有角色可以获得你的技能或使你的技能失效。',
+    locked: true,
+  },
 ];
 
 function grantRandomSkills(game: Game, owner: PlayerState, count: number): string[] {
@@ -3355,6 +3383,9 @@ function grantRandomSkills(game: Game, owner: PlayerState, count: number): strin
         'ruoyu',
         'jiefan',
         'gongao',
+        'laisheng',
+        'hebao',
+        'duxing',
       ].includes(skill.id),
   ).map((skill) => skill.id);
   const gained: string[] = [];

@@ -4,6 +4,15 @@ import { equipSkillId } from '../../core/equipment';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
 import { cardSuitText, heroSkillGroups, isRedCard, visibleHeroNames, type HeroSkillGroup } from '../labels';
+import { builtinPortrait, portraitFor } from '../portrait';
+import {
+  heroSkinList,
+  heroSkinSelection,
+  removeSkin,
+  selectHeroSkin,
+} from '../skins';
+import { useSkins } from './HeroPortrait';
+import { getHeroVoicePack, setHeroVoicePack, VOICE_PACKS } from '../voicePacks';
 
 interface Props {
   heroId: string;
@@ -37,6 +46,80 @@ function DetailSkill({ id }: { id: string }) {
   );
 }
 
+/** 图鉴里的皮肤选择：第一套「默认」，导入的皮肤可切换/删除 */
+function SkinSection({ heroId }: { heroId: string }) {
+  useSkins();
+  const skins = heroSkinList(heroId);
+  const current = heroSkinSelection(heroId);
+  if (skins.length <= 1 && !skins[0]?.url) return null;
+  return (
+    <>
+      <div className="detail-section-title">皮肤 · 点击切换</div>
+      <div className="detail-skins">
+        {skins.map((skin) => (
+          <div
+            key={skin.id}
+            className={`detail-skin ${skin.id === current ? 'is-on' : ''}`}
+            role="button"
+            tabIndex={0}
+            onClick={() => selectHeroSkin(heroId, skin.id)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') selectHeroSkin(heroId, skin.id);
+            }}
+          >
+            <span
+              className="detail-skin-art"
+              style={{ backgroundImage: `url("${skin.url ?? builtinPortrait(heroId)}")` }}
+            />
+            <span className="detail-skin-name">{skin.name}</span>
+            {!skin.builtin && (
+              <button
+                type="button"
+                className="detail-skin-del"
+                title="删除这套皮肤"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void removeSkin(heroId, skin.id);
+                }}
+              >
+                ×
+              </button>
+            )}
+            {skin.id === current && <span className="detail-skin-on">使用中</span>}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** 武将语音包：当前默认一套，预留多包切换 */
+function VoicePackSection() {
+  const current = getHeroVoicePack();
+  return (
+    <>
+      <div className="detail-section-title">武将语音包</div>
+      <div className="detail-skins">
+        {VOICE_PACKS.map((pack) => (
+          <div
+            key={pack.id}
+            className={`detail-skin ${pack.id === current ? 'is-on' : ''}`}
+            role="button"
+            tabIndex={0}
+            onClick={() => setHeroVoicePack(pack.id)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') setHeroVoicePack(pack.id);
+            }}
+          >
+            <span className="detail-skin-name voice-pack-name">{pack.name}</span>
+            {pack.id === current && <span className="detail-skin-on">使用中</span>}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', showRole, selfView = false, onClose }: Props) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -47,6 +130,7 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
   }, [onClose]);
   const hero = HERO_MAP.get(heroId);
   if (!hero) return null;
+  const skinUrl = portraitFor(hero.id);
   const roleLabel =
     mode === 'duel' || mode === 'guozhan' || !player
       ? ''
@@ -102,7 +186,14 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
         role="dialog"
         aria-modal="true"
         onClick={(event) => event.stopPropagation()}
+        style={{
+          backgroundImage: `linear-gradient(180deg, rgba(44, 36, 26, 0.86), rgba(22, 18, 13, 0.94)), url("${skinUrl}")`,
+          backgroundSize: 'auto, cover',
+          backgroundPosition: 'center, center 20%',
+          backgroundRepeat: 'no-repeat',
+        }}
       >
+        <div key={skinUrl} className="detail-render-sweep" aria-hidden="true" />
         <button type="button" className="detail-close" onClick={onClose} aria-label="收起武将详情">
           ×
         </button>
@@ -137,6 +228,10 @@ export function HeroDetailModal({ heroId, heroIds, player, mode = 'identity', sh
         </div>
 
         {quotes.length > 0 && <div className="detail-quote">{quotes.map((quote) => `「${quote}」`).join(' ')}</div>}
+
+        <SkinSection heroId={hero.id} />
+
+        <VoicePackSection />
 
         {player && (
           <>

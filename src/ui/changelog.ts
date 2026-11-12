@@ -25,6 +25,41 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.13',
+    date: '2026-11-12',
+    title: '武将牌版式、立绘皮肤与掼蛋 2v2',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '对局界面改为武将牌版式：座位以人物立绘铺底，直观展示体力勾玉、手牌数、装备与判定区。',
+          '每位武将默认配备专属立绘，可在图鉴详情里切换皮肤，也可批量导入自己的立绘覆盖默认。',
+          '卡牌改用图片牌面，马的 +1/-1 效果和武器攻击范围都有醒目标记。',
+          '新增武将「强尼银手」：群雄势力，三体力，技能【残躯】【烈火】【武仕】。',
+          '新增掼蛋 2v2 完整玩法：级牌、逢人配、接风、名次升级、打 A、进贡还贡。',
+          '新增 2v2 竞技模式：1、4 号位与 2、3 号位组队，共享选将池、队友手牌互通、队伍胜负结算。',
+        ],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '修复选将时座次显示错误：按主公锚定座次，自己不再恒为 1 号。',
+          '斗地主选将改为所有人锁定武将后统一亮将。',
+          '刘禅【放权】按正确顺序结算：跳过出牌，回合末弃一张牌令其他角色获得额外回合。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '手牌改为平铺直排，不再倾斜。',
+          '出牌时牌面在牌桌中央放大展示，落牌更直观。',
+          '悬停武将直接弹出武将信息，不再整体下滑。',
+          '右下角自己的信息卡完整显示，无需滚动。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.12',
     date: '2026-11-11',
     title: '响应体验、规则核对与界面优化',
@@ -1421,19 +1456,19 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
-const latestRelease = VERSIONS.find((entry) => entry.version === '0.9.12')!;
-const currentRelease = VERSIONS.find((entry) => entry.version === '0.9.11')!;
-const currentDev = VERSIONS.find((entry) => entry.version === '0.9.10')!;
-const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.9')!;
-const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.8')!;
-const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.7')!;
-const minorBase = VERSIONS.find((entry) => entry.version === '0.9.6')!;
-const olderBase = VERSIONS.find((entry) => entry.version === '0.9.5')!;
-const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.4')!;
-const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
-const earliestBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
-const dawnBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
-const firstBase = VERSIONS.find((entry) => entry.version === '0.9.0')!;
+const latestRelease = VERSIONS.find((entry) => entry.version === '0.9.13')!;
+const currentRelease = VERSIONS.find((entry) => entry.version === '0.9.12')!;
+const currentDev = VERSIONS.find((entry) => entry.version === '0.9.11')!;
+const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.10')!;
+const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.9')!;
+const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.8')!;
+const minorBase = VERSIONS.find((entry) => entry.version === '0.9.7')!;
+const olderBase = VERSIONS.find((entry) => entry.version === '0.9.6')!;
+const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.5')!;
+const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.4')!;
+const earliestBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
+const dawnBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
+const firstBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
 const dated = (entries: ChangelogEntry[], date: string): ChangelogEntry[] =>
   entries.map((entry) => ({ ...entry, date }));
 const eight = [
@@ -1485,6 +1520,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   earliestBase,
   dawnBase,
   firstBase,
+  VERSIONS.find((entry) => entry.version === '0.9.0')!,
   group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
   group('0.7.0~0.7.12', '2026-11-09', '联机、观战与规则完善', seven),
   group('0.6.0~0.6.9', '2026-11-08', '移动端、联机与规则完善', six),

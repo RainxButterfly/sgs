@@ -110,7 +110,15 @@ export function PlayerSeat({
       </span>
       {tableNo && <span className="seat-table-no">{tableNo}</span>}
       {roleLabel && <span className={`seat-role-chip role-${player.role}`}>{roleLabel}</span>}
+      {mark && (
+        <span className={`seat-identity-mark role-${mark}`} title={`标记身份：${ROLE_NAME[mark]}`}>
+          {ROLE_NAME[mark].slice(0, 1)}
+        </span>
+      )}
       {current && <span className="seat-turn-tag">行动中</span>}
+      {player.chained && (
+        <span className="seat-chain-line" aria-hidden="true" title="铁索连环：横置" />
+      )}
       {player.isBot && <span className="ai-badge">AI</span>}
       <span className="seat-plate">
         <span className="seat-hero">{heroLabel}</span>
@@ -129,6 +137,8 @@ export function PlayerSeat({
         mode === 'guozhan' && !showFaction ? 'is-dark' : '',
         current ? 'seat-current' : '',
         acting ? 'seat-acting' : '',
+        player.chained ? 'seat-chained' : '',
+        player.flipped ? 'seat-flipped' : '',
         targetable ? 'seat-targetable' : '',
         targeted ? 'seat-targeted' : '',
         selected ? 'seat-selected' : '',

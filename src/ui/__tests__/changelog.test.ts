@@ -11,9 +11,9 @@ function allItems(entries: ChangelogEntry[]): string[] {
 }
 
 describe('更新日志', () => {
-  it('最新版本为 0.9.12 且包含响应体验改动', () => {
-    expect(CHANGELOG[0].version).toBe('0.9.12');
-    expect(allItems([CHANGELOG[0]]).some((item) => item.includes('响应'))).toBe(true);
+  it('最新版本为 0.9.13 且包含武将牌版式改动', () => {
+    expect(CHANGELOG[0].version).toBe('0.9.13');
+    expect(allItems([CHANGELOG[0]]).some((item) => item.includes('武将牌'))).toBe(true);
   });
 
   it('不暴露测试工具/授权码等内部能力，防止滥用', () => {

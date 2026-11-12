@@ -789,7 +789,7 @@ export class Game {
         'judge',
       );
     }
-    const success = this.judgeResult(card, reason);
+    const success = this.judgeResult(card, reason, player);
     this.emit({
       type: 'judge',
       playerId: player.id,
@@ -809,8 +809,12 @@ export class Game {
     return card;
   }
 
-  private judgeResult(card: Card, reason: string): boolean {
-    if (reason.includes('闪电')) return card.suit === 'spade' && card.rank >= 2 && card.rank <= 9;
+  private judgeResult(card: Card, reason: string, player?: PlayerState): boolean {
+    if (reason.includes('闪电')) {
+      // 核爆：判定闪电时，所有黑桃花色都视为命中
+      if (player && this.hasSkill(player, 'hebao')) return card.suit === 'spade';
+      return card.suit === 'spade' && card.rank >= 2 && card.rank <= 9;
+    }
     if (reason.includes('乐不思蜀')) return card.suit !== 'heart';
     if (reason.includes('兵粮寸断')) return card.suit !== 'club';
     if (reason.includes('刚烈')) return card.suit === 'heart';
@@ -856,7 +860,7 @@ ${skill.desc}` : ''}`
             if (!ok) continue;
           }
           if (trig.oncePerTurn) owner.usedThisTurn[skill.id] = 1;
-          this.emit({ type: 'skill', playerId: owner.id, name: skill.name });
+          this.emit({ type: 'skill', playerId: owner.id, name: skill.name, skillId: skill.id });
           this.log(`【${owner.name}】发动【${skill.name}】`, 'skill');
           await trig.effect(ctx);
           if (this.state.over) return;
@@ -1530,7 +1534,7 @@ ${skill.desc}` : ''}`
     if (skill.active.oncePerTurn) {
       player.usedThisTurn[skillId] = (player.usedThisTurn[skillId] ?? 0) + 1;
     }
-    this.emit({ type: 'skill', playerId: player.id, name: skill.name });
+    this.emit({ type: 'skill', playerId: player.id, name: skill.name, skillId: skill.id });
     this.log(`【${player.name}】发动【${skill.name}】`, 'skill');
   }
 
@@ -2087,6 +2091,7 @@ ${skill.desc}` : ''}`
       if (idx >= 0) revealed.splice(idx, 1);
       picks.push({ playerId: p.id, card: got });
       await this.gainCard(p, got, undefined, true);
+      this.log(`【${p.name}】从五谷丰登获得 ${cardLabel(got)}`);
       this.emit({ type: 'harvest', cards: allCards, picks: picks.slice() });
     }
     for (const c of revealed) this.toDiscard(c);
@@ -2330,7 +2335,7 @@ ${skill.desc}` : ''}`
         );
         if (!picked.length) return null;
         const card = picked[0];
-        this.emit({ type: 'skill', playerId: player.id, name: '蛊惑', text: `声明为【${name}】` });
+        this.emit({ type: 'skill', playerId: player.id, name: '蛊惑', text: `声明为【${name}】`, skillId: 'guhuo' });
         this.log(`【${player.name}】发动蛊惑，声明为【${name}】`, 'skill');
         const questioners: PlayerState[] = [];
         for (const other of this.players) {
@@ -2640,7 +2645,7 @@ ${skill.desc}` : ''}`
   ): Promise<boolean> {
     if (this.wuxieWindowPending || forceWindow) {
       this.wuxieWindowPending = false;
-      const ms = 6000;
+      const ms = 3000;
       this.emit({ type: 'wuxieWindow', ms, until: Date.now() + ms });
       await this.io.delay(ms);
     }
@@ -2654,7 +2659,7 @@ ${skill.desc}` : ''}`
           prompt: `${desc}，是否使用无懈可击？`,
           canCancel: true,
           targetId: target.id,
-          timeout: 12000,
+          timeout: p.isBot ? 3000 : 5000,
         });
         if (resp) {
           nullified = !nullified;
@@ -3125,9 +3130,20 @@ ${skill.desc}` : ''}`
           continue;
         }
         const judged = await this.judge(player, '闪电');
-        if (judged.suit === 'spade' && judged.rank >= 2 && judged.rank <= 9) {
+        if (this.judgeResult(judged, '闪电', player)) {
           this.log(`【${player.name}】被闪电击中！`, 'judge');
-          await this.damage(null, player, 3, card, '闪电', 'thunder');
+          if (this.hasSkill(player, 'hebao')) {
+            this.log(`【${player.name}】发动【烈火】，弃置所有手牌并令全场受到闪电命中`, 'skill');
+            const hand = [...player.hand];
+            if (hand.length) await this.discardCards(player, hand, '烈火');
+            const targets = this.players.filter((p) => p.alive);
+            for (const t of targets) {
+              if (this.state.over) break;
+              await this.damage(null, t, 3, card, '闪电', 'thunder');
+            }
+          } else {
+            await this.damage(null, player, 3, card, '闪电', 'thunder');
+          }
           this.toDiscard(card);
         } else {
           let target = this.nextAlive(player);
@@ -3213,7 +3229,18 @@ ${skill.desc}` : ''}`
   }
 
   private resetTurnFlags(player: PlayerState): void {
-    const persistent = new Set(['niepan', 'luanwu', 'zaoxian', 'ruoyu', 'hunzi', 'huashen', 'zhiji', 'gongku']);
+    const persistent = new Set([
+      'niepan',
+      'luanwu',
+      'zaoxian',
+      'ruoyu',
+      'hunzi',
+      'huashen',
+      'zhiji',
+      'gongku',
+      'laishengUsed',
+      'laishengArmed',
+    ]);
     for (const key of Object.keys(player.flags)) {
       if (!persistent.has(key)) delete player.flags[key];
     }
@@ -3304,7 +3331,7 @@ ${skill.desc}` : ''}`
     const dir = this.state.direction;
     for (let i = 1; i <= n; i += 1) {
       const idx = (this.state.current + i * dir + n * 1000) % n;
-      if (this.players[idx].alive) {
+      if (this.players[idx].alive || this.players[idx].flags.laishengArmed) {
         this.state.current = idx;
         return;
       }
@@ -3318,8 +3345,19 @@ ${skill.desc}` : ''}`
       while (!this.state.over && !this.stopped) {
         const player = this.currentPlayer;
         if (!player?.alive) {
-          this.advance();
-          continue;
+          if (player?.flags.laishengArmed) {
+            player.flags.laishengArmed = 0;
+            player.alive = true;
+            player.hp = 1;
+            player.flipped = false;
+            player.chained = false;
+            this.emit({ type: 'revive', playerId: player.id, hp: 1 });
+            this.log(`【${player.name}】残躯生效，复活并摸两张牌`, 'skill');
+            this.drawCards(player, 2, '残躯');
+          } else {
+            this.advance();
+            continue;
+          }
         }
         if (player.flipped) {
           player.flipped = false;

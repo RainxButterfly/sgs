@@ -888,6 +888,15 @@ export const HEROES: HeroData[] = [
     skillIds: ['yaowu'],
     quote: '关西华雄，谁敢一战！',
   },
+  {
+    id: 'qiangniyinshou',
+    name: '强尼银手',
+    faction: 'qun',
+    gender: 'male',
+    hp: 3,
+    title: '摇滚小子',
+    skillIds: ['laisheng', 'hebao', 'duxing'],
+  },
 ];
 
 export const PLAYABLE_HEROES = [...HEROES];

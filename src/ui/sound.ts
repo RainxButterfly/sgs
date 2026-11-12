@@ -246,6 +246,37 @@ export function playSound(name: SoundName): void {
   }
 }
 
+/** 震动反馈（手机端有效）：受设置开关控制 */
+export function vibrate(pattern: number | number[] = 30): void {
+  try {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(pattern);
+    }
+  } catch {
+    // 桌面端或不支持时静默忽略
+  }
+}
+
+const VIBRATION_KEY = 'sgs-vibration-enabled';
+
+export function getVibrationEnabled(): boolean {
+  try {
+    const raw = localStorage.getItem(VIBRATION_KEY);
+    if (raw === null) return true;
+    return raw !== '0';
+  } catch {
+    return true;
+  }
+}
+
+export function setVibrationEnabled(value: boolean): void {
+  try {
+    localStorage.setItem(VIBRATION_KEY, value ? '1' : '0');
+  } catch {
+    // ignore
+  }
+}
+
 export function installClickSound(): () => void {
   if (typeof document === 'undefined') return () => undefined;
   const onPointerDown = (event: PointerEvent) => {

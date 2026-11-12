@@ -19,7 +19,9 @@ import {
 } from './update';
 import { loadBackgroundSettings, saveBackgroundSettings, loadBackgroundVideo, clearBackgroundVideo, type BackgroundScope } from './background';
 import type { GdView } from '../core/guandan-view';
-import { applySoundSettings, getSoundSettings, playSound } from './sound';
+import { applySoundSettings, getSoundSettings, getVibrationEnabled, playSound, setVibrationEnabled, vibrate } from './sound';
+import { playCardVoice, playDieVoice, playSkillVoice } from './voice';
+import { cardVoicePinyin } from './cardArt';
 import { applyMatchXp, loadProfile, normalizePlayerName, saveProfile, type PlayerProfile, type XpGain } from './profile';
 import { scheduleDataSnapshot } from './dataStorage';
 import { addMatchRecord, localDateKey } from './history';
@@ -425,6 +427,7 @@ interface GameStore {
   aiSpeed: number;
   soundEnabled: boolean;
   soundVolume: number;
+  vibrationEnabled: boolean;
   myRole: Role | null;
   firstPlayerId: number | null;
   profile: PlayerProfile;
@@ -489,6 +492,7 @@ interface GameStore {
   setAiSpeed: (value: number) => void;
   setSoundEnabled: (value: boolean) => void;
   setSoundVolume: (value: number) => void;
+  setVibrationEnabled: (value: boolean) => void;
   setBgImage: (image: string | null) => void;
   setBgVideo: () => void;
   setBgDim: (dim: number) => void;
@@ -670,6 +674,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   aiSpeed: loadAiSpeed(),
   soundEnabled: getSoundSettings().enabled,
   soundVolume: getSoundSettings().volume,
+  vibrationEnabled: getVibrationEnabled(),
   myRole: null,
   firstPlayerId: null,
   profile: loadProfile(),
@@ -1036,6 +1041,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
       flash: null,
       flashes: [],
       damageNotice: null,
+      revealNotice: null,
+      responseWindow: null,
+      wuxieWindow: false,
+      wuxieDeadline: null,
+      lastSkill: null,
+      spectateAsk: null,
+      selected: null,
+      selectedTargets: [],
+      asChooser: null,
+      cardChoices: [],
+      reorderTop: [],
+      promptDeadline: null,
+      skipWuxie: false,
+      modalMinimized: false,
     });
     set({ suspended: false });
   },
@@ -1668,6 +1687,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     applySoundSettings({ ...getSoundSettings(), volume });
     set({ soundVolume: volume });
   },
+  setVibrationEnabled: (value) => {
+    setVibrationEnabled(value);
+    set({ vibrationEnabled: value });
+  },
   setBgImage: (image) => {
     set({ bgImage: image, bgKind: 'image', bgVideoUrl: null });
     void clearBackgroundVideo();
@@ -1779,6 +1802,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       asChooser: null,
       cardChoices: [],
       reorderTop: [],
+      harvest: null,
+      aoe: null,
+      lastPlay: null,
+      lastJudge: null,
+      lastDiscard: null,
+      flash: null,
+      flashes: [],
+      damageNotice: null,
     });
   },
 
@@ -1871,9 +1902,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
       lastDiscard: null,
       cardHistory: [],
       discardOrigins: {},
+      harvest: null,
+      aoe: null,
       flash: null,
       flashes: [],
       damageNotice: null,
+      revealNotice: null,
+      responseWindow: null,
+      wuxieWindow: false,
+      wuxieDeadline: null,
+      lastSkill: null,
+      spectateAsk: null,
+      selected: null,
+      selectedTargets: [],
+      asChooser: null,
+      cardChoices: [],
+      reorderTop: [],
+      promptDeadline: null,
+      skipWuxie: false,
+      modalMinimized: false,
     });
   },
 
@@ -1891,6 +1938,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     else if (ev.type === 'skill') playSound('skill');
     else if (ev.type === 'turn' && ev.playerId === state.humanId) playSound('turn');
     else if (ev.type === 'dying') playSound('dying');
+    else if (ev.type === 'revive') playSound('heal');
+    if (getVibrationEnabled()) {
+      if (ev.type === 'damage' && ev.targetId === state.humanId) vibrate([40, 30, 40]);
+      else if (ev.type === 'dying' && ev.playerId === state.humanId) vibrate(200);
+    }
+    // 默认语音包：技能语音 / 卡牌语音 / 阵亡语音
+    if (ev.type === 'skill') {
+      playSkillVoice(ev.skillId);
+    } else if (ev.type === 'playCard' || ev.type === 'respond') {
+      const actor = state.game?.state.players[ev.playerId];
+      playCardVoice(cardVoicePinyin(ev.card.name) ?? undefined, actor?.gender === 'female' ? 'female' : 'male');
+    } else if (ev.type === 'death') {
+      const actor = state.game?.state.players[ev.playerId];
+      playDieVoice(actor?.heroId);
+    }
     if (ev.type === 'harvest') {
       patch.harvest = {
         cards: ev.cards,

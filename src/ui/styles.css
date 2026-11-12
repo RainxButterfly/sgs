@@ -121,6 +121,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  white-space: nowrap;
   border: 1px solid var(--line);
   background: rgba(20, 17, 13, 0.6);
   color: var(--ink);
@@ -2167,8 +2168,8 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   display: flex;
   align-items: flex-end;
   gap: 7px;
-  min-height: 134px;
-  padding: 10px 2px 0;
+  min-height: 150px;
+  padding: 10px 2px 4px;
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -3777,6 +3778,40 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   background: rgba(219, 181, 108, 0.14);
 }
 
+/* 皮肤切换时的「渲染」扫描动画 */
+.detail-render-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 240, 210, 0.16) 38%,
+    rgba(255, 250, 235, 0.5) 50%,
+    rgba(255, 240, 210, 0.16) 62%,
+    transparent 100%
+  );
+  background-size: 260% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  animation: renderSweep 0.72s ease forwards;
+}
+
+@keyframes renderSweep {
+  0% {
+    background-position: 130% 0;
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    background-position: -130% 0;
+    opacity: 0;
+  }
+}
+
 .hero-detail-head {
   display: flex;
   gap: 16px;
@@ -4071,8 +4106,96 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   color: var(--gold);
 }
 
-.detail-skills {
-  display: grid;
+/* 图鉴皮肤选择 */
+.detail-skins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 10px;
+}
+
+.detail-skin {
+  position: relative;
+  width: 72px;
+  padding: 0 0 20px;
+  border: 1px solid rgba(219, 181, 108, 0.3);
+  border-radius: 7px;
+  background: rgba(24, 19, 14, 0.55);
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.detail-skin:hover {
+  border-color: rgba(238, 212, 154, 0.75);
+  transform: translateY(-2px);
+}
+
+.detail-skin.is-on {
+  border-color: #eed69a;
+  box-shadow: 0 0 0 2px rgba(238, 212, 154, 0.45), 0 8px 18px rgba(0, 0, 0, 0.45);
+}
+
+.detail-skin-art {
+  display: block;
+  width: 100%;
+  height: 92px;
+  background-size: cover;
+  background-position: center 18%;
+  background-repeat: no-repeat;
+}
+
+.detail-skin-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: rgba(233, 205, 152, 0.9);
+  background: rgba(16, 12, 8, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.detail-skin-del {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: rgba(20, 12, 8, 0.8);
+  color: #ffb2a0;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.detail-skin-del:hover {
+  background: rgba(120, 30, 20, 0.9);
+  color: #fff;
+}
+
+.detail-skin-on {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(180, 132, 40, 0.92);
+  color: #fff6dd;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.detail-skills {  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
@@ -4567,6 +4690,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
 .settings-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 14px;
@@ -4865,7 +4989,32 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   background: rgba(255, 255, 255, 0.05);
   color: var(--ink);
   cursor: pointer;
+  overflow: hidden;
   transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.lobby-hero-card .lobby-hero-portrait {
+  position: absolute;
+  inset: 0;
+  background-position: center 18%;
+  opacity: 0.66;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.55) 58%, transparent 96%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.55) 58%, transparent 96%);
+}
+
+.lobby-hero-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(10, 8, 6, 0.1), rgba(10, 7, 5, 0.66));
+  pointer-events: none;
+}
+
+.lobby-hero-card > *:not(.lobby-hero-portrait) {
+  position: relative;
+  z-index: 1;
 }
 
 .lobby-hero-card:hover:not(:disabled) {
@@ -8296,6 +8445,37 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
 .harvest-done {
   color: var(--gold-bright);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.harvest-progress {
+  display: inline-block;
+  width: 90px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.harvest-progress i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--gold-bright), #ffd98a);
+  transform-origin: left;
+  animation: harvest-drain 2s linear forwards;
+}
+
+@keyframes harvest-drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 
 .harvest-picks {
@@ -11168,6 +11348,38 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   .card-gallery-item {
     padding: 8px;
   }
+}
+
+/* 卡牌详情（牌谱内点击牌面打开） */
+.card-detail {
+  background: linear-gradient(180deg, rgba(64, 53, 39, 0.985), rgba(38, 31, 23, 0.99));
+}
+
+.card-detail .card-detail-kicker {
+  margin-top: 8px;
+}
+
+.card-detail-hero {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  margin-top: 6px;
+}
+
+.card-detail-hero .card {
+  flex: 0 0 auto;
+}
+
+.card-detail-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.card-detail-effect {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(230, 220, 200, 0.85);
 }
 
 /* 大厅观战席与房主移出 */
@@ -16476,6 +16688,8 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 .rail-feed {
   flex: 1;
   min-height: 0;
+  max-height: 340px;
+  overflow: hidden;
 }
 
 .rail-feed-list {
@@ -16555,7 +16769,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
     min-width: 0;
     grid-column: 2;
     grid-row: 1;
-    max-height: 186px;
+    max-height: 308px;
     overflow: hidden;
   }
 
@@ -16604,7 +16818,11 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 
   .own-area > .hero-panel {
-    max-height: 158px;
+    max-height: 244px;
+  }
+
+  .own-area > .hero-panel .equip-slot {
+    min-height: 26px;
   }
 
   .hand-cards {
@@ -19162,11 +19380,13 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-/* 杀/闪/桃卡面：使用图片素材，只保留左上角花色与点数 */
+/* 图片卡面：方形牌、插画铺满整张、竖排牌名左上、花色点数右上、距离右下（与参考仓库一致） */
 .card-art {
   padding: 0;
   border-color: #c7a76a;
   background: #171018;
+  width: 88px;
+  height: 88px;
 }
 
 .card-art .card-art-img {
@@ -19176,23 +19396,64 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  filter: brightness(1.12) contrast(1.03);
 }
 
-.card-art .card-body,
 .card-art .card-corner-br {
   display: none;
 }
 
-.card-art .card-corner-tl {
-  z-index: 2;
+/* 竖排牌名：左上 */
+.card-art .card-body {
+  position: absolute;
   left: 5px;
   top: 5px;
-  padding: 1px 5px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  right: auto;
+  bottom: auto;
+  z-index: 2;
+  display: block;
+  padding: 0;
+  background: none;
+  text-align: center;
+}
+
+.card-art .card-body .card-name {
+  writing-mode: vertical-rl;
+  -webkit-writing-mode: vertical-rl;
+  white-space: nowrap;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 0 5px rgba(0, 0, 0, 0.7);
+  letter-spacing: 3px;
+  max-width: none;
+}
+
+/* 花色点数：右上 */
+.card-art .card-corner-tl {
+  z-index: 2;
+  left: auto;
+  right: 5px;
+  top: 5px;
+  padding: 1px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 5px;
-  background: rgba(12, 9, 7, 0.68);
+  background: rgba(12, 9, 7, 0.62);
   color: #fff !important;
   font-size: 12px;
+}
+
+/* 距离/范围标记：右下 */
+.card-art .card-range-tag {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  z-index: 3;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffd98a;
+  text-shadow: 0 0 3px #000, 0 1px 2px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.03em;
+  pointer-events: none;
 }
 
 .card-art::before {
@@ -19205,16 +19466,59 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   display: none;
 }
 
+/* 尺寸档位 */
+.card-sm.card-art {
+  width: 60px;
+  height: 60px;
+}
+
 .card-sm.card-art .card-corner-tl {
-  left: 4px;
+  right: 4px;
   top: 4px;
-  padding: 0 4px;
+  padding: 0 3px;
   font-size: 9.5px;
 }
 
+.card-sm.card-art .card-body {
+  left: 4px;
+  top: 4px;
+}
+
+.card-sm.card-art .card-body .card-name {
+  font-size: 13px;
+  letter-spacing: 2px;
+}
+
+.card-sm.card-art .card-range-tag {
+  right: 4px;
+  bottom: 3px;
+  font-size: 9px;
+}
+
+.card-lg.card-art {
+  width: 132px;
+  height: 132px;
+}
+
 .card-lg.card-art .card-corner-tl {
+  right: 7px;
+  top: 7px;
+  font-size: 15px;
+}
+
+.card-lg.card-art .card-body {
   left: 7px;
   top: 7px;
+}
+
+.card-lg.card-art .card-body .card-name {
+  font-size: 24px;
+  letter-spacing: 5px;
+}
+
+.card-lg.card-art .card-range-tag {
+  right: 8px;
+  bottom: 6px;
   font-size: 15px;
 }
 
@@ -20929,63 +21233,100 @@ video.game-bg.game-bg-video {
 }
 
 /* ---------- 对局动效层 ---------- */
-.play-fly {
+/* 出牌动画：牌从座位飞向桌心，放大停留后淡出 */
+.play-stage {
   position: fixed;
   z-index: 42;
-  width: 62px;
-  height: 88px;
-  margin: -44px 0 0 -31px;
-  border-radius: 8px;
-  background: linear-gradient(165deg, #fdfaf0, #e6dcc4);
-  border: 1px solid rgba(0, 0, 0, 0.32);
-  color: #23201a;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.52);
+  width: 126px;
+  height: 176px;
+  margin: -88px 0 0 -63px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: playStage 1.56s cubic-bezier(0.22, 0.85, 0.3, 1) forwards;
+}
+
+.play-stage::before {
+  content: '';
+  position: absolute;
+  inset: -14px;
+  border-radius: 16px;
+  background: radial-gradient(closest-side, rgba(240, 214, 150, 0.34), rgba(240, 214, 150, 0.08) 62%, transparent 74%);
+  opacity: 0;
+  animation: playStageHalo 1.56s ease-out forwards;
+}
+
+.play-stage .play-stage-card {
+  transform: rotate(var(--fx-rot, 0deg));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6), 0 0 22px rgba(238, 212, 154, 0.28);
+}
+
+.play-stage .play-fly-text {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  pointer-events: none;
-  animation: playFly 0.74s cubic-bezier(0.25, 0.8, 0.3, 1) forwards;
+  gap: 3px;
+  width: 108px;
+  height: 152px;
+  border-radius: 10px;
+  background: linear-gradient(165deg, #fdfaf0, #e6dcc4);
+  border: 1px solid rgba(0, 0, 0, 0.32);
+  color: #23201a;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.52);
+  transform: rotate(var(--fx-rot, 0deg));
 }
 
-.play-fly.is-red {
+.play-stage.is-red .play-fly-text {
   color: #b8322a;
 }
 
 .play-fly-suit {
-  font-size: 18px;
+  font-size: 22px;
   line-height: 1;
 }
 
 .play-fly-rank {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1;
 }
 
 .play-fly-name {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   opacity: 0.72;
 }
 
-@keyframes playFly {
+@keyframes playStage {
   0% {
-    transform: translate3d(0, 0, 0) scale(0.68) rotate(-7deg);
-    opacity: 0;
+    transform: translate3d(var(--fx-dx), var(--fx-dy), 0) scale(0.32);
+    opacity: 0.15;
   }
   18% {
-    transform: translate3d(0, -6px, 0) scale(1.08) rotate(0deg);
+    transform: translate3d(0, 0, 0) scale(1.08);
     opacity: 1;
   }
-  62% {
+  30% {
+    transform: translate3d(0, 0, 0) scale(1);
     opacity: 1;
+  }
+  52% {
+    transform: translate3d(0, -4px, 0) scale(0.96);
+    opacity: 0.72;
   }
   100% {
-    transform: translate3d(var(--fx-dx), var(--fx-dy), 0) scale(0.4) rotate(5deg);
+    transform: translate3d(0, -12px, 0) scale(0.86);
     opacity: 0;
   }
+}
+
+@keyframes playStageHalo {
+  0%, 10% { opacity: 0; transform: scale(0.7); }
+  24% { opacity: 1; }
+  80% { opacity: 0.85; }
+  100% { opacity: 0; transform: scale(1.18); }
 }
 
 html.fx-hit .app-root {
@@ -21050,42 +21391,7 @@ html.fx-hit .app-root::after {
   100% { transform: perspective(600px) rotateY(0) scale(1); opacity: 1; }
 }
 
-/* 牌堆/弃牌区落地涟漪 */
-.play-fly::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  border-radius: 12px;
-  border: 1px solid rgba(217, 180, 108, 0.6);
-  opacity: 0;
-  animation: flyRipple 0.5s ease-out 0.42s forwards;
-}
-
-@keyframes flyRipple {
-  0% { opacity: 0.7; transform: scale(0.6); }
-  100% { opacity: 0; transform: scale(1.6); }
-}
-
-/* 牌落到桌心的涟漪 */
-.play-land {
-  position: fixed;
-  z-index: 41;
-  width: 86px;
-  height: 86px;
-  margin: -43px 0 0 -43px;
-  border-radius: 50%;
-  border: 2px solid rgba(226, 192, 126, 0.85);
-  box-shadow: 0 0 26px rgba(226, 192, 126, 0.5), inset 0 0 22px rgba(226, 192, 126, 0.28);
-  pointer-events: none;
-  opacity: 0;
-  animation: playLand 0.62s ease-out 0.4s forwards;
-}
-.play-land.is-red { border-color: rgba(226, 128, 104, 0.85); box-shadow: 0 0 26px rgba(226, 110, 90, 0.5); }
-@keyframes playLand {
-  0% { opacity: 0; transform: scale(0.35); }
-  22% { opacity: 0.9; transform: scale(0.75); }
-  100% { opacity: 0; transform: scale(1.7); }
-}
+/* 牌堆/弃牌区落地涟漪：由 .play-stage 的光晕代替 */
 
 /* 技能发动时座位牌面的一圈光爆 */
 html body .seat.seat-card-v2 > .seat-skill-ring {
@@ -21104,34 +21410,23 @@ html body .seat.seat-card-v2 > .seat-skill-ring {
   100% { opacity: 0; filter: brightness(1); }
 }
 
-/* ---------- 手牌弧形 ---------- */
+/* ---------- 手牌直排 ---------- */
 .hand-cards {
   padding-top: 16px;
 }
 
 .hand-cards > .hand-card {
-  transform: rotate(var(--fan-rot, 0deg)) translateY(var(--fan-lift, 0px));
+  transform: none;
   transform-origin: bottom center;
   transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease;
 }
 
 .hand-cards > .hand-card:hover:not(:disabled) {
-  transform: rotate(var(--fan-rot, 0deg)) translateY(calc(var(--fan-lift, 0px) - 12px));
+  transform: translateY(-12px);
 }
 
 .hand-cards > .hand-card.card-selected {
-  transform: rotate(var(--fan-rot, 0deg)) translateY(calc(var(--fan-lift, 0px) - 20px));
-}
-
-@media (max-width: 900px) {
-  .hand-cards > .hand-card,
-  .hand-cards > .hand-card:hover:not(:disabled),
-  .hand-cards > .hand-card.card-selected {
-    transform: none;
-  }
-  .hand-cards > .hand-card.card-selected {
-    transform: translateY(-10px);
-  }
+  transform: translateY(-20px);
 }
 
 /* ================= 对局武将牌（座位卡片） =================
@@ -21264,6 +21559,28 @@ html body .seat.seat-card-v2 .seat-role-chip {
   white-space: nowrap;
 }
 
+/* 玩家标记的身份（忠/反/内）常显在武将卡上 */
+html body .seat.seat-card-v2 .seat-identity-mark {
+  position: absolute;
+  top: 30px;
+  right: 5px;
+  z-index: 5;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  background: rgba(8, 6, 4, 0.84);
+  border: 1px solid currentColor;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+html body .seat.seat-card-v2 .seat-identity-mark.role-lord { color: #f0c877; }
+html body .seat.seat-card-v2 .seat-identity-mark.role-loyalist { color: #a9e6b9; }
+html body .seat.seat-card-v2 .seat-identity-mark.role-rebel { color: #f0ada1; }
+html body .seat.seat-card-v2 .seat-identity-mark.role-traitor { color: #d8cff3; }
+
 html body .seat.seat-card-v2 .ai-badge {
   position: absolute;
   top: 30px;
@@ -21279,7 +21596,8 @@ html body .seat.seat-card-v2 .ai-badge {
 
 html body .seat.seat-card-v2 .seat-turn-tag {
   position: absolute;
-  top: 5px;
+  top: auto;
+  bottom: 46px;
   left: 50%;
   right: auto;
   transform: translateX(-50%);
@@ -21292,6 +21610,39 @@ html body .seat.seat-card-v2 .seat-turn-tag {
   letter-spacing: 0.08em;
   box-shadow: 0 0 16px rgba(255, 205, 100, 0.75);
   animation: turnTagBreathe 1.7s ease-in-out infinite;
+}
+
+/* 铁索连环（横置）：立绘横过来 + 斜向锁链 */
+html body .seat.seat-card-v2.seat-chained .seat-art-img {
+  transform: rotate(-90deg) scale(1.42);
+}
+html body .seat.seat-card-v2.seat-chained .seat-art-shade {
+  background:
+    linear-gradient(180deg, rgba(8, 6, 4, 0.42) 0%, transparent 26%, transparent 46%, rgba(8, 6, 4, 0.5) 74%, rgba(8, 6, 4, 0.94) 100%),
+    linear-gradient(90deg, rgba(8, 6, 4, 0.28), transparent 42%);
+}
+html body .seat.seat-card-v2 .seat-chain-line {
+  position: absolute;
+  inset: -4px;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(214, 146, 64, 0.85) 0 3px,
+      rgba(52, 34, 18, 0.92) 3px 8px,
+      rgba(224, 162, 78, 0.85) 8px 11px,
+      transparent 11px 22px
+    );
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  border-radius: 10px;
+}
+
+/* 翻面：立绘倒过来 + 灰化 */
+html body .seat.seat-card-v2.seat-flipped .seat-art-img {
+  transform: rotate(180deg) scale(1.03);
+  filter: grayscale(0.4) brightness(0.8);
 }
 
 @keyframes turnTagBreathe {
@@ -21437,33 +21788,19 @@ html body .seat.seat-card-v2 .seat-empty { font-size: 8.5px; color: rgba(205, 18
 html body .seat.seat-card-v2 .seat-mate-hand { margin-top: 2px; gap: 2px; }
 html body .seat.seat-card-v2 .seat-mate-hand span { font-size: 8px; padding: 0 3px; }
 
-/* 悬停展开完整信息（不占常驻空间） */
+/* 悬停不再下滑展开：完整武将信息由立绘区的悬浮卡直接显示（HeroHover） */
 html body .seat.seat-card-v2:hover { overflow: visible; }
-html body .seat.seat-card-v2:hover .seat-detail {
+
+/* 悬停工具栏与卡牌之间的桥接区：防止鼠标移向工具栏时悬停中断 */
+html body .seat.seat-card-v2::before {
+  content: "";
   position: absolute;
-  top: var(--seat-art-h);
-  left: -1px;
-  right: -1px;
-  z-index: 40;
-  height: auto;
-  min-height: 40px;
-  max-height: 190px;
-  overflow-y: auto;
-  padding: 7px 7px 8px;
-  border: 1px solid color-mix(in srgb, var(--faction) 60%, transparent);
-  border-top: 0;
-  border-radius: 0 0 9px 9px;
-  background: rgba(20, 16, 11, 0.98);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.7);
-}
-html body .seat.seat-card-v2:hover .seat-equips,
-html body .seat.seat-card-v2:hover .seat-judge,
-html body .seat.seat-card-v2:hover .seat-status-row,
-html body .seat.seat-card-v2:hover .seat-skills,
-html body .seat.seat-card-v2:hover .seat-mate-hand {
-  flex-wrap: wrap;
-  max-height: none;
-  overflow: visible;
+  top: -32px;
+  left: 0;
+  right: 0;
+  height: 32px;
+  z-index: 45;
+  pointer-events: auto;
 }
 
 /* ---------- 状态与操作 ---------- */
@@ -21490,9 +21827,6 @@ html body .seat.seat-card-v2:hover .seat-actions {
   opacity: 1;
   pointer-events: auto;
   transform: translateX(50%) translateY(-2px);
-}
-html body .seat.seat-card-v2:hover .seat-detail {
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.7), 0 0 0 1px color-mix(in srgb, var(--faction) 30%, transparent);
 }
 
 html body .seat.seat-card-v2 .seat-prop-row,

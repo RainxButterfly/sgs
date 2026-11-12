@@ -281,7 +281,7 @@ export function PromptBar() {
             </button>
           )}
           <button type="button" className="btn ghost" onClick={() => useGameStore.getState().cancelPrompt()}>
-            {isWuxie ? '本轮不用' : '取消'}
+            {isWuxie ? '本轮不用' : '不出'}
           </button>
           <button
             type="button"

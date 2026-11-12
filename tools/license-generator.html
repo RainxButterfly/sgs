@@ -302,7 +302,7 @@
     </div>
     <div class="top-right">
       <span class="chip local"><span class="dot"></span>本地专用 · 请勿打包发布</span>
-      <span class="chip ver"><span class="dot"></span><span id="verChip">工具 v1 · 游戏 v0.9.12</span></span>
+      <span class="chip ver"><span class="dot"></span><span id="verChip">工具 v1 · 游戏 v0.9.13</span></span>
       <div class="tabs" role="tablist">
         <button class="tab on" data-mode="forge" role="tab">铸造授权码</button>
         <button class="tab" data-mode="verify" role="tab">校验授权码</button>
@@ -319,7 +319,7 @@
           <h3 class="group-title"><span class="idx">1</span>批次与人数</h3>
           <div class="field">
             <label for="batch">用途批次 <span class="val" id="batchVal">—</span></label>
-            <input type="text" id="batch" placeholder="如：武器专项 / 0.9.12 内测" autocomplete="off" spellcheck="false" />
+            <input type="text" id="batch" placeholder="如：武器专项 / 0.9.13 内测" autocomplete="off" spellcheck="false" />
             <div class="hint" id="batchHint">批次名不能含「.」，会写进授权码明文。</div>
           </div>
           <div class="field">
@@ -390,8 +390,8 @@
           <div class="field">
             <label>游戏版本区间</label>
             <div class="two-col">
-              <input type="text" id="gameMin" value="0.9.12" spellcheck="false" />
-              <input type="text" id="gameMax" value="0.9.12" spellcheck="false" />
+              <input type="text" id="gameMin" value="0.9.13" spellcheck="false" />
+              <input type="text" id="gameMax" value="0.9.13" spellcheck="false" />
             </div>
             <div class="hint" id="gameHint">格式 x.y.z；默认锁定当前版本，跨版本测试可放宽上限。</div>
           </div>
@@ -461,7 +461,7 @@
         <h3 class="group-title"><span class="idx">✦</span>校验 / 解码授权码</h3>
         <div class="field">
           <label for="verifyInput">粘贴授权码</label>
-          <textarea id="verifyInput" placeholder="XH2.20261111.武器专项.a3f2c1.1-1.0.9.12~0.9.12.20261211.xxxxxxxxxxxx" spellcheck="false"></textarea>
+          <textarea id="verifyInput" placeholder="XH2.20261111.武器专项.a3f2c1.1-1.0.9.13~0.9.13.20261211.xxxxxxxxxxxx" spellcheck="false"></textarea>
         </div>
         <div class="v-actions">
           <button class="btn primary" id="verifyBtn" style="width:auto;flex:0 0 auto">🔍 校验签名与范围</button>
@@ -472,7 +472,7 @@
         <div class="v-env">
           <div class="field" style="margin:0">
             <label for="vGame">核对游戏版本</label>
-            <input type="text" id="vGame" value="0.9.12" spellcheck="false" />
+            <input type="text" id="vGame" value="0.9.13" spellcheck="false" />
           </div>
           <div class="field" style="margin:0">
             <label for="vTool">核对工具版本</label>
@@ -542,7 +542,7 @@
 /* ===== LICENSE-CORE-START (mirror of src/dev/license.ts — keep in sync; guarded by generator-html.test.ts) ===== */
 const SECRET = 'xinghe-sanguo-devtools-2026-rainbow';
 const DEV_TOOL_VERSION = 1;
-const DEFAULT_GAME_VERSION = '0.9.12';
+const DEFAULT_GAME_VERSION = '0.9.13';
 
 function todayStamp(){ return new Date().toISOString().slice(0,10).replace(/-/g,''); }
 

@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import defaultBg from '../../assets/bg-default.jpg';
 import { isAndroidApp, isTauri } from '../../net/lan';
 import { prepareBackgroundMedia } from '../background';
-import { clearSkins, importSkinFiles, skinHeroNames, subscribeSkins } from '../skins';
 import { applyDataDir, pickDataDir, readDataDirInfo, writeDataSnapshot } from '../dataStorage';
 import { formatDiagnostics } from '../diagnostics';
 import { levelTitle, profileProgress, xpForLevel } from '../profile';
 import { NameChip } from './NameChip';
 import { useGameStore } from '../store';
+import { getCardVoicePack, setCardVoicePack, VOICE_PACKS } from '../voicePacks';
 
 export function SettingsModal() {
   const open = useGameStore((s) => s.settingsOpen);
@@ -30,6 +30,8 @@ export function SettingsModal() {
   const soundVolume = useGameStore((s) => s.soundVolume);
   const setSoundEnabled = useGameStore((s) => s.setSoundEnabled);
   const setSoundVolume = useGameStore((s) => s.setSoundVolume);
+  const vibrationEnabled = useGameStore((s) => s.vibrationEnabled);
+  const setVibrationEnabled = useGameStore((s) => s.setVibrationEnabled);
   const setBgImage = useGameStore((s) => s.setBgImage);
   const setBgVideo = useGameStore((s) => s.setBgVideo);
   const setBgDim = useGameStore((s) => s.setBgDim);
@@ -39,23 +41,7 @@ export function SettingsModal() {
   const setBgScope = useGameStore((s) => s.setBgScope);
   const setSelfCardSide = useGameStore((s) => s.setSelfCardSide);
   const fileRef = useRef<HTMLInputElement>(null);
-  const skinRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
-  const [skinNote, setSkinNote] = useState('');
-  const [skinList, setSkinList] = useState<string[]>(() => skinHeroNames());
-
-  useEffect(() => subscribeSkins(() => setSkinList(skinHeroNames())), []);
-
-  const pickSkins = async (files: FileList | null) => {
-    if (!files || !files.length) return;
-    const result = await importSkinFiles(Array.from(files));
-    setSkinList(skinHeroNames());
-    setSkinNote(
-      result.skipped.length
-        ? `新增 ${result.added} 张，${result.skipped.length} 个文件名没对上武将`
-        : `新增 ${result.added} 张`,
-    );
-  };
 
   const [error, setError] = useState<string | null>(null);
   const [dataDir, setDataDir] = useState('');
@@ -324,42 +310,6 @@ export function SettingsModal() {
         </div>
 
         <div className="settings-section">
-          <div className="settings-section-title">武将皮肤</div>
-          <p className="settings-section-desc">
-            每位武将默认都有一张程序绘制的牌面。想换成自己的立绘，可批量导入图片覆盖，
-            文件名用武将 id 或中文名即可（如 caocao.jpg、曹操.png、caocao_少年.png）。
-            只保存在本机，会显示在对局座位与图鉴里。
-          </p>
-          <input
-            ref={skinRef}
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={(e) => void pickSkins(e.target.files)}
-          />
-          <div className="settings-actions">
-            <button type="button" className="btn ghost" onClick={() => skinRef.current?.click()}>
-              导入立绘
-            </button>
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={() => void clearSkins().then(() => setSkinNote('已清空全部皮肤'))}
-              disabled={!skinList.length}
-            >
-              清空皮肤
-            </button>
-          </div>
-          <div className="bg-setting-hint">
-            {skinList.length
-              ? `已用自定义立绘覆盖 ${skinList.length} 位：${skinList.join('、')}`
-              : '未导入自定义立绘，当前全部使用内置牌面。'}
-            {skinNote ? ` · ${skinNote}` : ''}
-          </div>
-        </div>
-
-        <div className="settings-section">
           <div className="settings-section-title">个人信息卡位置</div>
           <p className="settings-section-desc">决定对局中自己的武将信息卡放在牌桌左侧还是右侧。</p>
           <div className="settings-actions">
@@ -451,6 +401,40 @@ export function SettingsModal() {
             />
             <b>{Math.round(soundVolume * 100)}%</b>
           </div>
+          <div className="bg-setting-row">
+            <span>震动</span>
+            <button
+              type="button"
+              className={`count-btn ${vibrationEnabled ? 'on' : ''}`}
+              onClick={() => setVibrationEnabled(!vibrationEnabled)}
+            >
+              {vibrationEnabled ? '开启' : '关闭'}
+            </button>
+          </div>
+          <div className="bg-setting-hint">手机端在受伤、濒死时会有震动反馈；桌面端无震动效果。</div>
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-section-title">语音包</div>
+          <p className="settings-section-desc">
+            出牌、技能、阵亡的语音包；卡牌语音包在此设置，武将语音包在武将图鉴详情里切换。
+          </p>
+          <div className="bg-setting-row">
+            <span>卡牌语音包</span>
+            <div className="bg-scope-options">
+              {VOICE_PACKS.map((pack) => (
+                <button
+                  key={pack.id}
+                  type="button"
+                  className={`toggle-btn ${getCardVoicePack() === pack.id ? 'on' : ''}`}
+                  onClick={() => setCardVoicePack(pack.id)}
+                >
+                  {pack.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="bg-setting-hint">当前仅有默认语音包，后续版本会提供更多语音包供切换。</div>
         </div>
 
         <div className="settings-section">

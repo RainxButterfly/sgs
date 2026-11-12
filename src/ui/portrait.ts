@@ -1,11 +1,11 @@
 /**
- * 内置武将牌立绘：不依赖任何外部素材，按武将信息程序化绘制成 SVG。
- * 用户导入的皮肤优先，未导入时使用这里生成的牌面。
+ * 武将牌立绘解析：按「选中皮肤 → 默认内置立绘 → 程序生成牌面」的顺序取图。
+ * 暗将强制用生成暗面，不泄露身份。
  */
 
 import { HERO_MAP } from '../core/deck';
 import type { Faction, HeroData } from '../core/types';
-import { skinUrl } from './skins';
+import { heroSkinUrl } from './skins';
 
 interface Palette {
   skyTop: string;
@@ -246,13 +246,13 @@ export function builtinPortrait(heroId: string | undefined, hidden = false): str
 }
 
 /**
- * 座位/图鉴用的立绘地址：用户导入的皮肤优先；否则用内置牌面。
- * 暗将（国战未明置）强制用暗面，避免泄露武将身份。
+ * 座位/图鉴用的立绘地址：选中皮肤优先（含「默认」内置图），
+ * 都没有时用程序生成的牌面。暗将（国战未明置）强制用暗面。
  */
 export function portraitFor(heroId: string | undefined, hidden = false): string {
   if (!hidden) {
-    const imported = skinUrl(heroId);
-    if (imported) return imported;
+    const skin = heroSkinUrl(heroId);
+    if (skin) return skin;
   }
   return builtinPortrait(heroId, hidden);
 }

@@ -24,7 +24,7 @@ export function HarvestModal() {
 
   useEffect(() => {
     if (!done) return;
-    const timer = window.setTimeout(() => useGameStore.getState().dismissHarvest(), 6000);
+    const timer = window.setTimeout(() => useGameStore.getState().dismissHarvest(), 2000);
     return () => window.clearTimeout(timer);
   }, [done]);
 
@@ -99,7 +99,12 @@ export function HarvestModal() {
         </div>
         <div className="harvest-status">
           {done ? (
-            <span className="harvest-done">所有人已选完，窗口稍后自动关闭</span>
+            <span className="harvest-done">
+              所有人已选完
+              <span className="harvest-progress">
+                <i />
+              </span>
+            </span>
           ) : myTurn ? (
             <span>轮到你选择，点击一张牌后确认</span>
           ) : (

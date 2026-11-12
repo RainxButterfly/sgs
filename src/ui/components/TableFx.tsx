@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Card } from '../../core/types';
+import { cardArtUrl } from '../cardArt';
 import { cardDisplayName, rankText, SUIT_CHAR } from '../labels';
 import { useGameStore } from '../store';
+import { CardView } from './CardView';
 
 interface Fly {
   id: number;
@@ -10,9 +12,10 @@ interface Fly {
   dx: number;
   dy: number;
   card: Card;
+  rot: number;
 }
 
-/** 出一张牌时，牌从座位飞向桌心 */
+/** 出牌动画：牌从座位飞向桌心，放大成完整卡面停留片刻后淡出 */
 export function PlayFly() {
   const lastPlay = useGameStore((s) => s.lastPlay);
   const screen = useGameStore((s) => s.screen);
@@ -34,36 +37,46 @@ export function PlayFly() {
     const fromX = rect.left + rect.width / 2;
     const fromY = rect.top + rect.height / 2;
 
-    setFly({ id: lastPlay.id, fromX, fromY, dx: toX - fromX, dy: toY - fromY, card: lastPlay.card });
-    const timer = window.setTimeout(() => setFly(null), 1080);
+    setFly({
+      id: lastPlay.id,
+      fromX,
+      fromY,
+      dx: toX - fromX,
+      dy: toY - fromY,
+      card: lastPlay.card,
+      rot: (lastPlay.id % 7) - 3,
+    });
+    const timer = window.setTimeout(() => setFly(null), 1560);
     return () => window.clearTimeout(timer);
   }, [lastPlay, screen]);
 
   if (!fly) return null;
   const red = fly.card.suit === 'heart' || fly.card.suit === 'diamond';
+  const art = cardArtUrl(fly.card.name);
   return (
     <>
       <div
         key={fly.id}
-        className={`play-fly ${red ? 'is-red' : ''}`}
+        className={`play-stage ${art ? 'has-art' : ''} ${red ? 'is-red' : ''}`}
         style={{
-          left: `${fly.fromX}px`,
-          top: `${fly.fromY}px`,
-          ['--fx-dx' as string]: `${fly.dx}px`,
-          ['--fx-dy' as string]: `${fly.dy}px`,
+          left: `${fly.fromX + fly.dx}px`,
+          top: `${fly.fromY + fly.dy}px`,
+          ['--fx-dx' as string]: `${-fly.dx}px`,
+          ['--fx-dy' as string]: `${-fly.dy}px`,
+          ['--fx-rot' as string]: `${fly.rot}deg`,
         }}
         aria-hidden="true"
       >
-        <span className="play-fly-suit">{SUIT_CHAR[fly.card.suit] ?? ''}</span>
-        <span className="play-fly-rank">{rankText(fly.card.rank)}</span>
-        <span className="play-fly-name">{cardDisplayName(fly.card)}</span>
+        {art ? (
+          <CardView card={fly.card} size="lg" className="play-stage-card" />
+        ) : (
+          <span className="play-fly-text">
+            <span className="play-fly-suit">{SUIT_CHAR[fly.card.suit] ?? ''}</span>
+            <span className="play-fly-rank">{rankText(fly.card.rank)}</span>
+            <span className="play-fly-name">{cardDisplayName(fly.card)}</span>
+          </span>
+        )}
       </div>
-      <span
-        key={`land-${fly.id}`}
-        className={`play-land ${red ? 'is-red' : ''}`}
-        style={{ left: `${fly.fromX + fly.dx}px`, top: `${fly.fromY + fly.dy}px` }}
-        aria-hidden="true"
-      />
     </>
   );
 }

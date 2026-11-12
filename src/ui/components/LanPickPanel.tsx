@@ -4,6 +4,7 @@ import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type Role } from '../../core/types';
 import type { LobbyPlayer } from '../../net/protocol';
 import { HeroDetailModal } from './HeroDetail';
+import { HeroPortrait } from './HeroPortrait';
 import { HeroDataHover, HeroPairHover, HoverInfo } from './HoverInfo';
 import { isPickHeroVisible } from '../pickReveal';
 
@@ -218,6 +219,7 @@ export function LanPickPanel({
                   disabled={taken || !canPick}
                   onClick={() => setSelectedChoice(choice)}
                 >
+                  <HeroPortrait heroId={first.id} className="lobby-hero-portrait" />
                   <div className="lobby-hero-top">
                     <span className="faction-badge">{FACTION_NAME[first.faction]}</span>
                     <span className="lobby-hero-name">{heroes.map((hero) => hero.name).join(' / ')}</span>

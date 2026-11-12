@@ -10,6 +10,7 @@ import {
 } from '../../core/types';
 import { cardEffectText } from '../cardEffects';
 import { CardView } from '../components/CardView';
+import { CardSkinModal } from '../components/CardSkinModal';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { useSkins } from '../components/HeroPortrait';
 import { portraitFor } from '../portrait';
@@ -69,6 +70,7 @@ export function HeroGallery() {
   const [faction, setFaction] = useState<'all' | Faction>('all');
   const [cardFilter, setCardFilter] = useState<CardFilter>('all');
   const [detail, setDetail] = useState<string | null>(null);
+  const [cardDetail, setCardDetail] = useState<Card | null>(null);
   const [cardGroups] = useState(buildCardGroups);
 
   const heroes = PLAYABLE_HEROES.filter((hero) => faction === 'all' || hero.faction === faction);
@@ -190,7 +192,7 @@ export function HeroGallery() {
             <div className="card-gallery-grid">
               {cards.map((group) => (
                 <div key={group.key} className="card-gallery-item">
-                  <CardView card={group.card} size="sm" />
+                  <CardView card={group.card} size="sm" onClick={() => setCardDetail(group.card)} />
                   <div className="card-gallery-info">
                     <div className="card-gallery-head">
                       <b>{group.key}</b>
@@ -220,6 +222,7 @@ export function HeroGallery() {
       </div>
 
       {detail && <HeroDetailModal heroId={detail} onClose={() => setDetail(null)} />}
+      {cardDetail && <CardSkinModal card={cardDetail} onClose={() => setCardDetail(null)} />}
     </div>
   );
 }

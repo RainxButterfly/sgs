@@ -1,15 +1,7 @@
 import type { Card } from '../../core/types';
-import shaArt from '../../assets/cards/sha-haha.png';
-import shanArt from '../../assets/cards/shan-ji.jpg';
-import taoArt from '../../assets/cards/tao-mi.jpg';
 import { cardEffectText } from '../cardEffects';
-import { cardDisplayName, cardTypeText, isRedCard, rankText, SUIT_CHAR } from '../labels';
-
-const CARD_ART: Record<string, string> = {
-  杀: shaArt,
-  闪: shanArt,
-  桃: taoArt,
-};
+import { cardArtUrl, cardRangeText } from '../cardArt';
+import { cardDisplayName, isRedCard, rankText, SUIT_CHAR } from '../labels';
 
 interface Props {
   card: Card;
@@ -33,7 +25,8 @@ export function CardView({
   style,
 }: Props) {
   const red = isRedCard(card);
-  const art = CARD_ART[card.name];
+  const art = cardArtUrl(card.name);
+  const range = cardRangeText(card);
   return (
     <button
       type="button"
@@ -56,24 +49,14 @@ export function CardView({
 ${cardEffectText(card)}` : ''}`}
     >
       {art && <img className="card-art-img" src={art} alt="" aria-hidden="true" />}
-      {art && (card.element === 'fire' || card.element === 'thunder') && (
-        <span className={`card-element-badge card-element-${card.element}`}>
-          {card.element === 'fire' ? '火' : '雷'}
-        </span>
-      )}
       <span className="card-corner card-corner-tl">
         <span className="card-suit">{SUIT_CHAR[card.suit]}</span>
         <span className="card-rank">{rankText(card.rank)}</span>
       </span>
       <span className="card-body">
         <span className="card-name">{cardDisplayName(card)}</span>
-        {size !== 'sm' && <span className="card-kind">{cardTypeText(card)}</span>}
-        {card.equipSlot && size !== 'sm' && (
-          <span className="card-kind card-range">
-            {card.equipSlot === 'weapon' ? `攻击 ${card.range ?? 1}` : ''}
-          </span>
-        )}
       </span>
+      {art && range && <span className="card-range-tag">{range}</span>}
       <span className="card-corner card-corner-br">
         <span className="card-suit">{SUIT_CHAR[card.suit]}</span>
         <span className="card-rank">{rankText(card.rank)}</span>

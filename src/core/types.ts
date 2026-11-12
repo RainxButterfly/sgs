@@ -254,8 +254,9 @@ export type GameEvent =
   | { type: 'judge'; playerId: number; card: Card; text: string; reason: string; success: boolean; changedBy?: string }
   | { type: 'dying'; playerId: number }
   | { type: 'death'; playerId: number; role: Role }
+  | { type: 'revive'; playerId: number; hp: number }
   | { type: 'equip'; playerId: number; slot: EquipSlot; card?: Card }
-  | { type: 'skill'; playerId: number; name: string; text?: string }
+  | { type: 'skill'; playerId: number; name: string; text?: string; skillId?: string }
   | { type: 'wuxieWindow'; ms: number; until?: number }
   | { type: 'responseWindow'; playerId: number; name: string; ms: number; until?: number }
   | { type: 'reveal'; playerId?: number; cards: Card[]; label?: string }
