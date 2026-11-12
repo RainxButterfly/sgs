@@ -1,17 +1,17 @@
 {
-  "version": "0.9.12",
-  "notes": "四国闪 · 星河 v0.9.12",
-  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.12/updates/siguoshan-xinghe-win64.zip",
+  "version": "0.9.13",
+  "notes": "四国闪 · 星河 v0.9.13",
+  "url": "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.13/updates/siguoshan-xinghe-win64.zip",
   "urls": [
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.12/updates/siguoshan-xinghe-win64.zip",
-    "https://testingcf.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.12/updates/siguoshan-xinghe-win64.zip",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.12/updates/siguoshan-xinghe-win64.zip",
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.12/updates/siguoshan-xinghe-win64.zip",
-    "https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@v0.9.12/updates/siguoshan-xinghe-win64.zip",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.12/updates/siguoshan-xinghe-win64.zip",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.12/updates/siguoshan-xinghe-win64.zip",
-    "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.12/updates/siguoshan-xinghe-win64.zip",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.12/updates/siguoshan-xinghe-win64.zip"
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.13/updates/siguoshan-xinghe-win64.zip",
+    "https://testingcf.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.13/updates/siguoshan-xinghe-win64.zip",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.13/updates/siguoshan-xinghe-win64.zip",
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.13/updates/siguoshan-xinghe-win64.zip",
+    "https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@v0.9.13/updates/siguoshan-xinghe-win64.zip",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.13/updates/siguoshan-xinghe-win64.zip",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.13/updates/siguoshan-xinghe-win64.zip",
+    "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.13/updates/siguoshan-xinghe-win64.zip",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.13/updates/siguoshan-xinghe-win64.zip"
   ],
-  "sha256": "3d0229724db9c1e8f349ed16340c6a7da9f6dc73ea2928ffd829af1ba7778fa6"
+  "sha256": "da4f5cf485d102f4c8a0adb44cc7751ad43191b1406c77ab1cd77bd2ff53763a"
 }
