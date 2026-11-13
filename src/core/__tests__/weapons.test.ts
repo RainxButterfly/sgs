@@ -68,7 +68,7 @@ describe('武器审核', () => {
     expect(target.hp).toBe(target.maxHp - 1);
   });
 
-  it('寒冰剑只在目标至少有两张牌时可发动，并防止伤害', async () => {
+  it('寒冰剑在目标只有一张牌时也能发动，弃一张并防止伤害', async () => {
     const io = new TestIO((req) =>
       req.kind === 'chooseOption'
         ? {
@@ -87,9 +87,12 @@ describe('武器审核', () => {
     attacker.hand = [makeCard('sha', '杀', 'spade')];
     target.hand = [makeCard('only', '闪', 'heart')];
     await game.useCard(attacker, attacker.hand[0], '杀', [target.id]);
-    expect(target.hp).toBe(target.maxHp - 1);
-    expect(target.hand).toHaveLength(1);
-    expect(io.asked.some((req) => req.prompt.includes('寒冰剑'))).toBe(false);
+    expect(io.asked.some((req) => req.prompt.includes('寒冰剑'))).toBe(true);
+    expect(target.hp).toBe(target.maxHp);
+    expect(target.hand).toHaveLength(0);
+  });
+
+  it('寒冰剑在目标有两张牌时弃两张并防止伤害', async () => {
 
     const io2 = new TestIO((req) =>
       req.kind === 'chooseOption'
@@ -103,6 +106,7 @@ describe('武器审核', () => {
           }
         : undefined,
     );
+    // 目标两张牌：全部弃置
     const game2 = makeGame(2, io2);
     const [attacker2, target2] = game2.state.players;
     attacker2.equips.weapon = makeCard('hanbing2', '寒冰剑', 'spade', 'equip', 'weapon');

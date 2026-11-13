@@ -33,7 +33,7 @@ function knownRole(state: GameState, me: PlayerState, other: PlayerState): Playe
   if (other.id === me.id) return other.role;
   const mode = state.rules?.mode ?? 'identity';
   // 斗地主身份公开，国战按势力公开；身份场只公开主公、已明置和已阵亡角色。
-  if (mode === 'landlord' || mode === 'guozhan' || mode === 'duel') return other.role;
+  if (mode === 'landlord' || mode === 'guozhan' || mode === 'duel' || mode === '2v2') return other.role;
   if (other.roleRevealed || !other.alive || other.role === 'lord') return other.role;
   return undefined;
 }

@@ -265,7 +265,8 @@ export class Game {
       current: initialCurrent,
       startPlayer: initialCurrent,
       turn: 0,
-      direction: setup.direction ?? -1,
+      // 2v2 的队伍按号位划分，固定顺时针让号位与玩家顺序一一对应
+      direction: mode === '2v2' ? 1 : setup.direction ?? -1,
       phase: 'prepare',
       over: false,
       winner: null,
@@ -358,6 +359,30 @@ export class Game {
 
   emit(ev: GameEvent): void {
     this.io.emit(ev);
+  }
+
+  /** 测试工具：向全场广播一条操作通报（联机时所有玩家都会收到弹窗与战报） */
+  devAnnounce(playerId: number, text: string): void {
+    const player = this.state.players[playerId];
+    const name = player?.name ?? `座位 ${playerId}`;
+    this.log(`【测试工具】${name}：${text}`, 'system');
+    this.emit({ type: 'devNotice', playerId, name, text });
+  }
+
+  /** 测试工具：令指定角色阵亡 */
+  async devKillPlayer(playerId: number): Promise<boolean> {
+    const player = this.state.players[playerId];
+    if (!player || !player.alive) return false;
+    await this.kill(player);
+    return true;
+  }
+
+  /** 测试工具：直接结束对局 */
+  devEndGame(winner: 'loyalist' | 'rebel' | 'draw'): void {
+    if (this.state.over) return;
+    const text =
+      winner === 'draw' ? '测试工具结束对局：平局' : winner === 'loyalist' ? '测试工具结束对局：甲队获胜' : '测试工具结束对局：乙队获胜';
+    this.endGame(winner, text);
   }
 
   log(text: string, kind: 'info' | 'damage' | 'heal' | 'skill' | 'judge' | 'system' | 'death' = 'info'): void {
@@ -1927,14 +1952,25 @@ ${skill.desc}` : ''}`
       target.hand.length +
       Object.values(target.equips).filter((c) => !!c).length +
       target.judgeZone.length;
-    if (user.equips.weapon?.name === '寒冰剑' && targetCardCount >= 2) {
-      const ok = await this.confirm(user, '是否发动【寒冰剑】？防止此伤害，改为弃置目标两张牌', '寒冰剑');
+    if (user.equips.weapon?.name === '寒冰剑' && targetCardCount > 0) {
+      const want = Math.min(2, targetCardCount);
+      const ok = await this.confirm(
+        user,
+        `是否发动【寒冰剑】？防止此伤害，改为弃置【${target.name}】${want} 张牌`,
+        '寒冰剑',
+      );
       if (ok) {
-        for (let i = 0; i < 2; i += 1) {
+        let discarded = 0;
+        for (let i = 0; i < want; i += 1) {
           const c = await this.pickCardFrom(target, user, '寒冰剑：弃置一张牌');
-          if (c) await this.discardCards(target, [c], '寒冰剑');
+          if (!c) break;
+          await this.discardCards(target, [c], '寒冰剑');
+          discarded += 1;
         }
-        return;
+        if (discarded > 0) {
+          this.log(`【${user.name}】发动【寒冰剑】，弃置【${target.name}】${discarded} 张牌并防止伤害`, 'skill');
+          return;
+        }
       }
     }
 

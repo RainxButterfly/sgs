@@ -56,7 +56,9 @@ export function HeroPanel({
           ? player.role === 'lord'
             ? '地主'
             : '农民'
-          : ROLE_NAME[player.role];
+          : mode === '2v2'
+            ? '我方'
+            : ROLE_NAME[player.role];
   const pips = Array.from({ length: Math.max(player.maxHp, player.hp) }, (_, i) => i < player.hp);
   const showFlash = flash && flash.playerId === player.id ? flash : null;
   const activeFlashes = (flashes ?? []).filter((item) => item.playerId === player.id);

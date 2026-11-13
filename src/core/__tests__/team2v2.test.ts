@@ -28,6 +28,16 @@ describe('2v2 竞技模式', () => {
     expect(game.state.players.map((p) => p.role)).toEqual(['loyalist', 'rebel', 'rebel', 'loyalist']);
   });
 
+  it('2v2 固定顺时针，号位与玩家顺序一致（1、4 号位即 0、3 号玩家）', () => {
+    const { game } = makeGame();
+    expect(game.state.direction).toBe(1);
+    expect(game.state.startPlayer).toBe(0);
+    expect(game.state.players[0].role).toBe('loyalist');
+    expect(game.state.players[3].role).toBe('loyalist');
+    expect(game.state.players[1].role).toBe('rebel');
+    expect(game.state.players[2].role).toBe('rebel');
+  });
+
   it('需要恰好 4 名玩家', () => {
     expect(() =>
       makeGame({

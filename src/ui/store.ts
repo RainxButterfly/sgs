@@ -404,6 +404,8 @@ interface GameStore {
   devMessage: string;
   devBatch: string;
   devTainted: boolean;
+  /** 联机中被别人使用测试工具时的通报 */
+  devNotice: { id: number; name: string; text: string } | null;
   updateInfo: AppUpdateInfo | null;
   updateState: UpdateState;
   updateProgress: { downloaded: number; total: number };
@@ -503,6 +505,7 @@ interface GameStore {
   setBgmVolume: (value: number) => void;
   setBgmEnabled: (value: boolean) => void;
   setVibrationEnabled: (value: boolean) => void;
+  closeDevNotice: () => void;
   setBgImage: (image: string | null) => void;
   setBgVideo: () => void;
   setBgDim: (dim: number) => void;
@@ -662,6 +665,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   devMessage: '',
   devBatch: '',
   devTainted: false,
+  devNotice: null,
   updateInfo: null,
   updateState: 'idle',
   updateProgress: { downloaded: 0, total: 0 },
@@ -782,13 +786,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     const mode = rules?.mode ?? 'identity';
     const roles = buildRoles(count, mode);
-    if (mode !== 'landlord' && mode !== '2v2') {
+    if (mode === 'landlord') {
+      // 地主身份由叫分决定，先全部按农民占位
+      roles.fill('rebel');
+    } else if (mode !== '2v2') {
       for (let i = roles.length - 1; i > 0; i -= 1) {
         const j = Math.floor(Math.random() * (i + 1));
         [roles[i], roles[j]] = [roles[j], roles[i]];
       }
-    } else {
-      roles.fill('rebel');
     }
     let bots: { name: string; heroId: string; heroIds?: string[] }[];
     let candidates: string[];
@@ -1716,6 +1721,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ bgmEnabled: value });
     syncBgm();
   },
+  closeDevNotice: () => set({ devNotice: null }),
   setVibrationEnabled: (value) => {
     setVibrationEnabled(value);
     set({ vibrationEnabled: value });
@@ -1977,10 +1983,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       playSkillVoice(ev.skillId);
     } else if (ev.type === 'playCard' || ev.type === 'respond') {
       const actor = state.game?.state.players[ev.playerId];
-      playCardVoice(cardVoicePinyin(ev.card.name) ?? undefined, actor?.gender === 'female' ? 'female' : 'male');
+      // 转化牌按变化后的牌名播语音，没有对应语音时回退到原牌
+      const asPinyin = ev.as && ev.as !== ev.card.name ? cardVoicePinyin(ev.as) : null;
+      playCardVoice((asPinyin ?? cardVoicePinyin(ev.card.name)) ?? undefined, actor?.gender === 'female' ? 'female' : 'male');
     } else if (ev.type === 'death') {
       const actor = state.game?.state.players[ev.playerId];
       playDieVoice(actor?.heroId);
+    }
+    if (ev.type === 'devNotice') {
+      patch.devNotice = { id: Date.now(), name: ev.name, text: ev.text };
     }
     if (ev.type === 'harvest') {
       patch.harvest = {

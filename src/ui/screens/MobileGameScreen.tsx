@@ -22,8 +22,9 @@ import { useGameSnapshot, useGameStore } from '../store';
 import { PlayArrowLayer } from '../components/PlayArrowLayer';
 import { useDeviceStatus } from '../useDeviceStatus';
 
-function roleText(player: PlayerState, mode: string, self = false): string {
+function roleText(player: PlayerState, mode: string, self = false, myRole?: string): string {
   if (mode === 'duel' || mode === 'guozhan') return '';
+  if (mode === '2v2') return player.role === myRole ? '我方' : '敌方';
   if (mode === 'landlord') return player.role === 'lord' ? '地主' : '农民';
   if (self || player.roleRevealed || !player.alive || player.role === 'lord') return ROLE_NAME[player.role];
   return '';
@@ -282,7 +283,7 @@ export function MobileGameScreen() {
           
           const canTarget = targetable.has(player.id);
           const selectedTarget = selectedTargets.includes(player.id);
-          const role = roleText(player, mode);
+          const role = roleText(player, mode, false, human.role);
           const skills = visibleSkillIds(player, mode)
             .map((id) => SKILL_MAP.get(id)?.name)
             .filter(Boolean)
@@ -589,7 +590,9 @@ export function MobileGameScreen() {
           <span className="m-self-table-no">{humanTableNo}</span>
           <span className={`faction-badge faction-${human.faction}`}>{FACTION_NAME[human.faction]}</span>
           <b title={visibleHeroNames(human, mode, true)}>{visibleHeroNames(human, mode, true)}</b>
-          {roleText(human, mode, true) && <span className="m-self-role">{roleText(human, mode, true)}</span>}
+          {roleText(human, mode, true, human.role) && (
+            <span className="m-self-role">{roleText(human, mode, true, human.role)}</span>
+          )}
           {human.ambition && <span className="ambition-tag">野心家</span>}
           <button
             type="button"

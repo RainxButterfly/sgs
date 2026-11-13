@@ -9,6 +9,7 @@ import { ChangelogModal } from './ui/components/ChangelogModal';
 import { ClickSparkles } from './ui/components/ClickSparkles';
 import { DiscardFly, PlayFly, TablePulse } from './ui/components/TableFx';
 import { DamageFeedback } from './ui/components/DamageFeedback';
+import { DevActionNotice } from './ui/components/DevActionNotice';
 import { DevNotice } from './ui/components/DevNotice';
 import { StartProtection } from './ui/components/StartProtection';
 import { JudgeNotice } from './ui/components/JudgeNotice';
@@ -186,6 +187,7 @@ export default function App() {
       <UpdateModal />
       <ProfileSetupModal />
       <DevNotice />
+      <DevActionNotice />
       <StartProtection />
       <PlayFly />
       <DiscardFly />

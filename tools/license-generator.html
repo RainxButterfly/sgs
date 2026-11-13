@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>星璇 · 授权铸造台</title>
 <!--
-  本地专用授权码生成器（一人一码 XH2）。
+  本地专用授权码生成器（一人一码 XH3）。
   双击即可在浏览器打开，或用任意静态服务器托管；不依赖构建、不联网。
   安全约定：本文件含签名密钥，仅供开发者本地使用，切勿打包进 dist 或发给测试者。
   签名算法与 src/dev/license.ts 完全一致，由 src/dev/__tests__/generator-html.test.ts 防漂移校验。
@@ -376,16 +376,16 @@
             <div class="two-col">
               <div class="stepper">
                 <button class="step-btn" data-target="toolMin" data-delta="-1">−</button>
-                <input type="number" id="toolMin" value="1" min="1" max="99" />
+                <input type="number" id="toolMin" value="2" min="1" max="99" />
                 <button class="step-btn" data-target="toolMin" data-delta="1">+</button>
               </div>
               <div class="stepper">
                 <button class="step-btn" data-target="toolMax" data-delta="-1">−</button>
-                <input type="number" id="toolMax" value="1" min="1" max="99" />
+                <input type="number" id="toolMax" value="2" min="1" max="99" />
                 <button class="step-btn" data-target="toolMax" data-delta="1">+</button>
               </div>
             </div>
-            <div class="hint">最小 ≤ 最大；当前工具版本 v1。</div>
+            <div class="hint">最小 ≤ 最大；当前工具版本 v2。</div>
           </div>
           <div class="field">
             <label>游戏版本区间</label>
@@ -398,7 +398,24 @@
         </div>
 
         <div class="group">
-          <h3 class="group-title"><span class="idx">4</span>铸造</h3>
+          <h3 class="group-title"><span class="idx">4</span>用途与权限</h3>
+          <div class="field">
+            <label for="scope">联机权限</label>
+            <select id="scope">
+              <option value="solo">仅单机</option>
+              <option value="lan">单机 + 局域网联机</option>
+            </select>
+            <div class="hint">选「单机 + 局域网联机」后，联机对局中使用测试工具会向全场广播通报并写入战报。</div>
+          </div>
+          <div class="field">
+            <label for="anyVersion">版本范围</label>
+            <label class="switch-row"><input type="checkbox" id="anyVersion" /> 任意版本（不校验游戏版本）</label>
+            <div class="hint">勾选后该码在任何游戏版本都有效，适合核心测试成员；取消勾选则按上面的版本区间校验。</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <h3 class="group-title"><span class="idx">5</span>铸造</h3>
           <button class="btn primary" id="generateBtn">✦ 铸造 <span id="genCount">3</span> 个授权码</button>
           <div class="btn-row">
             <button class="btn ghost sm" id="randomBtn">🎲 随机批次</button>
@@ -461,7 +478,7 @@
         <h3 class="group-title"><span class="idx">✦</span>校验 / 解码授权码</h3>
         <div class="field">
           <label for="verifyInput">粘贴授权码</label>
-          <textarea id="verifyInput" placeholder="XH2.20261111.武器专项.a3f2c1.1-1.0.9.13~0.9.13.20261211.xxxxxxxxxxxx" spellcheck="false"></textarea>
+          <textarea id="verifyInput" placeholder="XH3.20261113.武器专项.a3f2c1.lan.fixed.2-2.0.9.16~0.9.16.20261213.xxxxxxxxxxxx" spellcheck="false"></textarea>
         </div>
         <div class="v-actions">
           <button class="btn primary" id="verifyBtn" style="width:auto;flex:0 0 auto">🔍 校验签名与范围</button>
@@ -501,7 +518,7 @@
         </div>
         <div class="manage-body">
           <div class="history-add">
-            <textarea id="historyAddInput" placeholder="粘贴之前生成的授权码（每行一个，可夹杂姓名/编号说明），自动识别其中的 XH2 码并按批次加入历史"></textarea>
+            <textarea id="historyAddInput" placeholder="粘贴之前生成的授权码（每行一个，可夹杂姓名/编号说明），自动识别其中的 XH3 / XH2 码并按批次加入历史"></textarea>
             <button class="btn sm" id="historyAddBtn">＋ 添加到历史</button>
           </div>
           <div id="historyList"></div>
@@ -541,8 +558,8 @@
 <script>
 /* ===== LICENSE-CORE-START (mirror of src/dev/license.ts — keep in sync; guarded by generator-html.test.ts) ===== */
 const SECRET = 'xinghe-sanguo-devtools-2026-rainbow';
-const DEV_TOOL_VERSION = 1;
-const DEFAULT_GAME_VERSION = '0.9.16';
+const DEV_TOOL_VERSION = 2;
+const DEFAULT_GAME_VERSION = '0.9.17';
 
 function todayStamp(){ return new Date().toISOString().slice(0,10).replace(/-/g,''); }
 
@@ -559,7 +576,13 @@ function compareVersion(a,b){
   return 0;
 }
 
+const ANY_VERSION_MIN='0.0.0', ANY_VERSION_MAX='99.99.99';
+
 function payloadOf(f){
+  return `XH3|${f.created}|${f.batch}|${f.serial}|${f.scope||'solo'}|${f.anyVersion?'any':'fixed'}|${f.toolMin}|${f.toolMax}|${f.gameMin}|${f.gameMax}|${f.expires}`;
+}
+
+function legacyPayloadOf(f){
   return `XH2|${f.created}|${f.batch}|${f.serial}|${f.toolMin}|${f.toolMax}|${f.gameMin}|${f.gameMax}|${f.expires}`;
 }
 
@@ -604,24 +627,43 @@ async function hmac(text){
 }
 
 async function signLicense(f){
-  const sig=(await hmac(payloadOf(f))).slice(0,12);
-  return `XH2.${f.created}.${f.batch}.${f.serial}.${f.toolMin}-${f.toolMax}.${f.gameMin}~${f.gameMax}.${f.expires||'long'}.${sig}`;
+  const n=f.anyVersion?{...f,scope:f.scope||'solo',gameMin:ANY_VERSION_MIN,gameMax:ANY_VERSION_MAX}:{...f,scope:f.scope||'solo'};
+  const sig=(await hmac(payloadOf(n))).slice(0,12);
+  return `XH3.${n.created}.${n.batch}.${n.serial}.${n.scope}.${n.anyVersion?'any':'fixed'}.${n.toolMin}-${n.toolMax}.${n.gameMin}~${n.gameMax}.${n.expires||'long'}.${sig}`;
 }
 
-function parseLicense(code){
-  const match=/^XH2\.(\d{8})\.([^.]+)\.([A-Za-z0-9-]+)\.(\d+)-(\d+)\.(\d+\.\d+\.\d+)~(\d+\.\d+\.\d+)\.(\d{8}|long)\.([0-9a-f]{12})$/.exec(code.trim());
-  if(!match) return null;
-  const [,created,batch,serial,toolMinRaw,toolMaxRaw,gameMin,gameMax,expires,sig]=match;
+function parseCode(code){
+  const raw=code.trim();
+  const v3=/^XH3\.(\d{8})\.([^.]+)\.([A-Za-z0-9-]+)\.(solo|lan)\.(any|fixed)\.(\d+)-(\d+)\.(\d+\.\d+\.\d+)~(\d+\.\d+\.\d+)\.(\d{8}|long)\.([0-9a-f]{12})$/.exec(raw);
+  if(v3){
+    const [,created,batch,serial,scope,ver,toolMinRaw,toolMaxRaw,gameMin,gameMax,expires,sig]=v3;
+    const toolMin=Number(toolMinRaw), toolMax=Number(toolMaxRaw);
+    if(toolMin>toolMax) return null;
+    const anyVersion=ver==='any';
+    if(!anyVersion&&compareVersion(gameMin,gameMax)>0) return null;
+    return { format:'XH3', sig, fields:{created,batch,serial,scope,anyVersion,toolMin,toolMax,
+      gameMin:anyVersion?ANY_VERSION_MIN:gameMin, gameMax:anyVersion?ANY_VERSION_MAX:gameMax,
+      expires:expires==='long'?'':expires} };
+  }
+  const v2=/^XH2\.(\d{8})\.([^.]+)\.([A-Za-z0-9-]+)\.(\d+)-(\d+)\.(\d+\.\d+\.\d+)~(\d+\.\d+\.\d+)\.(\d{8}|long)\.([0-9a-f]{12})$/.exec(raw);
+  if(!v2) return null;
+  const [,created,batch,serial,toolMinRaw,toolMaxRaw,gameMin,gameMax,expires,sig]=v2;
   const toolMin=Number(toolMinRaw), toolMax=Number(toolMaxRaw);
   if(toolMin>toolMax) return null;
   if(compareVersion(gameMin,gameMax)>0) return null;
-  return { fields:{created,batch,serial,toolMin,toolMax,gameMin,gameMax,expires:expires==='long'?'':expires}, sig };
+  return { format:'XH2', sig, fields:{created,batch,serial,scope:'solo',anyVersion:false,toolMin,toolMax,gameMin,gameMax,expires:expires==='long'?'':expires} };
+}
+
+function parseLicense(code){
+  const parsed=parseCode(code);
+  return parsed?{fields:parsed.fields,sig:parsed.sig}:null;
 }
 
 async function verifyLicense(code){
-  const parsed=parseLicense(code);
+  const parsed=parseCode(code);
   if(!parsed) return null;
-  const expect=(await hmac(payloadOf(parsed.fields))).slice(0,12);
+  const payload=parsed.format==='XH3'?payloadOf(parsed.fields):legacyPayloadOf(parsed.fields);
+  const expect=(await hmac(payload)).slice(0,12);
   return expect===parsed.sig?parsed.fields:null;
 }
 
@@ -629,7 +671,7 @@ function licenseProblem(f,env){
   if(env.revoked.includes(f.batch)) return `批次「${f.batch}」已被当前版本吊销`;
   if(env.revokedSerials.includes(f.serial)) return `授权编号「${f.serial}」已被当前版本吊销`;
   if(env.toolVersion<f.toolMin||env.toolVersion>f.toolMax) return `测试工具版本 v${env.toolVersion} 不在授权范围 v${f.toolMin}–v${f.toolMax}`;
-  if(compareVersion(env.gameVersion,f.gameMin)<0||compareVersion(env.gameVersion,f.gameMax)>0) return `当前游戏 v${env.gameVersion} 不在授权范围 v${f.gameMin}–v${f.gameMax}`;
+  if(!f.anyVersion&&(compareVersion(env.gameVersion,f.gameMin)<0||compareVersion(env.gameVersion,f.gameMax)>0)) return `当前游戏 v${env.gameVersion} 不在授权范围 v${f.gameMin}–v${f.gameMax}`;
   if(f.expires&&env.today>f.expires) return `授权已于 ${f.expires} 过期`;
   return null;
 }
@@ -637,7 +679,9 @@ function licenseProblem(f,env){
 function licenseSummary(f){
   const created=`${f.created.slice(0,4)}-${f.created.slice(4,6)}-${f.created.slice(6,8)}`;
   const expires=f.expires?`${f.expires.slice(0,4)}-${f.expires.slice(4,6)}-${f.expires.slice(6,8)}`:'长期';
-  return `编号 ${f.serial} · 创建于 ${created} · 用途批次「${f.batch}」 · 工具 v${f.toolMin}–v${f.toolMax} · 游戏 v${f.gameMin}–v${f.gameMax} · 有效期 ${expires}`;
+  const scope=f.scope==='lan'?'单机 + 联机':'仅单机';
+  const range=f.anyVersion?'任意版本':`v${f.gameMin}–v${f.gameMax}`;
+  return `编号 ${f.serial} · 创建于 ${created} · 用途批次「${f.batch}」 · ${scope} · 工具 v${f.toolMin}–v${f.toolMax} · 游戏 ${range} · 有效期 ${expires}`;
 }
 
 globalThis.__LICENSE_CORE__ = { SECRET, DEV_TOOL_VERSION, DEFAULT_GAME_VERSION, todayStamp, randomHex, compareVersion, payloadOf, hmac, signLicense, parseLicense, verifyLicense, licenseProblem, licenseSummary, hmacPure };
@@ -699,6 +743,8 @@ function readForm(){
     toolMax:clampInt($('toolMax').value,1,99),
     gameMin:$('gameMin').value.trim(),
     gameMax:$('gameMax').value.trim(),
+    scope:($('scope')&&$('scope').value==='lan')?'lan':'solo',
+    anyVersion:!!($('anyVersion')&&$('anyVersion').checked),
   };
 }
 
@@ -738,12 +784,13 @@ function updatePreview(){
   const exp=f.mode==='long'?'long':(f.expires||'xxxxxxxx');
   const gm=isVersion(f.gameMin)?f.gameMin:'x.y.z', gx=isVersion(f.gameMax)?f.gameMax:'x.y.z';
   $('fmtPreview').innerHTML=
-    `<b class="s0">XH2</b>.<b class="s1">${created}</b>.<b class="s2">${escapeHtml(f.batch||'批次')}</b>.`+
-    `<b class="s3">编号</b>.<b class="s4">${f.toolMin}-${f.toolMax}</b>.<b class="s5">${gm}~${gx}</b>.`+
+    `<b class="s0">XH3</b>.<b class="s1">${created}</b>.<b class="s2">${escapeHtml(f.batch||'批次')}</b>.`+
+    `<b class="s3">编号</b>.<b class="s4">${f.scope}</b>.<b class="s4">${f.anyVersion?'any':'fixed'}</b>.`+
+    `<b class="s5">${f.toolMin}-${f.toolMax}</b>.<b class="s5">${f.anyVersion?'0.0.0~99.99.99':gm+'~'+gx}</b>.`+
     `<b class="s6">${exp}</b>.<b class="s7">签名12位</b>`;
   const valid=validate(f).length===0;
   $('liveSummary').innerHTML= valid
-    ? `将铸造 <strong>${f.count}</strong> 个一人一码 · 批次「${escapeHtml(f.batch)}」 · 有效期 <strong>${fmtDate(f.expires)}</strong> · 游戏 v${gm}–v${gx}`
+    ? `将铸造 <strong>${f.count}</strong> 个一人一码 · 批次「${escapeHtml(f.batch)}」 · 有效期 <strong>${fmtDate(f.expires)}</strong> · ${f.scope==='lan'?'单机+联机':'仅单机'} · 游戏 ${f.anyVersion?'任意版本':'v'+gm+'–v'+gx}`
     : `<span style="color:var(--red)">请先补全左侧必填项。</span>`;
   // inline validation styling
   ['batch','gameMin','gameMax'].forEach(id=>$(id).classList.remove('invalid'));
@@ -791,7 +838,7 @@ async function generate(){
     const created=todayStamp();
     for(let i=0;i<f.count;i++){
       let serial=randomHex(3); while(used.has(serial)) serial=randomHex(3); used.add(serial);
-      const fields={created,batch:f.batch,serial,toolMin:f.toolMin,toolMax:f.toolMax,gameMin:f.gameMin,gameMax:f.gameMax,expires:f.expires};
+      const fields={created,batch:f.batch,serial,scope:f.scope,anyVersion:f.anyVersion,toolMin:f.toolMin,toolMax:f.toolMax,gameMin:f.anyVersion?'0.0.0':f.gameMin,gameMax:f.anyVersion?'99.99.99':f.gameMax,expires:f.expires};
       const code=await signLicense(fields);
       results.push({index:i+1,name:f.names[i]||'',serial,code,fields});
     }
@@ -1059,7 +1106,7 @@ function wire(){
   $('days').addEventListener('input',()=>{ $('daysNum').value=$('days').value; updatePreview(); saveForm(); });
   $('daysNum').addEventListener('input',()=>{ $('days').value=Math.min(365,clampInt($('daysNum').value,1,3650)); updatePreview(); saveForm(); });
   // generic live inputs
-  ['batch','names','expiryMode','expiresDate','toolMin','toolMax','gameMin','gameMax'].forEach(id=>{
+  ['batch','names','expiryMode','expiresDate','toolMin','toolMax','gameMin','gameMax','scope','anyVersion'].forEach(id=>{
     $(id).addEventListener('input',()=>{ updatePreview(); saveForm(); });
     $(id).addEventListener('change',()=>{ updatePreview(); saveForm(); });
   });
@@ -1068,7 +1115,7 @@ function wire(){
   $('resetBtn').addEventListener('click',()=>{
     $('batch').value=''; $('count').value=3; $('countRange').value=3; $('names').value='';
     $('expiryMode').value='days'; $('days').value=30; $('daysNum').value=30; $('expiresDate').value=defaultDate(30);
-    $('toolMin').value=1; $('toolMax').value=1; $('gameMin').value=DEFAULT_GAME_VERSION; $('gameMax').value=DEFAULT_GAME_VERSION;
+    $('toolMin').value=2; $('toolMax').value=2; $('gameMin').value=DEFAULT_GAME_VERSION; $('gameMax').value=DEFAULT_GAME_VERSION;
     updatePreview(); saveForm(); toast('已重置为默认参数','info');
   });
   $('randomBtn').addEventListener('click',()=>{
@@ -1100,7 +1147,7 @@ function wire(){
   $('verifyBtn').addEventListener('click',runVerify);
   $('verifyClear').addEventListener('click',()=>{ $('verifyInput').value=''; $('verifyResult').innerHTML=''; });
   $('verifySample').addEventListener('click',async()=>{
-    const demo=await signLicense({created:todayStamp(),batch:'示例批次',serial:randomHex(3),toolMin:1,toolMax:1,gameMin:DEFAULT_GAME_VERSION,gameMax:DEFAULT_GAME_VERSION,expires:''});
+    const demo=await signLicense({created:todayStamp(),batch:'示例批次',serial:randomHex(3),scope:'lan',anyVersion:false,toolMin:2,toolMax:2,gameMin:DEFAULT_GAME_VERSION,gameMax:DEFAULT_GAME_VERSION,expires:''});
     $('verifyInput').value=demo; runVerify();
   });
   ['vGame','vTool','vToday'].forEach(id=>$(id).addEventListener('input',()=>{ if($('verifyInput').value.trim()) runVerify(); }));

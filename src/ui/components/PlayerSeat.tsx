@@ -66,12 +66,13 @@ export function PlayerSeat({
   const hero = HERO_MAP.get(player.heroId);
   const showFaction = factionKnown(player, mode, selfView);
   const heroLabel = visibleHeroNames(player, mode, selfView);
-  const roleVisible = revealRoles || player.roleRevealed || !player.alive;
+  const roleVisible = mode === '2v2' || revealRoles || player.roleRevealed || !player.alive;
+  const myRole = useGameStore((s) => s.game?.state.players[s.humanId]?.role);
   const roleLabel =
     mode === '2v2'
-      ? player.role === 'loyalist'
-        ? '甲队'
-        : '乙队'
+      ? player.role === myRole
+        ? '我方'
+        : '敌方'
       : mode === 'guozhan' || mode === 'duel'
       ? ''
       : mode === 'landlord'
@@ -94,7 +95,8 @@ export function PlayerSeat({
   const showFlash = flash && flash.playerId === player.id ? flash : null;
   const activeFlashes = (flashes ?? []).filter((item) => item.playerId === player.id);
   const displayFlashes = activeFlashes.length ? activeFlashes : showFlash ? [showFlash] : [];
-  const canMark = !!onMark && !(mode === 'identity' && (player.role === 'lord' || roleVisible));
+  // 2v2 队伍本来就公开，不需要再手动标记
+  const canMark = !!onMark && mode === 'identity' && !(player.role === 'lord' || roleVisible);
   useSkins();
   const hidden = !showFaction;
   const portrait = portraitFor(hero?.id, hidden);

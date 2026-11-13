@@ -7,6 +7,7 @@ export function DevNotice() {
   const message = useGameStore((s) => s.devMessage);
   const batch = useGameStore((s) => s.devBatch);
   const [hidden, setHidden] = useState(false);
+  const [badgeHidden, setBadgeHidden] = useState(() => sessionStorage.getItem('xhs-dev-badge-hidden') === batch);
 
   useEffect(() => setHidden(false), [message]);
 
@@ -23,12 +24,24 @@ export function DevNotice() {
       </div>
     );
   }
-  if (status === 'active') {
+  if (status === 'active' && !badgeHidden) {
     return (
       <div className="dev-badge">
         测试授权 · {batch}
         <button type="button" onClick={() => void openDevtoolPage()}>
           工具页（Ctrl+Shift+D）
+        </button>
+        <button
+          type="button"
+          className="dev-badge-close"
+          title="隐藏本次启动的提示（工具仍可用，Ctrl+Shift+D 打开）"
+          aria-label="隐藏测试授权提示"
+          onClick={() => {
+            sessionStorage.setItem('xhs-dev-badge-hidden', batch);
+            setBadgeHidden(true);
+          }}
+        >
+          ×
         </button>
       </div>
     );

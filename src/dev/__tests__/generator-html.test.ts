@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import {
+  ANY_VERSION_MAX,
+  ANY_VERSION_MIN,
   DEV_TOOL_VERSION,
   licenseProblem,
   parseLicense,
@@ -44,9 +46,9 @@ function loadCore() {
 const core = loadCore();
 
 const vectors: LicenseFields[] = [
-  { created: '20261111', batch: '武器专项', serial: 'a3f2c1', toolMin: 1, toolMax: 1, gameMin: '0.9.11', gameMax: '0.9.11', expires: '20261211' },
-  { created: '20261111', batch: '国战双将', serial: 'b7e9d2', toolMin: 1, toolMax: 2, gameMin: '0.9.10', gameMax: '0.9.12', expires: '' },
-  { created: '20260101', batch: '回归测试', serial: '00ff12', toolMin: 2, toolMax: 3, gameMin: '0.10.0', gameMax: '0.10.5', expires: '20270101' },
+  { created: '20261111', batch: '武器专项', serial: 'a3f2c1', scope: 'solo', anyVersion: false, toolMin: 1, toolMax: 1, gameMin: '0.9.11', gameMax: '0.9.11', expires: '20261211' },
+  { created: '20261111', batch: '国战双将', serial: 'b7e9d2', scope: 'lan', anyVersion: false, toolMin: 1, toolMax: 2, gameMin: '0.9.10', gameMax: '0.9.12', expires: '' },
+  { created: '20260101', batch: '回归测试', serial: '00ff12', scope: 'lan', anyVersion: true, toolMin: 2, toolMax: 3, gameMin: '0.10.0', gameMax: '0.10.5', expires: '20270101' },
 ];
 
 const env: LicenseEnv = { gameVersion: '0.9.11', toolVersion: 1, revoked: [], revokedSerials: [], today: '20261111' };
@@ -67,7 +69,9 @@ describe('本地图形生成器与游戏校验一致', () => {
     for (const f of vectors) {
       const canonical = await signLicense(f);
       const sig = canonical.slice(canonical.lastIndexOf('.') + 1);
-      expect(core.hmacPure(core.SECRET, core.payloadOf(f)).slice(0, 12)).toBe(sig);
+      // 任意版本授权会归一化成 0.0.0~99.99.99 再签名
+      const normalized = f.anyVersion ? { ...f, gameMin: ANY_VERSION_MIN, gameMax: ANY_VERSION_MAX } : f;
+      expect(core.hmacPure(core.SECRET, core.payloadOf(normalized)).slice(0, 12)).toBe(sig);
     }
   });
 
