@@ -2008,13 +2008,53 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 62px;
-  padding: 10px 15px;
+  height: 64px;
+  min-height: 64px;
+  padding: 8px 15px;
+  overflow: hidden;
   border: 1px solid rgba(219, 181, 108, 0.3);
   border-radius: 6px;
   background: linear-gradient(180deg, rgba(62, 51, 38, 0.96), rgba(40, 33, 25, 0.97));
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   animation: fadeIn 0.18s ease;
+}
+
+/* 提示条高度固定，选中牌/追加状态时不改变文字换行，避免整行被撑高 */
+.prompt-bar .prompt-main {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.prompt-bar .prompt-title {
+  flex-wrap: nowrap;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prompt-bar .prompt-sub {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompt-bar .prompt-status {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prompt-bar .prompt-actions {
+  flex-wrap: nowrap;
+  max-width: 62%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.prompt-bar .prompt-actions::-webkit-scrollbar {
+  display: none;
 }
 
 .prompt-bar.idle {
@@ -8576,20 +8616,31 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 .harvest-mini {
   position: fixed;
   left: 50%;
-  bottom: 184px;
+  bottom: 196px;
   transform: translateX(-50%);
   z-index: 92;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px 7px 8px;
+  gap: 11px;
+  padding: 9px 16px 9px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(219, 181, 108, 0.72);
-  background: linear-gradient(180deg, rgba(62, 51, 38, 0.99), rgba(30, 24, 18, 0.99));
+  border: 2px solid rgba(255, 226, 168, 0.94);
+  background: linear-gradient(180deg, rgba(76, 61, 43, 0.99), rgba(34, 27, 19, 0.99));
   color: var(--gold-bright);
   cursor: pointer;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55), 0 0 18px rgba(219, 181, 108, 0.18);
-  animation: harvestMiniIn 0.18s ease;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.62), 0 0 28px rgba(255, 214, 130, 0.48);
+  animation: harvestMiniIn 0.18s ease, harvestMiniGlow 2s ease-in-out infinite;
+}
+
+@keyframes harvestMiniGlow {
+  0%, 100% {
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.62), 0 0 22px rgba(255, 214, 130, 0.38);
+    border-color: rgba(255, 226, 168, 0.78);
+  }
+  50% {
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.62), 0 0 34px rgba(255, 226, 168, 0.78);
+    border-color: rgba(255, 240, 200, 1);
+  }
 }
 
 .harvest-mini:hover {
@@ -8654,7 +8705,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
 .harvest-mini.is-my-turn {
   border-color: #ffe6a8;
-  animation: harvestPulse 1.5s ease-in-out infinite;
+  animation: harvestPulse 1.5s ease-in-out infinite, harvestMiniGlow 1.4s ease-in-out infinite;
 }
 
 .harvest-mini.is-my-turn .harvest-mini-open {
@@ -16723,10 +16774,15 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 }
 
 .rail-play-main .card.card-sm {
-  width: 50px;
-  height: 70px;
-  flex: 0 0 50px;
+  width: 64px;
+  height: 96px;
+  flex: 0 0 64px;
   pointer-events: none;
+}
+
+.rail-play-main .card.card-sm .card-body .card-name {
+  font-size: 12.5px;
+  letter-spacing: 1px;
 }
 
 .rail-play-main > div {
@@ -16756,21 +16812,24 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
 .rail-feed {
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
 }
 
 .rail-feed-list {
-  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 0 4px 10px 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-bottom: 10px;
 }
 
 .rail-feed-line {
+  flex: 0 0 auto;
   padding: 4px 6px;
   border-left: 2px solid rgba(219, 181, 108, 0.26);
   background: rgba(255, 255, 255, 0.025);
@@ -16831,7 +16890,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
   .own-area {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: minmax(0, 1fr) 240px 268px;
     align-items: end;
     gap: 12px;
     padding: 8px 18px 12px;
@@ -16840,11 +16899,10 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 
   .own-area > .hero-panel {
-    width: 360px;
+    width: 268px;
     min-width: 0;
-    grid-column: 2;
+    grid-column: 3;
     grid-row: 1;
-    max-height: 308px;
     overflow: hidden;
   }
 
@@ -16854,8 +16912,13 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
     min-width: 0;
   }
 
+  .own-area > .equip-bar {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
   .game-screen.self-card-left .own-area {
-    grid-template-columns: 320px minmax(0, 1fr);
+    grid-template-columns: 268px 240px minmax(0, 1fr);
   }
 
   .game-screen.self-card-left .own-area > .hero-panel {
@@ -16864,8 +16927,115 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 
   .game-screen.self-card-left .own-area > .play-column {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .game-screen.self-card-left .own-area > .equip-bar {
     grid-column: 2;
     grid-row: 1;
+  }
+
+  /* 独立装备栏：四格竖排，显示装备名称与效果，替个人信息卡分担内容 */
+  .equip-bar {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    min-height: 0;
+    padding: 8px 9px;
+    border: 1px solid rgba(219, 181, 108, 0.26);
+    border-radius: 9px;
+    background: linear-gradient(165deg, rgba(52, 43, 32, 0.9), rgba(28, 23, 17, 0.95));
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+  }
+
+  .equip-bar-title {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    color: var(--gold-bright);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+
+  .equip-bar-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(219, 181, 108, 0.32), transparent);
+  }
+
+  .equip-bar-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .equip-bar-slot {
+    flex: 1 1 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: center;
+    column-gap: 6px;
+    row-gap: 1px;
+    padding: 4px 7px;
+    border: 1px solid rgba(219, 181, 108, 0.16);
+    border-left: 2px solid rgba(219, 181, 108, 0.2);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  .equip-bar-slot.filled {
+    border-color: rgba(219, 181, 108, 0.42);
+    border-left-color: var(--gold);
+    background: linear-gradient(90deg, rgba(219, 181, 108, 0.14), rgba(219, 181, 108, 0.05));
+  }
+
+  .equip-bar-label {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    color: rgba(219, 181, 108, 0.72);
+    white-space: nowrap;
+  }
+
+  .equip-bar-name {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    font-size: 11.5px;
+    line-height: 1.25;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .equip-bar-name.is-empty {
+    color: rgba(205, 189, 162, 0.4);
+  }
+
+  .equip-bar-effect {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    font-size: 9.5px;
+    line-height: 1.25;
+    color: rgba(219, 181, 108, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .hand-cards {
@@ -17027,6 +17197,17 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   transition: 0.15s ease;
 }
 
+/* 单条记录最多 4 行，超长内容（如五谷丰登亮牌）不再把面板撑爆，完整内容看战报 */
+.rail-feed-line > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  word-break: break-word;
+}
+
 .rail-feed-line:hover {
   border-color: rgba(219, 181, 108, 0.18);
   background: rgba(219, 181, 108, 0.06);
@@ -17056,8 +17237,8 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 /* 牌桌侧栏聊天：与最新动向各占一半，互不挤压 */
 .rail-chat {
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -17065,9 +17246,9 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* 侧栏聊天复用全局等级气泡，微调字号适配窄栏 */
@@ -19474,10 +19655,72 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   flex: 0 0 auto;
 }
 
-/* 个人信息卡固定高度，保证技能、装备和手牌栏同时可见，不因装备增减而撑高整行 */
+/* 个人信息卡跟随整行高度，内容自适应，不再固定高度留白 */
 .own-area > .hero-panel {
-  height: 224px;
+  height: auto;
   min-height: 0;
+  align-self: stretch;
+}
+
+/* 收紧内边距与行距：判定区、铁索、翻面等状态增加时也不出现滚动条 */
+html body .own-area > .hero-panel {
+  padding: 9px 12px 8px;
+}
+
+html body .own-area > .hero-panel .hero-main {
+  margin-bottom: 5px;
+  gap: 10px;
+}
+
+html body .own-area > .hero-panel .hero-emblem {
+  width: 38px;
+  height: 38px;
+  flex-basis: 38px;
+  font-size: 15px;
+}
+
+html body .own-area > .hero-panel .hero-name {
+  font-size: 21px;
+}
+
+html body .own-area > .hero-panel .hero-title {
+  margin-top: 1px;
+  font-size: 11px;
+}
+
+html body .own-area > .hero-panel .hp-row.big {
+  margin-top: 2px;
+}
+
+html body .own-area > .hero-panel .hp-meter {
+  margin-top: 2px;
+}
+
+html body .own-area > .hero-panel .skill-desc {
+  display: none;
+}
+
+html body .own-area > .hero-panel .hero-body {
+  gap: 2px;
+  overflow: visible;
+}
+
+html body .own-area > .hero-panel .hero-range {
+  margin-top: 1px;
+}
+
+html body .own-area > .hero-panel .hero-judge {
+  margin-top: 4px;
+}
+
+html body .own-area > .hero-panel .hero-status-row {
+  margin-top: 3px;
+}
+
+html body .own-area > .hero-panel .hero-foot {
+  margin-top: 5px;
+  padding-top: 5px;
+  font-size: 12px;
 }
 
 .log-scrim {
@@ -21681,8 +21924,8 @@ html body .seat.seat-card-v2 > .seat-skill-ring {
 
 html body :is(.game-screen, .spectator-screen) .seat.seat-card-v2 {
   --faction: #d9b46c;
-  --seat-art-h: 122px;
-  width: 148px;
+  --seat-art-h: 104px;
+  width: 156px;
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--faction) 62%, transparent);
   border-radius: 10px;
@@ -21807,6 +22050,72 @@ html body .seat.seat-card-v2 .seat-role-chip {
   background: rgba(8, 6, 4, 0.72);
   border: 1px solid currentColor;
   white-space: nowrap;
+}
+
+/* 真实身份公开（阵亡 / 主公 / 已明置）时放大成一枚身份牌 */
+html body .seat.seat-card-v2 .seat-role-chip.is-revealed {
+  top: 28px;
+  right: 5px;
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+  border-width: 1.5px;
+  border-radius: 5px;
+  font-family: var(--font-calligraphy);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+  background: rgba(10, 8, 5, 0.92);
+  box-shadow: 0 0 14px currentColor, 0 3px 10px rgba(0, 0, 0, 0.65);
+  animation: roleRevealPop 0.36s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes roleRevealPop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* 常显的身份标记按钮：放在势力角标下方，随时可点 */
+html body .seat.seat-card-v2 .seat-role-mark {
+  position: absolute;
+  top: 30px;
+  left: 5px;
+  z-index: 6;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px dashed rgba(219, 181, 108, 0.55);
+  border-radius: 4px;
+  background: rgba(8, 6, 4, 0.72);
+  color: rgba(238, 222, 190, 0.85);
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+html body .seat.seat-card-v2 .seat-role-mark:hover {
+  border-color: var(--gold-bright);
+  background: rgba(219, 181, 108, 0.24);
+  color: #fff;
+}
+
+html body .seat.seat-card-v2 .seat-role-mark.role-lord,
+html body .seat.seat-card-v2 .seat-role-mark.role-loyalist,
+html body .seat.seat-card-v2 .seat-role-mark.role-rebel,
+html body .seat.seat-card-v2 .seat-role-mark.role-traitor {
+  border-style: solid;
+  border-color: currentColor;
+  background: rgba(8, 6, 4, 0.9);
+  font-size: 12px;
+  box-shadow: 0 0 10px currentColor;
 }
 
 /* 玩家标记的身份（忠/反/内）常显在武将卡上 */
@@ -21948,8 +22257,8 @@ html body .seat.seat-card-v2 .seat-plate .ambition-tag {
 html body .seat.seat-card-v2 .seat-detail {
   position: relative;
   padding: 4px 5px 5px;
-  height: 64px;
-  overflow: hidden;
+  min-height: 62px;
+  overflow: visible;
   background: linear-gradient(180deg, #241d16, #14100b);
   border-top: 1px solid color-mix(in srgb, var(--faction) 42%, transparent);
 }
@@ -22295,3 +22604,121 @@ html body .own-area > .hero-panel > .hero-main,
 html body .own-area > .hero-panel > .hero-body,
 html body .own-area > .hero-panel > .hero-foot,
 html body .own-area > .hero-panel > .hero-reveal-bar { position: relative; z-index: 1; }
+
+/* ---------- 音量面板（设置 / 对局内共用） ---------- */
+.volume-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.volume-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.volume-row .volume-label {
+  color: rgba(219, 181, 108, 0.9);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.volume-row input[type='range'] {
+  width: 100%;
+  accent-color: var(--gold);
+}
+
+.volume-row input[type='range']:disabled {
+  opacity: 0.45;
+}
+
+.volume-row b {
+  text-align: right;
+  color: var(--gold-bright);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.volume-switch {
+  grid-template-columns: 64px minmax(0, 1fr);
+}
+
+.volume-switch .count-btn {
+  justify-self: start;
+}
+
+.volume-master {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid rgba(219, 181, 108, 0.18);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.volume-panel.is-compact {
+  gap: 5px;
+  margin-top: 0;
+}
+
+.volume-panel.is-compact .volume-row {
+  grid-template-columns: 56px minmax(0, 1fr) 36px;
+  font-size: 12px;
+}
+
+.volume-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  border: 0;
+  background: rgba(0, 0, 0, 0.28);
+  cursor: default;
+}
+
+/* 对局内音量窗口：与战报同样点其它区域关闭 */
+.volume-window {
+  position: fixed;
+  right: 22px;
+  top: 74px;
+  z-index: 61;
+  width: 292px;
+  padding: 14px 15px 15px;
+  border: 1px solid rgba(219, 181, 108, 0.34);
+  border-radius: 10px;
+  background: linear-gradient(170deg, rgba(52, 43, 32, 0.98), rgba(28, 23, 17, 0.99));
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.6);
+  animation: fadeIn 0.16s ease;
+}
+
+.volume-window-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(219, 181, 108, 0.2);
+  color: var(--gold-bright);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+}
+
+.volume-window-hint {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+html.theme-magic .volume-window {
+  border-color: var(--line);
+  background: linear-gradient(160deg, rgba(34, 20, 52, 0.98), rgba(12, 9, 22, 0.99));
+}

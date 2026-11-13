@@ -15,7 +15,7 @@ let voiceVolume = 1;
 function refreshSettings() {
   const s = getSoundSettings();
   voiceEnabled = s.enabled;
-  voiceVolume = s.volume;
+  voiceVolume = s.voiceVolume;
 }
 
 function play(url: string): void {

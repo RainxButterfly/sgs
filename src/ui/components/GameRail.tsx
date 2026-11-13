@@ -22,11 +22,30 @@ export function GameRail({ onShowLog }: Props) {
   const [stickers, setStickers] = useState(false);
   const lastLogId = game?.state.log[game.state.log.length - 1]?.id;
   useEffect(() => {
-    if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
-  }, [lastLogId]);
+    const el = feedRef.current;
+    if (!el) return;
+    // 等本次渲染的布局完成后再滚到底，避免长条目换行后高度变化导致最新一条被裁
+    const scroll = () => {
+      el.scrollTop = el.scrollHeight;
+    };
+    scroll();
+    const raf = requestAnimationFrame(scroll);
+    const timer = window.setTimeout(scroll, 120);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(timer);
+    };
+  }, [lastLogId, game?.state.log.length]);
   useEffect(() => {
-    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }, [messages.length]);
+    const el = chatRef.current;
+    if (!el) return;
+    const scroll = () => {
+      el.scrollTop = el.scrollHeight;
+    };
+    scroll();
+    const raf = requestAnimationFrame(scroll);
+    return () => cancelAnimationFrame(raf);
+  }, [messages.length, game?.state.log.length]);
   if (!game) return null;
 
   const online = lanRole === 'host' || lanRole === 'client';
@@ -80,7 +99,7 @@ export function GameRail({ onShowLog }: Props) {
         <div className="rail-feed-list" ref={feedRef}>
           {recent.length === 0 && <div className="rail-empty">暂无记录</div>}
           {recent.map((entry) => (
-            <div key={entry.id} className={`rail-feed-line log-${entry.kind}`}>
+            <div key={entry.id} className={`rail-feed-line log-${entry.kind}`} title={entry.text}>
               <i className="rail-feed-dot" />
               <span>{entry.text}</span>
             </div>

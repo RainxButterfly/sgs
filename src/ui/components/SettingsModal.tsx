@@ -6,6 +6,7 @@ import { applyDataDir, pickDataDir, readDataDirInfo, writeDataSnapshot } from '.
 import { formatDiagnostics } from '../diagnostics';
 import { levelTitle, profileProgress, xpForLevel } from '../profile';
 import { NameChip } from './NameChip';
+import { VolumePanel } from './VolumePanel';
 import { useGameStore } from '../store';
 import { getCardVoicePack, setCardVoicePack, VOICE_PACKS } from '../voicePacks';
 
@@ -27,9 +28,7 @@ export function SettingsModal() {
   const aiSpeed = useGameStore((s) => s.aiSpeed);
   const setAiSpeed = useGameStore((s) => s.setAiSpeed);
   const soundEnabled = useGameStore((s) => s.soundEnabled);
-  const soundVolume = useGameStore((s) => s.soundVolume);
   const setSoundEnabled = useGameStore((s) => s.setSoundEnabled);
-  const setSoundVolume = useGameStore((s) => s.setSoundVolume);
   const vibrationEnabled = useGameStore((s) => s.vibrationEnabled);
   const setVibrationEnabled = useGameStore((s) => s.setVibrationEnabled);
   const setBgImage = useGameStore((s) => s.setBgImage);
@@ -397,12 +396,12 @@ export function SettingsModal() {
         </div>
 
         <div className="settings-section">
-          <div className="settings-section-title">音效</div>
+          <div className="settings-section-title">声音</div>
           <p className="settings-section-desc">
-            点击按钮、选牌、出牌、响应、受伤和回复时会播放轻量音效；关闭后完全静音。
+            音效与武将语音可以分别调音量；关闭总开关后全部静音。背景音乐通道已预留，后续版本开放。
           </p>
           <div className="bg-setting-row">
-            <span>音效开关</span>
+            <span>声音开关</span>
             <button
               type="button"
               className={`count-btn ${soundEnabled ? 'on' : ''}`}
@@ -411,19 +410,7 @@ export function SettingsModal() {
               {soundEnabled ? '开启' : '关闭'}
             </button>
           </div>
-          <div className="bg-setting-row">
-            <span>音量</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={5}
-              value={Math.round(soundVolume * 100)}
-              disabled={!soundEnabled}
-              onChange={(event) => setSoundVolume(Number(event.target.value) / 100)}
-            />
-            <b>{Math.round(soundVolume * 100)}%</b>
-          </div>
+          <VolumePanel />
           <div className="bg-setting-row">
             <span>震动</span>
             <button

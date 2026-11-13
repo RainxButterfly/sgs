@@ -20,6 +20,7 @@ import {
 import { loadBackgroundSettings, saveBackgroundSettings, loadBackgroundVideo, clearBackgroundVideo, type BackgroundScope } from './background';
 import type { GdView } from '../core/guandan-view';
 import { applySoundSettings, getSoundSettings, getVibrationEnabled, playSound, setVibrationEnabled, vibrate } from './sound';
+import { syncBgm } from './bgm';
 import { playCardVoice, playDieVoice, playSkillVoice } from './voice';
 import { cardVoicePinyin } from './cardArt';
 import { applyMatchXp, loadProfile, normalizePlayerName, saveProfile, type PlayerProfile, type XpGain } from './profile';
@@ -427,6 +428,9 @@ interface GameStore {
   aiSpeed: number;
   soundEnabled: boolean;
   soundVolume: number;
+  voiceVolume: number;
+  bgmVolume: number;
+  bgmEnabled: boolean;
   vibrationEnabled: boolean;
   myRole: Role | null;
   firstPlayerId: number | null;
@@ -495,6 +499,9 @@ interface GameStore {
   setAiSpeed: (value: number) => void;
   setSoundEnabled: (value: boolean) => void;
   setSoundVolume: (value: number) => void;
+  setVoiceVolume: (value: number) => void;
+  setBgmVolume: (value: number) => void;
+  setBgmEnabled: (value: boolean) => void;
   setVibrationEnabled: (value: boolean) => void;
   setBgImage: (image: string | null) => void;
   setBgVideo: () => void;
@@ -677,6 +684,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   aiSpeed: loadAiSpeed(),
   soundEnabled: getSoundSettings().enabled,
   soundVolume: getSoundSettings().volume,
+  voiceVolume: getSoundSettings().voiceVolume,
+  bgmVolume: getSoundSettings().bgmVolume,
+  bgmEnabled: getSoundSettings().bgmEnabled,
   vibrationEnabled: getVibrationEnabled(),
   myRole: null,
   firstPlayerId: null,
@@ -1690,6 +1700,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const volume = Math.max(0, Math.min(1, value));
     applySoundSettings({ ...getSoundSettings(), volume });
     set({ soundVolume: volume });
+  },
+  setVoiceVolume: (value) => {
+    const voiceVolume = Math.max(0, Math.min(1, value));
+    applySoundSettings({ ...getSoundSettings(), voiceVolume });
+    set({ voiceVolume });
+  },
+  setBgmVolume: (value) => {
+    const bgmVolume = Math.max(0, Math.min(1, value));
+    applySoundSettings({ ...getSoundSettings(), bgmVolume });
+    set({ bgmVolume });
+  },
+  setBgmEnabled: (value) => {
+    applySoundSettings({ ...getSoundSettings(), bgmEnabled: value });
+    set({ bgmEnabled: value });
+    syncBgm();
   },
   setVibrationEnabled: (value) => {
     setVibrationEnabled(value);

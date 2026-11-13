@@ -6,6 +6,7 @@ import { GameContextMenu } from '../components/GameContextMenu';
 import { GameRail } from '../components/GameRail';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroPanel } from '../components/HeroPanel';
+import { EquipBar } from '../components/EquipBar';
 import { Hand } from '../components/Hand';
 import { LogPanel } from '../components/LogPanel';
 import { GameModals } from '../components/Modals';
@@ -208,6 +209,7 @@ export function GameScreen() {
             onClearSelection={() => useGameStore.getState().clearSelection()}
           />
         </div>
+        <EquipBar player={human} />
       </div>
       <LogPanel open={logOpen} onClose={() => setLogOpen(false)} />
       <GameModals />

@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { PHASE_NAME } from '../../core/types';
 import { compositionText } from '../composition';
 import { visibleHeroNames } from '../labels';
 import { useGameSnapshot, useGameStore } from '../store';
 import { SpectatorBadge } from './SpectatorBadge';
+import { VolumeModal } from './VolumeModal';
 
 interface Props {
   logOpen: boolean;
@@ -18,6 +20,7 @@ export function TopBar({ logOpen, onToggleLog, onExit }: Props) {
   const chatUnread = useGameStore((s) => s.chatUnread);
   const autoPlay = useGameStore((s) => s.autoPlay);
   const setAutoPlay = useGameStore((s) => s.setAutoPlay);
+  const [volumeOpen, setVolumeOpen] = useState(false);
   if (!game) return null;
   const current = game.state.players[game.state.current];
   const mine = !spectate && current?.id === humanId;
@@ -54,6 +57,14 @@ export function TopBar({ logOpen, onToggleLog, onExit }: Props) {
             {autoPlay ? '托管中' : '托管'}
           </button>
         )}
+        <button
+          type="button"
+          className={`btn ghost small ${volumeOpen ? 'on' : ''}`}
+          title="调节音效与武将语音音量"
+          onClick={() => setVolumeOpen((v) => !v)}
+        >
+          音量
+        </button>
         <button type="button" className="btn ghost small" onClick={openChat}>
           聊天{chatUnread > 0 && <span className="chat-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>}
         </button>
@@ -67,6 +78,7 @@ export function TopBar({ logOpen, onToggleLog, onExit }: Props) {
           退出
         </button>
       </div>
+      <VolumeModal open={volumeOpen} onClose={() => setVolumeOpen(false)} />
     </header>
   );
 }

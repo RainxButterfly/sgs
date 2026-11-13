@@ -25,9 +25,84 @@ export const CHANGE_LABEL: Record<ChangeKind, string> = {
 
 const VERSIONS: ChangelogEntry[] = [
   {
+    version: '0.9.16',
+    date: '2026-11-13',
+    title: '装备栏排版、动向列表与掼蛋先手',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '新增音量调节：音效与武将语音两条通道独立可调，设置里能调，对局顶栏「音量」按钮也能随时调（窗口样式，点其它区域即可关闭）。',
+          '身份标记改为常显按钮，直接放在势力角标下方，随时点选；真实身份公开（阵亡、主公等）时放大成一枚身份牌。',
+        ],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '修复最近动向面板内容整体空白、列表撑不出高度的问题，记录恢复正常滚动显示，最新一条始终完整可见。',
+          '修复装备栏高度不足导致槽位文字重叠的问题，装备名称与效果分行显示，不再挤在一起。',
+          '修复选中卡牌时提示条换行把整行撑高的问题，提示条高度固定，界面不再跳动。',
+          '修复个人信息卡高度固定导致的底部空白、以及判定区/铁索等状态出现时冒出滚动条的问题。',
+          '修复其他玩家武将牌高度不足、判定区与「铁索·横置」被裁掉的问题，信息条改为自适应高度。',
+          '修复「当前出牌」里的牌过矮导致牌名显示不全的问题，牌面加大到 64×96。',
+          '掼蛋首局先手改为随机决定，不再固定房主先出，开局提示会写明由谁先出。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '装备栏高度与手牌区一致，不再把底部区域和牌桌撑高；四个槽位在有限高度内上下两行排布，一眼看清。',
+          '个人信息卡宽度收窄到与右侧信息栏一致，腾出的宽度让给装备栏，装备名称与效果完整显示。',
+          '装备栏补齐星虹魔法主题配色，音量面板同样适配两套主题。',
+          '长战报条目在最近动向里最多显示四行，完整内容可在完整战报中查看。',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.9.15',
+    date: '2026-11-13',
+    title: '装备栏、侧栏滚动与五谷状态胶囊',
+    sections: [
+      {
+        kind: 'feature',
+        items: [
+          '新增独立装备栏：武器、防具、+1 马、-1 马各自成格，显示装备名称、花色与效果，悬停可查看完整说明。',
+        ],
+      },
+      {
+        kind: 'fix',
+        items: [
+          '修复最近动向内容溢出面板、最后一行只显示一半的问题，列表现在严格在面板范围内滚动。',
+          '修复联机时聊天框被最近动向挤压、两者高度不均的问题，现在各占一半高度。',
+        ],
+      },
+      {
+        kind: 'polish',
+        items: [
+          '五谷丰登等弹窗收起后的胶囊加粗边框并持续发光脉冲，收在哪里一眼就能看到。',
+        ],
+      },
+    ],
+  },
+  {
     version: '0.9.14',
     date: '2026-11-13',
-    title: '武将牌版式、立绘皮肤与掼蛋 2v2',
+    title: '立绘填满与更新包同步',
+    sections: [
+      {
+        kind: 'fix',
+        items: [
+          '武将立绘在图鉴与皮肤缩略图中填满整张卡，不再上下留白，双头武将两人都能看到。',
+          '修复检查更新未能识别新版本的问题，更新包与版本清单同步发布。',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.9.13',
+    date: '2026-11-13',
+    title: '武将牌版式、立绘皮肤与对局界面整备',
     sections: [
       {
         kind: 'feature',
@@ -56,8 +131,7 @@ const VERSIONS: ChangelogEntry[] = [
           '修复卡牌图片被裁切、过暗的问题，牌面图案完整显示。',
           '修复部分武将发动技能无语音的问题（激将、空城、龙胆等），补全对应语音。',
           '铁索连环改为立绘横置 + 锁链视觉，翻面改为立绘 180 度旋转，状态一目了然。',
-          '修复最新动向面板文字溢出、退出对局后残留弹窗未关闭的问题。',
-          '修复联机时聊天框被最新动向挤压、最新动向文字超出面板的问题，两者各占一半。',
+          '修复退出对局后残留弹窗未关闭的问题。',
           '修复借刀杀人等两段式锦囊选择后无法更换第一个目标的问题。',
           '身份标记「忠 / 反 / 内」常显在武将卡上，不再需要悬停才能看到。',
           '缩短无懈可击的等待时间，对局节奏更紧凑。',
@@ -72,7 +146,6 @@ const VERSIONS: ChangelogEntry[] = [
           '右下角自己的信息卡完整显示，无需滚动。',
           '卡牌改为方形牌面，牌名竖排、花色点数右上、范围右下，视觉更清晰。',
           '卡牌牌面改为浅色底、深色文字，花色红黑分明，图案不再发黑、不再裁切。',
-          '武将立绘在图鉴与皮肤缩略图中填满整张卡，不再上下留白。',
           '牌桌侧栏新增常驻聊天框，不用点按钮也能看到消息并发送。',
           '聊天消息按玩家等级显示专属气泡，名字与等级显示在气泡上方，对局、大厅、掼蛋统一。',
           '对局侧栏与掼蛋聊天框支持表情包，去掉快捷文字按钮，输入区更宽敞。',
@@ -1480,21 +1553,10 @@ const group = (version: string, date: string, title: string, versions: Changelog
   versions,
 });
 
-const latestRelease = VERSIONS.find((entry) => entry.version === '0.9.14')!;
-const currentRelease = VERSIONS.find((entry) => entry.version === '0.9.12')!;
-const currentDev = VERSIONS.find((entry) => entry.version === '0.9.11')!;
-const currentPatch = VERSIONS.find((entry) => entry.version === '0.9.10')!;
-const previousPatch = VERSIONS.find((entry) => entry.version === '0.9.9')!;
-const currentMinor = VERSIONS.find((entry) => entry.version === '0.9.8')!;
-const minorBase = VERSIONS.find((entry) => entry.version === '0.9.7')!;
-const olderBase = VERSIONS.find((entry) => entry.version === '0.9.6')!;
-const oldestBase = VERSIONS.find((entry) => entry.version === '0.9.5')!;
-const ancientBase = VERSIONS.find((entry) => entry.version === '0.9.4')!;
-const earliestBase = VERSIONS.find((entry) => entry.version === '0.9.3')!;
-const dawnBase = VERSIONS.find((entry) => entry.version === '0.9.2')!;
-const firstBase = VERSIONS.find((entry) => entry.version === '0.9.1')!;
 const dated = (entries: ChangelogEntry[], date: string): ChangelogEntry[] =>
   entries.map((entry) => ({ ...entry, date }));
+/** 0.9 整段合并为一个分组，右侧按版本分段展示 0.9.15 → 0.9.0 */
+const nine = VERSIONS.filter((entry) => entry.version.startsWith('0.9.'));
 const eight = [
   ...EARLY_08,
   ...VERSIONS.filter((entry) => entry.version.startsWith('0.8.') && !entry.version.includes('~')),
@@ -1531,20 +1593,7 @@ const five = [
 ];
 
 export const CHANGELOG: ChangelogEntry[] = [
-  latestRelease,
-  currentRelease,
-  currentDev,
-  currentPatch,
-  previousPatch,
-  currentMinor,
-  minorBase,
-  olderBase,
-  oldestBase,
-  ancientBase,
-  earliestBase,
-  dawnBase,
-  firstBase,
-  VERSIONS.find((entry) => entry.version === '0.9.0')!,
+  group('0.9.0~0.9.16', '2026-11-10 ~ 2026-11-13', '武将牌版式、立绘皮肤与对局界面整备', nine),
   group('0.8.0~0.8.16', '2026-11-09 ~ 2026-11-10', '暗将、观战与技能整备', eight),
   group('0.7.0~0.7.12', '2026-11-09', '联机、观战与规则完善', seven),
   group('0.6.0~0.6.9', '2026-11-08', '移动端、联机与规则完善', six),

@@ -67,13 +67,19 @@ describe('强尼银手', () => {
     const others = game.state.players.slice(1);
     player.hand = [mk('heart', 3), mk('diamond', 8)];
     player.judgeZone = [{ id: 'sd', name: '闪电', suit: 'spade', rank: 1, type: 'delayed' }];
+    // 清空其他角色手牌，避免随机的无懈可击把闪电抵消掉导致用例不稳定
+    others.forEach((p) => {
+      p.hand = [];
+    });
     const othersHp = others.map((p) => p.hp);
     // 固定判定牌为黑桃 5，保证命中
     game.judge = async () => mk('spade', 5);
     // @ts-expect-error 测试直接结算判定阶段
     await game.judgePhase(player);
-    // 强尼手牌被清空
-    expect(player.hand.length).toBe(0);
+    // 原手牌被全部弃置（残躯复活摸牌不影响此断言）
+    expect(player.hand.some((card) => card.id === 't-heart-3')).toBe(false);
+    expect(player.hand.some((card) => card.id === 't-diamond-8')).toBe(false);
+    expect(logText(game)).toContain('烈火');
     // 全场（含强尼）各受 3 点伤害
     for (let i = 0; i < others.length; i += 1) {
       expect(others[i].hp).toBe(othersHp[i] - 3);

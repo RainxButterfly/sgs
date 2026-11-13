@@ -109,11 +109,25 @@ export function PlayerSeat({
         {showFaction ? FACTION_NAME[player.faction] : '暗'}
       </span>
       {tableNo && <span className="seat-table-no">{tableNo}</span>}
-      {roleLabel && <span className={`seat-role-chip role-${player.role}`}>{roleLabel}</span>}
-      {mark && (
-        <span className={`seat-identity-mark role-${mark}`} title={`标记身份：${ROLE_NAME[mark]}`}>
-          {ROLE_NAME[mark].slice(0, 1)}
+      {roleLabel && (
+        <span className={`seat-role-chip role-${player.role} ${roleVisible ? 'is-revealed' : ''}`}>
+          {roleLabel}
         </span>
+      )}
+      {canMark && (
+        <button
+          type="button"
+          className={`seat-role-mark ${mark ? `role-${mark}` : ''}`}
+          title={mark ? `你标记为「${ROLE_NAME[mark]}」，点击修改` : '标记你判断的身份（仅自己可见）'}
+          aria-label={mark ? `已标记身份 ${ROLE_NAME[mark]}` : '标记身份'}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onMark?.();
+          }}
+        >
+          {mark ? ROLE_NAME[mark].slice(0, 1) : '标'}
+        </button>
       )}
       {current && <span className="seat-turn-tag">行动中</span>}
       {player.chained && (
@@ -296,39 +310,22 @@ export function PlayerSeat({
               </button>
             </div>
           )}
-          {(canMark || (onDetail && showFaction)) && (
+          {onDetail && showFaction && (
             <div className="seat-action-row">
-              {canMark && (
+              <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} mode={mode} self={selfView} />}>
                 <button
                   type="button"
-                  className={`seat-action seat-mark ${mark ? `role-${mark}` : ''}`}
-                  title="标记你判断的身份（仅自己可见）"
-                  aria-label="标记身份"
+                  className="seat-action seat-info"
+                  title="查看武将详情"
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={(event) => {
                     event.stopPropagation();
-                    onMark?.();
+                    onDetail();
                   }}
                 >
-                  {mark ? ROLE_NAME[mark].slice(0, 1) : '标'}
+                  i
                 </button>
-              )}
-              {onDetail && showFaction && (
-                <HoverInfo className="seat-info-wrap" content={<HeroHover hero={hero} player={player} mode={mode} self={selfView} />}>
-                  <button
-                    type="button"
-                    className="seat-action seat-info"
-                    title="查看武将详情"
-                    onPointerDown={(event) => event.stopPropagation()}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onDetail();
-                    }}
-                  >
-                    i
-                  </button>
-                </HoverInfo>
-              )}
+              </HoverInfo>
             </div>
           )}
         </div>

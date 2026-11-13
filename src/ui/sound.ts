@@ -18,11 +18,30 @@ export type SoundName =
 
 interface SoundSettings {
   enabled: boolean;
+  /** 音效音量 */
   volume: number;
+  /** 武将/卡牌语音音量 */
+  voiceVolume: number;
+  /** 背景音乐音量 */
+  bgmVolume: number;
+  /** 背景音乐开关 */
+  bgmEnabled: boolean;
 }
 
 const STORAGE_KEY = 'sgs-sound-settings';
-const DEFAULTS: SoundSettings = { enabled: true, volume: 0.32 };
+const DEFAULTS: SoundSettings = {
+  enabled: true,
+  volume: 0.32,
+  voiceVolume: 0.85,
+  bgmVolume: 0.3,
+  bgmEnabled: true,
+};
+
+const clamp01 = (value: unknown, fallback: number): number => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.max(0, Math.min(1, num));
+};
 
 function loadSettings(): SoundSettings {
   try {
@@ -31,7 +50,10 @@ function loadSettings(): SoundSettings {
     const parsed = JSON.parse(raw) as Partial<SoundSettings>;
     return {
       enabled: parsed.enabled !== false,
-      volume: Math.max(0, Math.min(1, Number(parsed.volume ?? DEFAULTS.volume))),
+      volume: clamp01(parsed.volume, DEFAULTS.volume),
+      voiceVolume: clamp01(parsed.voiceVolume, DEFAULTS.voiceVolume),
+      bgmVolume: clamp01(parsed.bgmVolume, DEFAULTS.bgmVolume),
+      bgmEnabled: parsed.bgmEnabled !== false,
     };
   } catch {
     return DEFAULTS;
@@ -47,10 +69,27 @@ export function getSoundSettings(): SoundSettings {
   return settings;
 }
 
+/** 语音音量（关闭音效时一并静音） */
+export function getVoiceVolume(): number {
+  return settings.enabled ? settings.voiceVolume : 0;
+}
+
+/** 背景音乐音量（关闭音乐开关时为 0） */
+export function getBgmVolume(): number {
+  return settings.bgmEnabled ? settings.bgmVolume : 0;
+}
+
+export function isBgmEnabled(): boolean {
+  return settings.bgmEnabled;
+}
+
 export function applySoundSettings(next: SoundSettings): void {
   settings = {
     enabled: next.enabled,
-    volume: Math.max(0, Math.min(1, next.volume)),
+    volume: clamp01(next.volume, DEFAULTS.volume),
+    voiceVolume: clamp01(next.voiceVolume, DEFAULTS.voiceVolume),
+    bgmVolume: clamp01(next.bgmVolume, DEFAULTS.bgmVolume),
+    bgmEnabled: next.bgmEnabled !== false,
   };
   if (master && context) {
     master.gain.setTargetAtTime(settings.enabled ? settings.volume : 0, context.currentTime, 0.02);

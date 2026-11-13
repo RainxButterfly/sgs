@@ -39,6 +39,11 @@ function setupHands(game: GuandanMatch, hands: GdCard[][]) {
 }
 
 describe('掼蛋 · 发牌', () => {
+  it('首局先手座位随机，不固定房主先出', () => {
+    const leaders = [0.05, 0.3, 0.55, 0.8].map((value) => new GuandanMatch({ rng: () => value }).turn);
+    expect(leaders).toEqual([0, 1, 2, 3]);
+  });
+
   it('四家各 27 张，共 108 张且无重复', () => {
     const game = freshGame();
     expect(game.seats.map((s) => s.hand.length)).toEqual([27, 27, 27, 27]);
@@ -55,7 +60,7 @@ describe('掼蛋 · 发牌', () => {
 describe('掼蛋 · 出牌规则', () => {
   it('首家不能过牌', () => {
     const game = freshGame();
-    const r = game.pass(0);
+    const r = game.pass(game.turn);
     expect(r.ok).toBe(false);
     expect(r.reason).toContain('首家');
   });

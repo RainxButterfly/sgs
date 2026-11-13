@@ -3453,3 +3453,47 @@ html.theme-magic .m-self .m-reveal-row {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* ---------- 装备栏（星虹主题） ---------- */
+html.theme-magic .equip-bar {
+  border-color: var(--line);
+  border-radius: 12px;
+  background: linear-gradient(160deg, rgba(34, 20, 52, 0.96), rgba(12, 9, 22, 0.98));
+  box-shadow: 0 12px 30px rgba(4, 0, 14, 0.45);
+}
+
+html.theme-magic .equip-bar-title {
+  color: var(--ink);
+}
+
+html.theme-magic .equip-bar-title::after {
+  background: linear-gradient(90deg, rgba(255, 119, 207, 0.5), transparent);
+}
+
+html.theme-magic .equip-bar-slot {
+  border-color: var(--line);
+  border-left-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+html.theme-magic .equip-bar-slot.filled {
+  border-color: rgba(255, 119, 207, 0.42);
+  border-left-color: var(--accent);
+  background: linear-gradient(90deg, rgba(255, 119, 207, 0.16), rgba(255, 255, 255, 0.02));
+}
+
+html.theme-magic .equip-bar-label {
+  color: var(--gold-dim);
+}
+
+html.theme-magic .equip-bar-name {
+  color: var(--ink);
+}
+
+html.theme-magic .equip-bar-name.is-empty {
+  color: rgba(185, 174, 203, 0.45);
+}
+
+html.theme-magic .equip-bar-effect {
+  color: rgba(185, 174, 203, 0.86);
+}

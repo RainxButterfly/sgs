@@ -1,9 +1,9 @@
 import { HERO_MAP } from '../../core/deck';
 import { SKILL_MAP } from '../../core/skills';
 import { FACTION_NAME, ROLE_NAME, type GameMode, type PlayerState } from '../../core/types';
-import { cardSuitText, equipSlotText, factionKnown, isRedCard, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
+import { cardSuitText, factionKnown, isRedCard, shortCardName, visibleHeroNames, visibleSkillIds } from '../labels';
 import { useGameSnapshot } from '../store';
-import { EquipHover, HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
+import { HoverInfo, JudgeHover, SkillHover } from './HoverInfo';
 import { HeroPortrait } from './HeroPortrait';
 
 interface Flash {
@@ -65,12 +65,6 @@ export function HeroPanel({
   const skills = visibleSkillIds(player, mode, selfView);
   const heroLabel = visibleHeroNames(player, mode, selfView);
   const showFaction = factionKnown(player, mode, selfView);
-  const slots = [
-    { key: 'weapon', label: '武器' },
-    { key: 'armor', label: '防具' },
-    { key: 'horsePlus', label: '+1 马' },
-    { key: 'horseMinus', label: '-1 马' },
-  ] as const;
 
   return (
     <div
@@ -141,34 +135,6 @@ export function HeroPanel({
           {player.equips.horsePlus && <span className="hero-range-horse plus">+1马 · 他人距我+1</span>}
           {player.equips.horseMinus && <span className="hero-range-horse minus">-1马 · 我距他人-1</span>}
         </div>
-        <div className="hero-equips">
-        {slots.map(({ key, label }) => {
-          const card = player.equips[key];
-          const body = (
-            <>
-              <span className="equip-label">{label}</span>
-              <span className="equip-name">
-                {card && (
-                  <i className={`equip-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>
-                    {cardSuitText(card)}
-                  </i>
-                )}
-                {card ? shortCardName(card.name) : '—'}
-              </span>
-              {card && <span className="equip-slot-hint">{equipSlotText(card.equipSlot)}</span>}
-            </>
-          );
-          return card ? (
-            <HoverInfo key={key} as="div" className="equip-slot filled" content={<EquipHover name={card.name} />}>
-              {body}
-            </HoverInfo>
-          ) : (
-            <div key={key} className="equip-slot">
-              {body}
-            </div>
-          );
-        })}
-      </div>
       {player.judgeZone.length > 0 && (
         <div className="hero-judge">
           <span className="hero-judge-label">判定区</span>

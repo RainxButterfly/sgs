@@ -111,7 +111,8 @@ export class GuandanMatch {
       hand: [],
       place: null,
     }));
-    this.startRound(0);
+    // 首局随机决定先出牌的座位，房主不固定先手
+    this.startRound(Math.floor(this.rng() * 4) % 4);
   }
 
   /* ---------------- 基础查询 ---------------- */
@@ -178,7 +179,9 @@ export class GuandanMatch {
     this.deal();
     this.turn = firstSeat;
     this.phase = 'play';
-    this.note(`第 ${this.round} 局开始，级牌 ${LEVEL_NAME[this.levels[0]]} / ${LEVEL_NAME[this.levels[1]]}`);
+    this.note(
+      `第 ${this.round} 局开始，级牌 ${LEVEL_NAME[this.levels[0]]} / ${LEVEL_NAME[this.levels[1]]}，由 ${this.seats[firstSeat]?.name ?? '玩家'} 先出`,
+    );
   }
 
   /* ---------------- 出牌 ---------------- */
