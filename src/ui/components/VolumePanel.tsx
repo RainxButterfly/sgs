@@ -54,7 +54,7 @@ export function VolumePanel({ compact = false, showMaster = false }: Props) {
             type="range"
             min={0}
             max={100}
-            step={5}
+            step={1}
             value={Math.round(row.value * 100)}
             disabled={row.disabled}
             onChange={(event) => row.onChange(Number(event.target.value) / 100)}

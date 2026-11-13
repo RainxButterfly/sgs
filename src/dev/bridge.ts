@@ -5,6 +5,9 @@ import {
   DEV_GAME_VERSION_KEY,
   DEV_SESSION_KEY,
   DEV_TOOL_VERSION,
+  featureMeta,
+  featureOfCommand,
+  hasFeature,
   licenseAllowsLan,
   licenseProblem,
   readSession,
@@ -304,6 +307,12 @@ async function tick(): Promise<void> {
         if (inLan && !licenseAllowsLan(fields)) {
           cmd.status = 'rejected';
           cmd.note = '该授权码仅限单机使用，联机需要使用「单机+联机」类型的授权码';
+          continue;
+        }
+        const need = featureOfCommand(cmd.type);
+        if (!hasFeature(fields, need)) {
+          cmd.status = 'rejected';
+          cmd.note = `该授权码未解锁「${featureMeta(need).label}」权限`;
           continue;
         }
         const game = state.game as unknown as DevGame | null;

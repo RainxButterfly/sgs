@@ -32,7 +32,7 @@ async function makeLicense(serial: string, over: Partial<LicenseFields> = {}) {
     created: '20261111',
     batch: '武器专项',
     serial,
-    scope: 'solo',
+    flags: 0x1f,
     anyVersion: false,
     toolMin: 1,
     toolMax: 2,

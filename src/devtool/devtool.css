@@ -571,3 +571,75 @@ button:active {
     grid-template-columns: minmax(0, 1fr) 64px 64px auto;
   }
 }
+
+/* ---------- 授权功能权限位 ---------- */
+.dt-chip.part {
+  border-color: rgba(255, 211, 110, 0.5);
+  background: rgba(255, 211, 110, 0.1);
+  color: var(--dt-gold);
+}
+
+.dt-chip.lock {
+  border-color: rgba(255, 138, 155, 0.42);
+  background: rgba(255, 138, 155, 0.08);
+  color: #ffb0bd;
+}
+
+.dt-feats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dt-feat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--dt-line);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(160, 148, 194, 0.7);
+}
+
+.dt-feat i {
+  font-style: normal;
+  font-size: 10px;
+}
+
+.dt-feat.on {
+  border-color: rgba(138, 255, 193, 0.42);
+  background: rgba(138, 255, 193, 0.1);
+  color: #a8ffd2;
+}
+
+.dt-feat.off {
+  border-color: rgba(255, 138, 155, 0.3);
+  color: rgba(255, 176, 189, 0.62);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 138, 155, 0.45);
+}
+
+.dt-feat.danger.on {
+  border-color: rgba(255, 138, 155, 0.5);
+  background: rgba(255, 138, 155, 0.12);
+  color: #ffb0bd;
+}
+
+/* 未解锁的功能卡：内容变灰且不可点击，卡片本身仍可滚动阅读 */
+.dt-card.is-locked {
+  border-color: rgba(255, 138, 155, 0.24);
+}
+
+.dt-card.is-locked .dt-actions,
+.dt-card.is-locked .dt-rows,
+.dt-card.is-locked .dt-hero-picker {
+  opacity: 0.42;
+  filter: grayscale(0.55);
+  pointer-events: none;
+  user-select: none;
+}
+

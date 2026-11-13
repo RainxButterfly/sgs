@@ -3,9 +3,13 @@ import { createRoot } from 'react-dom/client';
 import { HEROES } from '../core/deck';
 import { DEV_CARD_NAMES } from '../dev/bridge';
 import {
+  DEV_FEATURES,
   DEV_GAME_VERSION_KEY,
   DEV_TOOL_CODE_KEY,
   DEV_TOOL_VERSION,
+  featureMeta,
+  featureOfCommand,
+  hasFeature,
   licenseAllowsLan,
   licenseProblem,
   licenseSummary,
@@ -16,6 +20,7 @@ import {
   type DevCardSpec,
   type DevCommand,
   type DevCommandType,
+  type DevFeature,
   type DevSession,
   type LicenseFields,
 } from '../dev/license';
@@ -174,6 +179,11 @@ function ToolApp() {
       setSendError(problem);
       return;
     }
+    const need = featureOfCommand(type);
+    if (!hasFeature(fields, need)) {
+      setSendError(`当前授权码未解锁「${featureMeta(need).label}」权限，请联系开发者换发。`);
+      return;
+    }
     cmdSeq += 1;
     const cmd: DevCommand = { id: `c${Date.now()}-${cmdSeq}`, type, status: 'pending', ...extra };
     const current = readSession() ?? { code: code.trim(), commands: [], updatedAt: 0 };
@@ -228,6 +238,12 @@ function ToolApp() {
   );
 
   const lanReady = fields ? licenseAllowsLan(fields) : false;
+  const unlockedCount = fields ? DEV_FEATURES.filter((meta) => hasFeature(fields, meta.key)).length : 0;
+  const lockedClass = (key: DevFeature) => (fields && !hasFeature(fields, key) ? ' is-locked' : '');
+  const lockChip = (key: DevFeature) =>
+    fields && !hasFeature(fields, key) ? (
+      <span className="dt-chip small lock">✕ {featureMeta(key).label} 未解锁</span>
+    ) : null;
 
   return (
     <div className="dt-app">
@@ -250,6 +266,9 @@ function ToolApp() {
               <span className={`dt-chip ${lanReady ? 'lan' : ''}`}>{lanReady ? '单机 + 联机' : '仅单机'}</span>
               <span className={`dt-chip ${fields.anyVersion ? 'any' : ''}`}>
                 {fields.anyVersion ? '任意版本' : `v${fields.gameMin}–v${fields.gameMax}`}
+              </span>
+              <span className={`dt-chip ${unlockedCount === DEV_FEATURES.length ? 'ok' : 'part'}`}>
+                功能 {unlockedCount}/{DEV_FEATURES.length}
               </span>
             </>
           )}
@@ -275,6 +294,23 @@ function ToolApp() {
         </div>
         {unlockError && <p className="dt-error">{unlockError}</p>}
         {fields && <p className="dt-summary">{licenseSummary(fields)}</p>}
+        {fields && (
+          <div className="dt-feats">
+            {DEV_FEATURES.map((meta) => {
+              const on = hasFeature(fields, meta.key);
+              return (
+                <span
+                  key={meta.key}
+                  className={`dt-feat ${on ? 'on' : 'off'}${meta.danger ? ' danger' : ''}`}
+                  title={meta.desc}
+                >
+                  <i>{on ? '✓' : '✕'}</i>
+                  {meta.label}
+                </span>
+              );
+            })}
+          </div>
+        )}
         {fields && !problem && (
           <p className="dt-note">
             {lanReady
@@ -288,8 +324,8 @@ function ToolApp() {
       </section>
 
       <div className="dt-grid dt-grid-3">
-        <section className="dt-card">
-          <div className="dt-card-head"><h2>体力与摸牌</h2></div>
+        <section className={`dt-card${lockedClass('hp')}`}>
+          <div className="dt-card-head"><h2>体力与摸牌</h2>{lockChip('hp')}</div>
           <div className="dt-actions">
             <label className="dt-field">
               <span>体力</span>
@@ -310,8 +346,8 @@ function ToolApp() {
           </div>
         </section>
 
-        <section className="dt-card">
-          <div className="dt-card-head"><h2>状态</h2></div>
+        <section className={`dt-card${lockedClass('status')}`}>
+          <div className="dt-card-head"><h2>状态</h2>{lockChip('status')}</div>
           <div className="dt-actions">
             <button type="button" className="dt-ghost strong" onClick={() => send('setChained')}>切换铁索</button>
             <button type="button" className="dt-ghost strong" onClick={() => send('setFlipped')}>切换翻面</button>
@@ -331,10 +367,10 @@ function ToolApp() {
           </div>
         </section>
 
-        <section className="dt-card dt-danger">
+        <section className={`dt-card dt-danger${lockedClass('fate')}`}>
           <div className="dt-card-head">
             <h2>生死与胜负</h2>
-            <span className="dt-chip small bad">谨慎</span>
+            {lockChip('fate') ?? <span className="dt-chip small bad">谨慎</span>}
           </div>
           <div className="dt-actions">
             <button type="button" className="dt-danger-btn" onClick={() => send('killSelf')}>令自己阵亡</button>
@@ -352,8 +388,8 @@ function ToolApp() {
       </div>
 
       <div className="dt-grid dt-grid-fill">
-        <section className="dt-card">
-          <div className="dt-card-head"><h2>武将</h2></div>
+        <section className={`dt-card${lockedClass('hero')}`}>
+          <div className="dt-card-head"><h2>武将</h2>{lockChip('hero')}</div>
           <div className="dt-hero-picker">
             <input value={heroSearch} onChange={(e) => setHeroSearch(e.target.value)} placeholder="搜索武将，如 曹操 / 关羽" />
             <div className="dt-hero-list">
@@ -386,8 +422,8 @@ function ToolApp() {
           </div>
         </section>
 
-        <section className="dt-card">
-          <div className="dt-card-head"><h2>手牌与牌堆</h2></div>
+        <section className={`dt-card${lockedClass('cards')}`}>
+          <div className="dt-card-head"><h2>手牌与牌堆</h2>{lockChip('cards')}</div>
           {cardEditor}
           <div className="dt-actions">
             <button type="button" className="dt-primary" onClick={() => send('setHand', { cards: rows })}>替换我的手牌</button>

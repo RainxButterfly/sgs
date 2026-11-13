@@ -46,9 +46,9 @@ function loadCore() {
 const core = loadCore();
 
 const vectors: LicenseFields[] = [
-  { created: '20261111', batch: '武器专项', serial: 'a3f2c1', scope: 'solo', anyVersion: false, toolMin: 1, toolMax: 1, gameMin: '0.9.11', gameMax: '0.9.11', expires: '20261211' },
-  { created: '20261111', batch: '国战双将', serial: 'b7e9d2', scope: 'lan', anyVersion: false, toolMin: 1, toolMax: 2, gameMin: '0.9.10', gameMax: '0.9.12', expires: '' },
-  { created: '20260101', batch: '回归测试', serial: '00ff12', scope: 'lan', anyVersion: true, toolMin: 2, toolMax: 3, gameMin: '0.10.0', gameMax: '0.10.5', expires: '20270101' },
+  { created: '20261111', batch: '武器专项', serial: 'a3f2c1', flags: 0x1f, anyVersion: false, toolMin: 1, toolMax: 1, gameMin: '0.9.11', gameMax: '0.9.11', expires: '20261211' },
+  { created: '20261111', batch: '国战双将', serial: 'b7e9d2', flags: 0x3f, anyVersion: false, toolMin: 1, toolMax: 2, gameMin: '0.9.10', gameMax: '0.9.12', expires: '' },
+  { created: '20260101', batch: '回归测试', serial: '00ff12', flags: 0x0b, anyVersion: true, toolMin: 2, toolMax: 3, gameMin: '0.10.0', gameMax: '0.10.5', expires: '20270101' },
 ];
 
 const env: LicenseEnv = { gameVersion: '0.9.11', toolVersion: 1, revoked: [], revokedSerials: [], today: '20261111' };

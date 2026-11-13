@@ -1,4 +1,6 @@
+import type { CSSProperties } from 'react';
 import type { PlayerState } from '../../core/types';
+import { cardArtUrl } from '../cardArt';
 import { cardSuitText, isRedCard, shortCardName } from '../labels';
 import { EquipHover, HoverInfo } from './HoverInfo';
 
@@ -21,7 +23,7 @@ function effectText(key: (typeof SLOTS)[number]['key'], range?: number): string 
   return '我距他人 -1';
 }
 
-/** 独立装备栏：右侧个人信息卡之外单列显示武器/防具/两匹马 */
+/** 独立装备栏：右侧个人信息卡之外单列显示武器/防具/两匹马，格子背景用对应装备牌的牌面 */
 export function EquipBar({ player }: Props) {
   return (
     <div className="equip-bar">
@@ -29,15 +31,17 @@ export function EquipBar({ player }: Props) {
       <div className="equip-bar-list">
         {SLOTS.map(({ key, label }) => {
           const card = player.equips[key];
+          const art = card ? cardArtUrl(card.name) : null;
+          const style = art ? ({ '--equip-art': `url(${art})` } as CSSProperties) : undefined;
           const body = (
             <>
               <span className="equip-bar-label">{label}</span>
+              {card && (
+                <span className={`equip-bar-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>
+                  {cardSuitText(card)}
+                </span>
+              )}
               <span className={`equip-bar-name ${card ? '' : 'is-empty'}`}>
-                {card && (
-                  <i className={`equip-suit ${isRedCard(card) ? 'is-red' : 'is-black'}`}>
-                    {cardSuitText(card)}
-                  </i>
-                )}
                 {card ? shortCardName(card.name) : '空'}
               </span>
               <span className="equip-bar-effect">{card ? effectText(key, card.range) : '未装备'}</span>
@@ -48,6 +52,7 @@ export function EquipBar({ player }: Props) {
               key={key}
               as="div"
               className="equip-bar-slot filled"
+              style={style}
               content={<EquipHover name={card.name} />}
             >
               {body}

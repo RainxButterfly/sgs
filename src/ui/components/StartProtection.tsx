@@ -20,8 +20,10 @@ export function StartProtection() {
     <div className="start-protection" role="alert" aria-live="assertive">
       <div className="start-protection-card">
         <span className="start-protection-ring">{remain}</span>
-        <b>开局保护</b>
-        <small>{remain} 秒后可操作 · 先看清座次与武将</small>
+        <div>
+          <b>开局保护</b>
+          <small>{remain} 秒后可操作 · 先看清座次、桌号与身份</small>
+        </div>
       </div>
     </div>
   );

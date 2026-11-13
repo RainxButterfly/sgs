@@ -68,7 +68,7 @@ export function ChangelogModal() {
     <div className="modal-backdrop changelog-backdrop" onClick={close}>
       <div className="modal changelog-modal" onClick={(event) => event.stopPropagation()}>
         <div className="modal-head">
-          <div className="modal-title">更新日志</div>
+          <div className="modal-title">开发者日志</div>
           <button
             type="button"
             className="modal-minimize"

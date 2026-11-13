@@ -133,6 +133,20 @@
   .mode-extra{margin-top:14px}
   .long-note{display:flex;gap:9px;align-items:center;padding:12px 14px;border-radius:var(--r-sm);background:rgba(70,230,160,.1);border:1px solid rgba(70,230,160,.3);color:#bff5dd;font-size:12.5px}
 
+  /* 功能权限勾选 */
+  .feat-grid{display:grid;grid-template-columns:1fr;gap:7px}
+  .feat-item{position:relative;display:grid;grid-template-columns:16px minmax(0,1fr);grid-template-rows:auto auto;column-gap:8px;row-gap:2px;align-items:center;padding:9px 11px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;transition:.18s;opacity:.55}
+  .feat-item:hover{border-color:var(--violet);opacity:.85}
+  .feat-item.on{opacity:1;border-color:rgba(70,230,160,.42);background:rgba(70,230,160,.08);box-shadow:0 0 0 1px rgba(70,230,160,.12) inset}
+  .feat-item.danger.on{border-color:rgba(255,93,177,.5);background:rgba(255,93,177,.1)}
+  .feat-item input{width:15px;height:15px;accent-color:var(--violet);grid-row:1 / span 2;margin:0;cursor:pointer}
+  .feat-item .fi-label{font-size:12.5px;font-weight:700;color:var(--ink);letter-spacing:.4px}
+  .feat-item .fi-desc{font-size:10.5px;line-height:1.35;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .feat-item.danger .fi-label{color:var(--magenta)}
+  .feat-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .feat-actions .btn{flex:0 0 auto;padding:6px 11px;font-size:11.5px}
+  @media (max-width:640px){ .feat-grid{grid-template-columns:1fr} }
+
   /* buttons */
   .btn{appearance:none;cursor:pointer;font-family:inherit;font-weight:700;font-size:14px;border-radius:var(--r-sm);padding:12px 18px;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink);transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
   .btn:hover{transform:translateY(-2px);border-color:var(--violet);background:var(--surface-3)}
@@ -398,14 +412,16 @@
         </div>
 
         <div class="group">
-          <h3 class="group-title"><span class="idx">4</span>用途与权限</h3>
+          <h3 class="group-title"><span class="idx">4</span>功能权限</h3>
           <div class="field">
-            <label for="scope">联机权限</label>
-            <select id="scope">
-              <option value="solo">仅单机</option>
-              <option value="lan">单机 + 局域网联机</option>
-            </select>
-            <div class="hint">选「单机 + 局域网联机」后，联机对局中使用测试工具会向全场广播通报并写入战报。</div>
+            <label>这个码解锁哪些功能 <span class="val" id="featVal">6/6</span></label>
+            <div class="feat-grid" id="featGrid"></div>
+            <div class="feat-actions">
+              <button type="button" class="btn ghost sm" data-featpreset="all">全选</button>
+              <button type="button" class="btn ghost sm" data-featpreset="basic" title="手牌、体力、状态、武将四项，不含生死与联机">基础四项</button>
+              <button type="button" class="btn ghost sm" data-featpreset="none">清空</button>
+            </div>
+            <div class="hint">没勾的功能在测试工具里会变灰禁用，游戏端也会拒绝对应指令。勾「局域网联机」才允许在联机对局中使用。</div>
           </div>
           <div class="field">
             <label for="anyVersion">版本范围</label>
@@ -578,11 +594,33 @@ function compareVersion(a,b){
 
 const ANY_VERSION_MIN='0.0.0', ANY_VERSION_MAX='99.99.99';
 
+/* 功能权限位：与 src/dev/license.ts 的 DEV_FEATURES 一致 */
+const DEV_FEATURES=[
+  {key:'cards', bit:0x01, label:'手牌与牌堆', desc:'替换手牌、追加手牌、按顺序置顶牌堆'},
+  {key:'hp', bit:0x02, label:'体力与摸牌', desc:'设置体力 / 上限、体力回满、额外摸牌'},
+  {key:'status', bit:0x04, label:'状态与判定', desc:'铁索、翻面、贴判定牌、清空判定区、设置身份'},
+  {key:'hero', bit:0x08, label:'武将', desc:'立即更换武将、指定下次选将的候选武将'},
+  {key:'fate', bit:0x10, label:'生死与胜负', desc:'令自己阵亡、令其他角色阵亡、直接结束对局', danger:true},
+  {key:'lan', bit:0x20, label:'局域网联机', desc:'允许在联机对局中使用，并向全场广播与记入战报'},
+];
+const FEATURE_ALL=DEV_FEATURES.reduce((m,f)=>m|f.bit,0);
+const FEATURE_SOLO_ALL=FEATURE_ALL & ~0x20;
+
+function flagsToHex(flags){ return (flags & FEATURE_ALL).toString(16).padStart(2,'0'); }
+function featureList(flags){ return DEV_FEATURES.filter(f=>(flags & f.bit)!==0); }
+function featureLabels(flags){ return featureList(flags).map(f=>f.label); }
+function hasFeatureBit(flags,key){ const f=DEV_FEATURES.find(x=>x.key===key); return !!f && (flags & f.bit)!==0; }
+
 function payloadOf(f){
-  return `XH3|${f.created}|${f.batch}|${f.serial}|${f.scope||'solo'}|${f.anyVersion?'any':'fixed'}|${f.toolMin}|${f.toolMax}|${f.gameMin}|${f.gameMax}|${f.expires}`;
+  return `XH4|${f.created}|${f.batch}|${f.serial}|${flagsToHex(f.flags)}|${f.anyVersion?'any':'fixed'}|${f.toolMin}|${f.toolMax}|${f.gameMin}|${f.gameMax}|${f.expires}`;
 }
 
 function legacyPayloadOf(f){
+  const scope=(f.flags & 0x20)?'lan':'solo';
+  return `XH3|${f.created}|${f.batch}|${f.serial}|${scope}|${f.anyVersion?'any':'fixed'}|${f.toolMin}|${f.toolMax}|${f.gameMin}|${f.gameMax}|${f.expires}`;
+}
+
+function legacyV2PayloadOf(f){
   return `XH2|${f.created}|${f.batch}|${f.serial}|${f.toolMin}|${f.toolMax}|${f.gameMin}|${f.gameMax}|${f.expires}`;
 }
 
@@ -627,13 +665,25 @@ async function hmac(text){
 }
 
 async function signLicense(f){
-  const n=f.anyVersion?{...f,scope:f.scope||'solo',gameMin:ANY_VERSION_MIN,gameMax:ANY_VERSION_MAX}:{...f,scope:f.scope||'solo'};
+  const base={...f,flags:(f.flags==null?FEATURE_ALL:f.flags)&FEATURE_ALL};
+  const n=base.anyVersion?{...base,gameMin:ANY_VERSION_MIN,gameMax:ANY_VERSION_MAX}:base;
   const sig=(await hmac(payloadOf(n))).slice(0,12);
-  return `XH3.${n.created}.${n.batch}.${n.serial}.${n.scope}.${n.anyVersion?'any':'fixed'}.${n.toolMin}-${n.toolMax}.${n.gameMin}~${n.gameMax}.${n.expires||'long'}.${sig}`;
+  return `XH4.${n.created}.${n.batch}.${n.serial}.${flagsToHex(n.flags)}.${n.anyVersion?'any':'fixed'}.${n.toolMin}-${n.toolMax}.${n.gameMin}~${n.gameMax}.${n.expires||'long'}.${sig}`;
 }
 
 function parseCode(code){
   const raw=code.trim();
+  const v4=/^XH4\.(\d{8})\.([^.]+)\.([A-Za-z0-9-]+)\.([0-9a-f]{2})\.(any|fixed)\.(\d+)-(\d+)\.(\d+\.\d+\.\d+)~(\d+\.\d+\.\d+)\.(\d{8}|long)\.([0-9a-f]{12})$/.exec(raw);
+  if(v4){
+    const [,created,batch,serial,flagsHex,ver,toolMinRaw,toolMaxRaw,gameMin,gameMax,expires,sig]=v4;
+    const toolMin=Number(toolMinRaw), toolMax=Number(toolMaxRaw);
+    if(toolMin>toolMax) return null;
+    const anyVersion=ver==='any';
+    if(!anyVersion&&compareVersion(gameMin,gameMax)>0) return null;
+    return { format:'XH4', sig, fields:{created,batch,serial,flags:parseInt(flagsHex,16)&FEATURE_ALL,anyVersion,toolMin,toolMax,
+      gameMin:anyVersion?ANY_VERSION_MIN:gameMin, gameMax:anyVersion?ANY_VERSION_MAX:gameMax,
+      expires:expires==='long'?'':expires} };
+  }
   const v3=/^XH3\.(\d{8})\.([^.]+)\.([A-Za-z0-9-]+)\.(solo|lan)\.(any|fixed)\.(\d+)-(\d+)\.(\d+\.\d+\.\d+)~(\d+\.\d+\.\d+)\.(\d{8}|long)\.([0-9a-f]{12})$/.exec(raw);
   if(v3){
     const [,created,batch,serial,scope,ver,toolMinRaw,toolMaxRaw,gameMin,gameMax,expires,sig]=v3;
@@ -641,7 +691,7 @@ function parseCode(code){
     if(toolMin>toolMax) return null;
     const anyVersion=ver==='any';
     if(!anyVersion&&compareVersion(gameMin,gameMax)>0) return null;
-    return { format:'XH3', sig, fields:{created,batch,serial,scope,anyVersion,toolMin,toolMax,
+    return { format:'XH3', sig, fields:{created,batch,serial,flags:scope==='lan'?FEATURE_ALL:FEATURE_SOLO_ALL,anyVersion,toolMin,toolMax,
       gameMin:anyVersion?ANY_VERSION_MIN:gameMin, gameMax:anyVersion?ANY_VERSION_MAX:gameMax,
       expires:expires==='long'?'':expires} };
   }
@@ -651,7 +701,7 @@ function parseCode(code){
   const toolMin=Number(toolMinRaw), toolMax=Number(toolMaxRaw);
   if(toolMin>toolMax) return null;
   if(compareVersion(gameMin,gameMax)>0) return null;
-  return { format:'XH2', sig, fields:{created,batch,serial,scope:'solo',anyVersion:false,toolMin,toolMax,gameMin,gameMax,expires:expires==='long'?'':expires} };
+  return { format:'XH2', sig, fields:{created,batch,serial,flags:FEATURE_SOLO_ALL,anyVersion:false,toolMin,toolMax,gameMin,gameMax,expires:expires==='long'?'':expires} };
 }
 
 function parseLicense(code){
@@ -662,7 +712,7 @@ function parseLicense(code){
 async function verifyLicense(code){
   const parsed=parseCode(code);
   if(!parsed) return null;
-  const payload=parsed.format==='XH3'?payloadOf(parsed.fields):legacyPayloadOf(parsed.fields);
+  const payload=parsed.format==='XH4'?payloadOf(parsed.fields):parsed.format==='XH3'?legacyPayloadOf(parsed.fields):legacyV2PayloadOf(parsed.fields);
   const expect=(await hmac(payload)).slice(0,12);
   return expect===parsed.sig?parsed.fields:null;
 }
@@ -679,12 +729,13 @@ function licenseProblem(f,env){
 function licenseSummary(f){
   const created=`${f.created.slice(0,4)}-${f.created.slice(4,6)}-${f.created.slice(6,8)}`;
   const expires=f.expires?`${f.expires.slice(0,4)}-${f.expires.slice(4,6)}-${f.expires.slice(6,8)}`:'长期';
-  const scope=f.scope==='lan'?'单机 + 联机':'仅单机';
+  const scope=hasFeatureBit(f.flags,'lan')?'单机 + 联机':'仅单机';
+  const feats=featureLabels(f.flags);
   const range=f.anyVersion?'任意版本':`v${f.gameMin}–v${f.gameMax}`;
-  return `编号 ${f.serial} · 创建于 ${created} · 用途批次「${f.batch}」 · ${scope} · 工具 v${f.toolMin}–v${f.toolMax} · 游戏 ${range} · 有效期 ${expires}`;
+  return `编号 ${f.serial} · 创建于 ${created} · 批次「${f.batch}」 · ${scope} · 功能 ${feats.length}/${DEV_FEATURES.length}（${feats.join('、')||'无'}） · 工具 v${f.toolMin}–v${f.toolMax} · 游戏 ${range} · 有效期 ${expires}`;
 }
 
-globalThis.__LICENSE_CORE__ = { SECRET, DEV_TOOL_VERSION, DEFAULT_GAME_VERSION, todayStamp, randomHex, compareVersion, payloadOf, hmac, signLicense, parseLicense, verifyLicense, licenseProblem, licenseSummary, hmacPure };
+globalThis.__LICENSE_CORE__ = { SECRET, DEV_TOOL_VERSION, DEFAULT_GAME_VERSION, DEV_FEATURES, FEATURE_ALL, FEATURE_SOLO_ALL, todayStamp, randomHex, compareVersion, payloadOf, hmac, signLicense, parseLicense, verifyLicense, licenseProblem, licenseSummary, hmacPure };
 /* ===== LICENSE-CORE-END ===== */
 
 /* ============================ UI ============================ */
@@ -743,9 +794,40 @@ function readForm(){
     toolMax:clampInt($('toolMax').value,1,99),
     gameMin:$('gameMin').value.trim(),
     gameMax:$('gameMax').value.trim(),
-    scope:($('scope')&&$('scope').value==='lan')?'lan':'solo',
+    flags:readFlags(),
     anyVersion:!!($('anyVersion')&&$('anyVersion').checked),
   };
+}
+
+/* ---- 功能权限勾选 ---- */
+function renderFeatGrid(){
+  const grid=$('featGrid');
+  grid.innerHTML=DEV_FEATURES.map(f=>{
+    const on=(FEATURE_ALL & f.bit)!==0;
+    return `<label class="feat-item${f.danger?' danger':''}${on?' on':''}" title="${f.desc}">
+      <input type="checkbox" data-bit="${f.bit}" data-key="${f.key}" ${on?'checked':''}>
+      <span class="fi-label">${f.label}</span>
+      <span class="fi-desc">${f.desc}</span>
+    </label>`;
+  }).join('');
+}
+function readFlags(){
+  let mask=0;
+  document.querySelectorAll('#featGrid input[type=checkbox]').forEach(el=>{ if(el.checked) mask|=Number(el.dataset.bit); });
+  return mask & FEATURE_ALL;
+}
+function writeFlags(keys){
+  const set=new Set(keys||[]);
+  document.querySelectorAll('#featGrid input[type=checkbox]').forEach(el=>{ el.checked=set.has(el.dataset.key); });
+  syncFeatStyles();
+}
+function syncFeatStyles(){
+  document.querySelectorAll('#featGrid .feat-item').forEach(item=>{
+    const box=item.querySelector('input');
+    item.classList.toggle('on',!!(box&&box.checked));
+  });
+  const n=DEV_FEATURES.filter(f=>(readFlags()&f.bit)!==0).length;
+  if($('featVal')) $('featVal').textContent=`${n}/${DEV_FEATURES.length}`;
 }
 
 function validate(f){
@@ -757,6 +839,7 @@ function validate(f){
   if(!isVersion(f.gameMax)) errs.push(['gameMax','游戏版本格式应为 x.y.z。']);
   if(isVersion(f.gameMin)&&isVersion(f.gameMax)&&compareVersion(f.gameMin,f.gameMax)>0) errs.push(['gameMax','游戏版本下限不能高于上限。']);
   if(f.mode==='date'&&!f.expires) errs.push(['expiresDate','请选择到期日期。']);
+  if(f.flags===0) errs.push(['featGrid','至少勾选一个功能权限。']);
   return errs;
 }
 
@@ -772,6 +855,7 @@ function updatePreview(){
   $('daysVal').textContent=`${clampInt($('daysNum').value,1,3650)} 天`;
   $('daysHint').textContent=`到期日：${fmtDate(f.expires)}`;
   $('verChip').textContent=`工具 v${DEV_TOOL_VERSION} · 游戏 v${DEFAULT_GAME_VERSION}`;
+  syncFeatStyles();
   // expiry mode visibility
   $('extra-days').classList.toggle('hidden',f.mode!=='days');
   $('extra-date').classList.toggle('hidden',f.mode!=='date');
@@ -784,13 +868,14 @@ function updatePreview(){
   const exp=f.mode==='long'?'long':(f.expires||'xxxxxxxx');
   const gm=isVersion(f.gameMin)?f.gameMin:'x.y.z', gx=isVersion(f.gameMax)?f.gameMax:'x.y.z';
   $('fmtPreview').innerHTML=
-    `<b class="s0">XH3</b>.<b class="s1">${created}</b>.<b class="s2">${escapeHtml(f.batch||'批次')}</b>.`+
-    `<b class="s3">编号</b>.<b class="s4">${f.scope}</b>.<b class="s4">${f.anyVersion?'any':'fixed'}</b>.`+
+    `<b class="s0">XH4</b>.<b class="s1">${created}</b>.<b class="s2">${escapeHtml(f.batch||'批次')}</b>.`+
+    `<b class="s3">编号</b>.<b class="s4">${flagsToHex(f.flags)}</b>.<b class="s4">${f.anyVersion?'any':'fixed'}</b>.`+
     `<b class="s5">${f.toolMin}-${f.toolMax}</b>.<b class="s5">${f.anyVersion?'0.0.0~99.99.99':gm+'~'+gx}</b>.`+
     `<b class="s6">${exp}</b>.<b class="s7">签名12位</b>`;
+  const feats=featureLabels(f.flags);
   const valid=validate(f).length===0;
   $('liveSummary').innerHTML= valid
-    ? `将铸造 <strong>${f.count}</strong> 个一人一码 · 批次「${escapeHtml(f.batch)}」 · 有效期 <strong>${fmtDate(f.expires)}</strong> · ${f.scope==='lan'?'单机+联机':'仅单机'} · 游戏 ${f.anyVersion?'任意版本':'v'+gm+'–v'+gx}`
+    ? `将铸造 <strong>${f.count}</strong> 个一人一码 · 批次「${escapeHtml(f.batch)}」 · 有效期 <strong>${fmtDate(f.expires)}</strong> · 解锁 <strong>${feats.length}</strong> 项（${escapeHtml(feats.join('、')||'无')}） · 游戏 ${f.anyVersion?'任意版本':'v'+gm+'–v'+gx}`
     : `<span style="color:var(--red)">请先补全左侧必填项。</span>`;
   // inline validation styling
   ['batch','gameMin','gameMax'].forEach(id=>$(id).classList.remove('invalid'));
@@ -804,7 +889,7 @@ function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<'
 function saveForm(){
   try{
     const f=readForm();
-    localStorage.setItem(STORE_KEY,JSON.stringify({batch:$('batch').value,count:f.count,names:$('names').value,mode:f.mode,days:$('daysNum').value,expiresDate:$('expiresDate').value,toolMin:f.toolMin,toolMax:f.toolMax,gameMin:f.gameMin,gameMax:f.gameMax}));
+    localStorage.setItem(STORE_KEY,JSON.stringify({batch:$('batch').value,count:f.count,names:$('names').value,mode:f.mode,days:$('daysNum').value,expiresDate:$('expiresDate').value,toolMin:f.toolMin,toolMax:f.toolMax,gameMin:f.gameMin,gameMax:f.gameMax,featKeys:featureList(f.flags).map(x=>x.key),anyVersion:f.anyVersion}));
   }catch(e){}
 }
 function loadForm(){
@@ -820,6 +905,8 @@ function loadForm(){
   if(s.toolMax!=null)$('toolMax').value=s.toolMax;
   if(s.gameMin!=null)$('gameMin').value=s.gameMin;
   if(s.gameMax!=null)$('gameMax').value=s.gameMax;
+  if(Array.isArray(s.featKeys)) writeFlags(s.featKeys);
+  if(s.anyVersion!=null)$('anyVersion').checked=!!s.anyVersion;
 }
 function defaultDate(days){ const d=new Date(); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
 
@@ -838,7 +925,7 @@ async function generate(){
     const created=todayStamp();
     for(let i=0;i<f.count;i++){
       let serial=randomHex(3); while(used.has(serial)) serial=randomHex(3); used.add(serial);
-      const fields={created,batch:f.batch,serial,scope:f.scope,anyVersion:f.anyVersion,toolMin:f.toolMin,toolMax:f.toolMax,gameMin:f.anyVersion?'0.0.0':f.gameMin,gameMax:f.anyVersion?'99.99.99':f.gameMax,expires:f.expires};
+      const fields={created,batch:f.batch,serial,flags:f.flags,anyVersion:f.anyVersion,toolMin:f.toolMin,toolMax:f.toolMax,gameMin:f.anyVersion?'0.0.0':f.gameMin,gameMax:f.anyVersion?'99.99.99':f.gameMax,expires:f.expires};
       const code=await signLicense(fields);
       results.push({index:i+1,name:f.names[i]||'',serial,code,fields});
     }
@@ -949,7 +1036,7 @@ function renderManage(){
 }
 function addManualHistory(){
   const text=$('historyAddInput').value;
-  const re=/XH2\.\d{8}\.[^.]+\.[A-Za-z0-9-]+\.\d+-\d+\.\d+\.\d+\.\d+~\d+\.\d+\.\d+\.(?:\d{8}|long)\.[0-9a-f]{12}/g;
+  const re=/XH[234]\.\d{8}\.[^.]+\.[A-Za-z0-9-]+\.(?:[0-9a-f]{2}\.|solo\.|lan\.)?(?:\d+-\d+\.)?(?:\d+\.\d+\.\d+~\d+\.\d+\.\d+\.)?(?:\d{8}|long)\.[0-9a-f]{12}/g;
   const matches=text.match(re)||[];
   const h=loadHistory();
   const existing=new Set();
@@ -966,7 +1053,7 @@ function addManualHistory(){
     groups.get(key).codes.push({serial:f.serial,name:'',code:m});
     added++;
   }
-  if(!added) return toast(matches.length?'这些授权码已在历史中':'没有识别到有效的 XH2 授权码', matches.length?'info':'err');
+  if(!added) return toast(matches.length?'这些授权码已在历史中':'没有识别到有效的授权码（XH2 / XH3 / XH4）', matches.length?'info':'err');
   const newBatches=[...groups.values()].map(g=>({id:'b'+Date.now()+Math.random().toString(36).slice(2,6),...g}));
   saveHistoryList([...newBatches,...h]);
   $('historyAddInput').value='';
@@ -1027,7 +1114,7 @@ async function runVerify(){
   if(!code){ out.innerHTML=''; return toast('请粘贴授权码','err'); }
   const parsed=parseLicense(code);
   if(!parsed){
-    out.innerHTML=`<div class="v-status bad"><span class="ic">✕</span>格式无效：不是合法的 XH2 授权码（或仍为旧版 XH1）。</div>`;
+    out.innerHTML=`<div class="v-status bad"><span class="ic">✕</span>格式无效：不是合法的 XH4 / XH3 / XH2 授权码（旧版 XH1 已停用）。</div>`;
     return;
   }
   const fields=await verifyLicense(code);
@@ -1044,6 +1131,7 @@ async function runVerify(){
 }
 function fieldsGrid(f){
   const cell=(k,v,cls)=>`<div class="v-cell"><div class="k">${k}</div><div class="v ${cls||''}">${escapeHtml(v)}</div></div>`;
+  const feats=featureLabels(f.flags);
   return `<div class="v-grid">`+
     cell('编号 serial',f.serial,'cyan')+
     cell('用途批次',f.batch)+
@@ -1051,6 +1139,8 @@ function fieldsGrid(f){
     cell('有效期',fmtDate(f.expires),'gold')+
     cell('工具版本',`v${f.toolMin} – v${f.toolMax}`)+
     cell('游戏版本',`v${f.gameMin} – v${f.gameMax}`)+
+    cell('功能权限',`${feats.length}/${DEV_FEATURES.length} · ${feats.join('、')||'无'}`)+
+    cell('联机使用',hasFeatureBit(f.flags,'lan')?'允许（全场通报）':'仅单机')+
     `</div>`;
 }
 
@@ -1106,16 +1196,25 @@ function wire(){
   $('days').addEventListener('input',()=>{ $('daysNum').value=$('days').value; updatePreview(); saveForm(); });
   $('daysNum').addEventListener('input',()=>{ $('days').value=Math.min(365,clampInt($('daysNum').value,1,3650)); updatePreview(); saveForm(); });
   // generic live inputs
-  ['batch','names','expiryMode','expiresDate','toolMin','toolMax','gameMin','gameMax','scope','anyVersion'].forEach(id=>{
+  ['batch','names','expiryMode','expiresDate','toolMin','toolMax','gameMin','gameMax','anyVersion'].forEach(id=>{
     $(id).addEventListener('input',()=>{ updatePreview(); saveForm(); });
     $(id).addEventListener('change',()=>{ updatePreview(); saveForm(); });
   });
+  // 功能权限勾选
+  $('featGrid').addEventListener('change',()=>{ syncFeatStyles(); updatePreview(); saveForm(); });
+  document.querySelectorAll('[data-featpreset]').forEach(btn=>btn.addEventListener('click',()=>{
+    const mode=btn.dataset.featpreset;
+    const keys=mode==='all'?DEV_FEATURES.map(f=>f.key):mode==='basic'?DEV_FEATURES.filter(f=>!f.danger&&f.key!=='lan').map(f=>f.key):[];
+    writeFlags(keys); updatePreview(); saveForm();
+    toast(mode==='none'?'已清空功能权限（至少需勾选一项才能铸造）':'已套用权限预设','info');
+  }));
   // actions
   $('generateBtn').addEventListener('click',generate);
   $('resetBtn').addEventListener('click',()=>{
     $('batch').value=''; $('count').value=3; $('countRange').value=3; $('names').value='';
     $('expiryMode').value='days'; $('days').value=30; $('daysNum').value=30; $('expiresDate').value=defaultDate(30);
     $('toolMin').value=2; $('toolMax').value=2; $('gameMin').value=DEFAULT_GAME_VERSION; $('gameMax').value=DEFAULT_GAME_VERSION;
+    $('anyVersion').checked=false; writeFlags(DEV_FEATURES.map(f=>f.key));
     updatePreview(); saveForm(); toast('已重置为默认参数','info');
   });
   $('randomBtn').addEventListener('click',()=>{
@@ -1147,7 +1246,7 @@ function wire(){
   $('verifyBtn').addEventListener('click',runVerify);
   $('verifyClear').addEventListener('click',()=>{ $('verifyInput').value=''; $('verifyResult').innerHTML=''; });
   $('verifySample').addEventListener('click',async()=>{
-    const demo=await signLicense({created:todayStamp(),batch:'示例批次',serial:randomHex(3),scope:'lan',anyVersion:false,toolMin:2,toolMax:2,gameMin:DEFAULT_GAME_VERSION,gameMax:DEFAULT_GAME_VERSION,expires:''});
+    const demo=await signLicense({created:todayStamp(),batch:'示例批次',serial:randomHex(3),flags:FEATURE_SOLO_ALL,anyVersion:false,toolMin:2,toolMax:2,gameMin:DEFAULT_GAME_VERSION,gameMax:DEFAULT_GAME_VERSION,expires:''});
     $('verifyInput').value=demo; runVerify();
   });
   ['vGame','vTool','vToday'].forEach(id=>$(id).addEventListener('input',()=>{ if($('verifyInput').value.trim()) runVerify(); }));
@@ -1158,6 +1257,7 @@ function wire(){
 
 function init(){
   $('vToday').value=todayStamp();
+  renderFeatGrid();
   loadForm();
   wire();
   updatePreview();

@@ -3479,7 +3479,13 @@ html.theme-magic .equip-bar-slot {
 html.theme-magic .equip-bar-slot.filled {
   border-color: rgba(255, 119, 207, 0.42);
   border-left-color: var(--accent);
-  background: linear-gradient(90deg, rgba(255, 119, 207, 0.16), rgba(255, 255, 255, 0.02));
+  background-color: #120b1e;
+  background-image:
+    linear-gradient(100deg, rgba(9, 5, 16, 0.92) 0%, rgba(9, 5, 16, 0.7) 52%, rgba(9, 5, 16, 0.2) 100%),
+    var(--equip-art, none);
+  background-size: cover, cover;
+  background-position: center, center 42%;
+  background-repeat: no-repeat;
 }
 
 html.theme-magic .equip-bar-label {
@@ -3496,4 +3502,12 @@ html.theme-magic .equip-bar-name.is-empty {
 
 html.theme-magic .equip-bar-effect {
   color: rgba(185, 174, 203, 0.86);
+}
+
+html.theme-magic .equip-bar-suit.is-red {
+  color: #ff9ad5;
+}
+
+html.theme-magic .equip-bar-suit.is-black {
+  color: #cfc6e6;
 }

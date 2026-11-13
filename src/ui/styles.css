@@ -16976,66 +16976,107 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 
   .equip-bar-slot {
+    position: relative;
     flex: 1 1 0;
     min-height: 0;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
     align-content: center;
     align-items: center;
     column-gap: 6px;
-    row-gap: 1px;
-    padding: 4px 7px;
+    row-gap: 2px;
+    padding: 5px 8px 5px 9px;
+    overflow: hidden;
     border: 1px solid rgba(219, 181, 108, 0.16);
     border-left: 2px solid rgba(219, 181, 108, 0.2);
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.22);
   }
 
+  /* 已装备：格子背景铺对应装备牌的牌面，前面压一层暗色保证文字可读 */
   .equip-bar-slot.filled {
     border-color: rgba(219, 181, 108, 0.42);
     border-left-color: var(--gold);
-    background: linear-gradient(90deg, rgba(219, 181, 108, 0.14), rgba(219, 181, 108, 0.05));
+    background-color: #14100b;
+    background-image:
+      linear-gradient(100deg, rgba(9, 7, 4, 0.93) 0%, rgba(9, 7, 4, 0.72) 52%, rgba(9, 7, 4, 0.2) 100%),
+      var(--equip-art, none);
+    background-size: cover, cover;
+    background-position: center, center 42%;
+    background-repeat: no-repeat;
+  }
+
+  .equip-bar-slot.filled::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgba(255, 232, 186, 0.08);
+    pointer-events: none;
   }
 
   .equip-bar-label {
     grid-column: 1;
     grid-row: 1;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.06em;
-    color: rgba(219, 181, 108, 0.72);
+    color: rgba(219, 181, 108, 0.78);
     white-space: nowrap;
   }
 
-  .equip-bar-name {
+  .equip-bar-suit {
     grid-column: 2;
     grid-row: 1;
     justify-self: end;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    min-width: 0;
     font-size: 11.5px;
-    line-height: 1.25;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  }
+
+  .equip-bar-suit.is-red {
+    color: #ff8a8a;
+  }
+
+  .equip-bar-suit.is-black {
+    color: #d8cfc0;
+  }
+
+  .equip-bar-name {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
     color: var(--ink);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.78);
   }
 
   .equip-bar-name.is-empty {
+    font-weight: 500;
     color: rgba(205, 189, 162, 0.4);
+    text-shadow: none;
   }
 
   .equip-bar-effect {
-    grid-column: 1 / -1;
+    grid-column: 2;
     grid-row: 2;
-    font-size: 9.5px;
-    line-height: 1.25;
-    color: rgba(219, 181, 108, 0.8);
+    justify-self: end;
+    padding-left: 8px;
+    font-size: 10.5px;
+    line-height: 1.2;
+    color: rgba(219, 181, 108, 0.9);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 7px rgba(0, 0, 0, 0.75);
   }
 
   .hand-cards {
@@ -21532,54 +21573,58 @@ html {
   100% { opacity: 0; }
 }
 
-/* 开局保护：前 3 秒屏蔽操作 */
+/* 开局保护：前 3 秒屏蔽操作（只拦截点击，不模糊/压暗桌面，保证座次、桌号、身份看得清） */
 .start-protection {
   position: fixed;
   inset: 0;
   z-index: 80;
   display: grid;
   place-items: center;
-  background: rgba(8, 5, 16, 0.42);
-  backdrop-filter: blur(2px);
+  padding-top: 16vh;
+  background: transparent;
+  backdrop-filter: none;
   cursor: default;
   animation: fadeIn 0.2s ease;
 }
 
 .start-protection-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 8px;
-  padding: 26px 40px;
-  border-radius: 20px;
-  border: 1px solid rgba(170, 142, 255, 0.4);
-  background: linear-gradient(180deg, rgba(38, 24, 58, 0.96), rgba(16, 10, 30, 0.97));
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
-  text-align: center;
+  gap: 14px;
+  padding: 12px 22px 12px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(170, 142, 255, 0.45);
+  background: linear-gradient(180deg, rgba(38, 24, 58, 0.92), rgba(16, 10, 30, 0.94));
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+  text-align: left;
+  pointer-events: none;
 }
 
 .start-protection-card b {
-  font-size: 18px;
-  letter-spacing: 2px;
+  display: block;
+  font-size: 14px;
+  letter-spacing: 1.5px;
   color: #f1ebff;
 }
 
 .start-protection-card small {
-  font-size: 12px;
+  font-size: 11px;
   color: #bdb0e6;
 }
 
 .start-protection-ring {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  font-size: 26px;
+  font-size: 19px;
   font-weight: 800;
   color: #1a1030;
   background: var(--rainbow, linear-gradient(120deg, #ff5db1, #f5c451, #46e6a0, #38e1ff, #a78bfa));
-  box-shadow: 0 0 24px rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 18px rgba(139, 92, 246, 0.55);
+  flex: 0 0 auto;
 }
 
 /* 主菜单自定义壁纸 */

@@ -461,7 +461,7 @@ export function SettingsModal() {
           </p>
           <div className="settings-actions settings-actions-grid">
             <button type="button" className="btn ghost" onClick={openChangelog}>
-              查看更新日志
+              查看开发者日志
             </button>
             <button type="button" className="btn ghost" onClick={openAbout}>
               关于

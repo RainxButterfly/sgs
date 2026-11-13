@@ -11,6 +11,7 @@ interface Props {
   children: ReactNode;
   className?: string;
   as?: 'span' | 'div';
+  style?: React.CSSProperties;
 }
 
 interface CardPos {
@@ -20,7 +21,7 @@ interface CardPos {
   placed?: boolean;
 }
 
-export function HoverInfo({ content, children, className, as = 'span' }: Props) {
+export function HoverInfo({ content, children, className, as = 'span', style }: Props) {
   const [pos, setPos] = useState<CardPos | null>(null);
   const hideTimer = useRef<number | null>(null);
   const anchor = useRef<DOMRect | null>(null);
@@ -70,6 +71,7 @@ export function HoverInfo({ content, children, className, as = 'span' }: Props) 
   return (
     <Tag
       className={className}
+      style={style}
       onMouseEnter={show}
       onMouseLeave={scheduleHide}
       onFocus={show}
