@@ -1,17 +1,17 @@
 {
-  "version": "0.9.18",
-  "notes": "四国闪 · 星河 v0.9.18",
-  "url": "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.18/updates/siguoshan-xinghe-arm64.apk",
+  "version": "0.9.19",
+  "notes": "四国闪 · 星河 v0.9.19",
+  "url": "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.19/updates/siguoshan-xinghe-arm64.apk",
   "urls": [
-    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.18/updates/siguoshan-xinghe-arm64.apk",
-    "https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@v0.9.18/updates/siguoshan-xinghe-arm64.apk",
-    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.18/updates/siguoshan-xinghe-arm64.apk",
-    "https://testingcf.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.18/updates/siguoshan-xinghe-arm64.apk",
-    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.18/updates/siguoshan-xinghe-arm64.apk",
-    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.18/updates/siguoshan-xinghe-arm64.apk",
-    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.18/updates/siguoshan-xinghe-arm64.apk",
-    "https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.18/updates/siguoshan-xinghe-arm64.apk",
-    "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.18/updates/siguoshan-xinghe-arm64.apk"
+    "https://fastly.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.19/updates/siguoshan-xinghe-arm64.apk",
+    "https://jsd.onmicrosoft.cn/gh/RainxButterfly/sgs@v0.9.19/updates/siguoshan-xinghe-arm64.apk",
+    "https://cdn.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.19/updates/siguoshan-xinghe-arm64.apk",
+    "https://testingcf.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.19/updates/siguoshan-xinghe-arm64.apk",
+    "https://gcore.jsdelivr.net/gh/RainxButterfly/sgs@v0.9.19/updates/siguoshan-xinghe-arm64.apk",
+    "https://ghfast.top/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.19/updates/siguoshan-xinghe-arm64.apk",
+    "https://ghproxy.net/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.19/updates/siguoshan-xinghe-arm64.apk",
+    "https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.19/updates/siguoshan-xinghe-arm64.apk",
+    "https://gh-proxy.com/https://raw.githubusercontent.com/RainxButterfly/sgs/v0.9.19/updates/siguoshan-xinghe-arm64.apk"
   ],
-  "sha256": "525f00889e23c467f9c54e65726e17ad05eef9faa7d39c6b1d44759efadcb6ef"
+  "sha256": "2a9612ae8213a22828dde56410680b8cb11202997c122c6655ae1a0ccf7ce0fc"
 }
