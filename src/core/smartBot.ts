@@ -304,6 +304,7 @@ function chooseOption(state: GameState, me: PlayerState, req: AskRequest): GameA
   if (ids.includes('yes') && ids.includes('no')) {
     let yes = true;
     if (prompt.includes('鬼才')) yes = Math.random() < 0.25;
+    else if (prompt.includes('放权')) yes = false;
     else if (prompt.includes('流离')) {
       const sourceId = state.current;
       const hasEnemy = state.players.some(

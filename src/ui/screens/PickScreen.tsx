@@ -5,6 +5,7 @@ import { FACTION_NAME, ROLE_NAME } from '../../core/types';
 import { HeroDetailModal } from '../components/HeroDetail';
 import { HeroDataHover, HoverInfo } from '../components/HoverInfo';
 import { HeroPortrait } from '../components/HeroPortrait';
+import { seatNumber } from '../labels';
 import { useGameStore } from '../store';
 
 export function PickScreen() {
@@ -26,11 +27,22 @@ export function PickScreen() {
   const pairHp = pairHeroes.reduce((sum, hero) => sum + hero.hp, 0);
   const pairSkills = [...new Set(pairHeroes.flatMap((hero) => hero.skillIds))];
   const gameMode = preGame.rules?.mode ?? 'identity';
-  // 座次编号以主公为 1 号位（无主公的模式按 0 号位起算）
+  // 座次编号与牌桌完全一致：以主公为 1 号位，沿本局的出牌方向递增
   const lordIndex = preGame.roles.indexOf('lord');
-  const seatAnchor = lordIndex >= 0 ? lordIndex : 0;
+  // 先手座位在选将前就确定（主公或随机先手），座次编号以它为 1 号位
+  const bidDoneLord = preGame.bid?.done && (preGame.bid.highestBidder ?? -1) >= 0 ? preGame.bid.highestBidder : null;
+  const seatAnchor =
+    (gameMode === 'landlord' ? bidDoneLord : null) ?? preGame.firstPlayer ?? (lordIndex >= 0 ? lordIndex : 0);
   const seatTotal = 1 + preGame.bots.length;
-  const seatNo = (index: number) => ((index - seatAnchor + seatTotal) % seatTotal) + 1;
+  const turnDirection: 1 | -1 = preGame.rules?.turnDirection ?? -1;
+  const seatNo = (index: number) => seatNumber(index, seatAnchor, seatTotal, turnDirection);
+  /** 从自己出发沿出牌方向的相对位次：1=下家，total-1=上家 */
+  const relOf = (index: number) => (((index * turnDirection) % seatTotal) + seatTotal) % seatTotal;
+  const relLabel = (rel: number) => (rel === 1 ? '下家' : rel === seatTotal - 1 ? '上家' : '');
+  // 列表按牌桌上的实际顺序排列（自己 → 下家 → …），避免与桌面座位对不上
+  const seatOrder = preGame.bots
+    .map((bot, i) => ({ bot, index: i + 1 }))
+    .sort((a, b) => relOf(a.index) - relOf(b.index));
   const bid = preGame.bid;
   const bidPending = !!bid && !bid.done;
   const myRole =
@@ -139,14 +151,16 @@ export function PickScreen() {
                       : '选择中'}
               </span>
             </div>
-            {preGame.bots.map((bot, index) => {
+            {seatOrder.map(({ bot, index }) => {
               const hero = HERO_MAP.get(bot.heroId);
-              const isLord = preGame.lordIndex === index + 1;
+              const isLord = preGame.lordIndex === index;
               const showHero = gameMode === 'landlord' ? !isLord : isLord;
+              const rel = relLabel(relOf(index));
               return (
                 <div key={bot.name + bot.heroId} className={`pick-seat ${isLord ? 'is-lord' : ''}`}>
                   <span className="pick-seat-label">
-                    {preGame.roles[index + 1] === 'lord' ? '主公' : '电脑'} · {seatNo(index + 1)}号位
+                    {preGame.roles[index] === 'lord' ? '主公' : '电脑'} · {seatNo(index)}号位
+                    {rel && <em className="pick-seat-rel">{rel}</em>}
                   </span>
                   <span className="pick-seat-hero">
                     {showHero ? (hero?.name ?? '随机') : '未亮将'}
@@ -173,6 +187,8 @@ export function PickScreen() {
                 : preGame.lordIndex >= 0
                   ? '主公武将已经亮出，其余武将会在全部选择完成后亮出。'
                   : '其余空位由电脑自动选择武将。'}
+              <br />
+              座次按牌桌顺序排列（你 → 下家 → …），号位与进入对局后一致。
             </div>
           </section>
 

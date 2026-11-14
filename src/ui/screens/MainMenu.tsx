@@ -20,6 +20,7 @@ export function MainMenu() {
   const updateState = useGameStore((s) => s.updateState);
   const openUpdateModal = useGameStore((s) => s.openUpdateModal);
   const netError = useGameStore((s) => s.netError);
+  const lobby = useGameStore((s) => s.lobby);
   const profile = useGameStore((s) => s.profile);
   const uiPalette = useGameStore((s) => s.uiPalette);
   const bgImage = useGameStore((s) => s.bgImage);
@@ -138,6 +139,36 @@ export function MainMenu() {
                   }}
                 >
                   退出房间
+                </button>
+              </div>
+            </div>
+          )}
+          {!suspended && lobby && (
+            <div className="suspended-banner lobby-banner">
+              <div className="suspended-text">
+                <b>房间还开着</b>
+                <span title={`房间码 ${lobby.room.code}`}>
+                  {lobby.picking ? '选将进行中' : '等待开局'} · 码 {lobby.room.code}
+                </span>
+              </div>
+              <div className="suspended-actions">
+                <button
+                  type="button"
+                  className="btn primary small"
+                  onClick={() => useGameStore.setState({ screen: 'lobby' })}
+                >
+                  回到房间
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost small"
+                  onClick={() => {
+                    if (window.confirm('离开房间后需要重新创建或加入，确定离开吗？')) {
+                      useGameStore.getState().leaveLan();
+                    }
+                  }}
+                >
+                  离开房间
                 </button>
               </div>
             </div>
@@ -267,7 +298,7 @@ export function MainMenu() {
             <button
               type="button"
               className="menu-action"
-              onClick={() => useGameStore.setState({ screen: 'gallery' })}
+              onClick={() => useGameStore.setState({ screen: 'gallery', galleryFrom: 'menu' })}
             >
               <span className="menu-action-icon" aria-hidden="true">📖</span>
               <span className="menu-action-copy">
@@ -357,7 +388,7 @@ export function MainMenu() {
                 key={hero.id}
                 type="button"
                 className={`menu-fan-card c${index + 1} faction-${hero.faction}`}
-                onClick={() => useGameStore.setState({ screen: 'gallery' })}
+                onClick={() => useGameStore.setState({ screen: 'gallery', galleryFrom: 'menu' })}
                 title={`${FACTION_NAME[hero.faction]} · ${hero.name} · ${hero.title}`}
               >
                 <span className="fan-faction">{FACTION_NAME[hero.faction]}</span>

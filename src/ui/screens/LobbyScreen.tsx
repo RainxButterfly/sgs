@@ -260,9 +260,33 @@ export function LobbyScreen() {
                   : '已进入房间，等待房主开始选将。'}
             </p>
           </div>
-          <button type="button" className="btn ghost" onClick={leaveLan}>
-            离开
-          </button>
+          <div className="lobby-head-actions">
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => useGameStore.setState({ screen: 'gallery', galleryFrom: 'lobby' })}
+            >
+              图鉴
+            </button>
+            <button
+              type="button"
+              className="btn ghost"
+              title="回到主界面，房间仍然保留，可随时回来"
+              onClick={() => useGameStore.setState({ screen: 'menu' })}
+            >
+              主界面
+            </button>
+            <button
+              type="button"
+              className="btn ghost"
+              title="退出房间并断开连接"
+              onClick={() => {
+                if (window.confirm('离开房间后需要重新创建或加入，确定离开吗？')) leaveLan();
+              }}
+            >
+              离开房间
+            </button>
+          </div>
         </div>
 
         {picking ? (
@@ -275,6 +299,7 @@ export function LobbyScreen() {
               landlord={gameMode === 'landlord'}
               team={gameMode === '2v2'}
               turnAnchor={lobby.turnAnchor ?? 0}
+              direction={(rules.turnDirection ?? -1) as 1 | -1}
               hasLord={gameMode === 'identity' || gameMode === 'landlord'}
               startCount={pickCount}
               code={lobby.room.code}

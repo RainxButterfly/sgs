@@ -233,7 +233,9 @@ export function MobileGameScreen() {
   );
 
   return (
-    <div className={`mobile-game self-card-${selfCardSide} ${prompting ? 'is-prompting' : ''}`}>
+    <div
+      className={`mobile-game self-card-${selfCardSide} ${prompting ? 'is-prompting' : ''} ${mine ? 'is-my-turn' : ''}`}
+    >
       {bgKind === 'video' && bgVideoUrl && (bgScope === 'all' || bgScope === 'game') ? (
         <video className="game-bg game-bg-video" src={bgVideoUrl} autoPlay loop muted playsInline />
       ) : (
@@ -558,6 +560,11 @@ export function MobileGameScreen() {
             设置
           </button>
         </aside>
+      {mine && (
+        <div className="m-turn-banner" role="status">
+          {prompting ? '轮到你出牌 · 请选择动作' : '你的回合'}
+        </div>
+      )}
       <div className="m-hand">
         <Hand
           player={human}

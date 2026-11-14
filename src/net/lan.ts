@@ -182,6 +182,8 @@ export class LanHostManager {
   roles: Role[] | null = null;
   lordPlayerId: number | null = null;
   lordBotHero: string | null = null;
+  /** 无主公模式在选将前随机定下的先手座位，保证选将页与牌桌座次一致 */
+  firstPlayerSeat = 0;
   private readonly relay: RelayClient;
   private readonly hooks: HostHooks;
   private lastGameHeroes = new Set<string>();
@@ -324,9 +326,9 @@ export class LanHostManager {
     const lordSeat = this.lordPlayerId == null && this.lordBotHero ? this.roles?.indexOf('lord') : undefined;
     // 座次编号以主公为 1 号位：主播时主公可能不在 0 号位
     const turnAnchor = (() => {
-      if (!this.roles) return 0;
+      if (!this.roles) return this.firstPlayerSeat;
       const index = this.roles.indexOf('lord');
-      return index >= 0 ? index : 0;
+      return index >= 0 ? index : this.firstPlayerSeat;
     })();
     return {
       room: {
@@ -664,6 +666,7 @@ export class LanHostManager {
       this.lordPlayerId = null;
       this.lordBotHero = choices[Math.floor(Math.random() * choices.length)]?.id ?? PLAYABLE_HEROES[0].id;
     }
+    this.firstPlayerSeat = lordIndex >= 0 ? lordIndex : gameMode === '2v2' ? 0 : Math.floor(Math.random() * total);
     this.picking = true;
     this.targetCount = total;
     if (this.roles) {
@@ -1349,6 +1352,7 @@ export class LanHostManager {
         seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
         direction: this.rules?.turnDirection ?? -1,
         roles,
+        startPlayer: this.firstPlayerSeat,
         rules: this.mode === 'custom' || gameMode !== 'identity' ? this.rules : { military: this.rules.military },
       },
       this.createIO(() => box.game),

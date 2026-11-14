@@ -6,6 +6,7 @@ import type { LobbyPlayer } from '../../net/protocol';
 import { HeroDetailModal } from './HeroDetail';
 import { HeroPortrait } from './HeroPortrait';
 import { HeroDataHover, HeroPairHover, HoverInfo } from './HoverInfo';
+import { seatNumber } from '../labels';
 import { isPickHeroVisible } from '../pickReveal';
 
 interface Props {
@@ -17,6 +18,8 @@ interface Props {
   team?: boolean;
   /** 主公在 players 里的下标，用于把主公显示成 1 号位 */
   turnAnchor?: number;
+  /** 本局出牌方向，座次编号与牌桌保持一致 */
+  direction?: 1 | -1;
   /** 本模式是否存在主公（身份场 / 斗地主） */
   hasLord?: boolean;
   startCount: number;
@@ -42,6 +45,7 @@ export function LanPickPanel({
   landlord,
   team,
   turnAnchor = 0,
+  direction = -1,
   hasLord = false,
   startCount,
   code,
@@ -71,7 +75,9 @@ export function LanPickPanel({
   const lordBotHero = lordPlayerId == null && lordHeroId ? HERO_MAP.get(lordHeroId) : undefined;
   // 座次编号按「全部座位」取模，电脑位也要排进去
   const seatTotal = Math.max(1, players.length + emptySlots);
-  const seatNo = (index: number) => ((index - turnAnchor + seatTotal) % seatTotal) + 1;
+  const seatNo = (index: number) => seatNumber(index, turnAnchor, seatTotal, direction);
+  const relOf = (index: number) => (((index * direction) % seatTotal) + seatTotal) % seatTotal;
+  const relLabel = (rel: number) => (rel === 1 ? '下家' : rel === seatTotal - 1 ? '上家' : '');
 
   const matePicks = team
     ? (players.find((player) => player.playerId === TEAM_MATE_SEAT[me.playerId])?.heroIds ?? [])
@@ -120,6 +126,9 @@ export function LanPickPanel({
               >
                 <span className="pick-seat-label">
                   {isLord ? (landlord ? '地主' : '主公') : player.isHost ? '房主' : '玩家'} · {seatNo(index)}号位
+                  {relLabel(relOf(player.playerId)) && (
+                    <em className="pick-seat-rel">{relLabel(relOf(player.playerId))}</em>
+                  )}
                   {player.connId === me.connId && <span className="pick-seat-me">你</span>}
                   {team && <span className="pick-seat-team">{teamName(player.playerId)}</span>}
                 </span>
@@ -151,7 +160,12 @@ export function LanPickPanel({
             const isBotLord = !lordPlayerId && !!lordBotHero && lordSeat === seatIndex;
             return (
               <div key={`empty-${index}`} className={`pick-seat ${isBotLord ? 'is-lord' : ''}`}>
-                <span className="pick-seat-label">{isBotLord ? (landlord ? '地主' : '主公') : '电脑'} · {seatNo(seatIndex)}号位</span>
+                <span className="pick-seat-label">
+                  {isBotLord ? (landlord ? '地主' : '主公') : '电脑'} · {seatNo(seatIndex)}号位
+                  {relLabel(relOf(seatIndex)) && (
+                    <em className="pick-seat-rel">{relLabel(relOf(seatIndex))}</em>
+                  )}
+                </span>
                 <span className="pick-seat-hero">{isBotLord ? lordBotHero?.name : '自动补足'}</span>
                 <span className="pick-seat-tag">{isBotLord ? '电脑' : '空位'}</span>
               </div>

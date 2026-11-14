@@ -13,6 +13,7 @@ function seedPreGame() {
       ],
       roles: ['rebel', 'rebel', 'rebel'],
       lordIndex: -1,
+      firstPlayer: 0,
       lordHeroId: null,
       bid: { highest: 0, highestBidder: -1, bids: [null, null, null], done: false },
     },

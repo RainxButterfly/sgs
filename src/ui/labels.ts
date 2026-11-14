@@ -142,8 +142,23 @@ export function playerHeroNames(player: PlayerState): string {
 
 const TABLE_NUMERALS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
+/**
+ * 座次序号：以先手（anchor）为 1 号位，沿本局出牌方向递增。
+ * 选将页与牌桌共用同一套算法，保证两边显示的号位一致。
+ */
+export function seatNumber(index: number, anchor: number, total: number, direction: 1 | -1): number {
+  if (total <= 0) return 0;
+  return (((index - anchor) * direction) % total + total) % total + 1;
+}
+
+/** 从自己出发沿出牌方向的相对位次：0=自己，1=下家 */
+export function seatRelation(index: number, self: number, total: number, direction: 1 | -1): number {
+  if (total <= 0) return 0;
+  return (((index - self) * direction) % total + total) % total;
+}
+
 export function tableSeatLabel(startPlayer: number, direction: 1 | -1, playerId: number, total: number): string {
   if (total <= 0) return '';
-  const offset = ((playerId - startPlayer) * direction + total * 1000) % total;
+  const offset = seatNumber(playerId, startPlayer, total, direction) - 1;
   return TABLE_NUMERALS[offset] ?? String(offset + 1);
 }

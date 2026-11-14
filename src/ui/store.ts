@@ -49,6 +49,8 @@ interface PreGame {
   bots: { name: string; heroId: string; heroIds?: string[] }[];
   roles: Role[];
   lordIndex: number;
+  /** 先手座位：身份场为主公，其余模式在选将前随机确定 */
+  firstPlayer: number;
   lordHeroId: string | null;
   bid?: {
     highest: number;
@@ -354,6 +356,8 @@ interface AoeState {
 
 interface GameStore {
   screen: Screen;
+  /** 图鉴的返回目标：从房间进来时返回房间，其余回主菜单 */
+  galleryFrom: 'menu' | 'lobby';
   game: GameLike | null;
   preGame: PreGame | null;
   humanId: number;
@@ -614,6 +618,7 @@ const io: GameIO = {
 
 export const useGameStore = create<GameStore>((set, get) => ({
   screen: 'menu',
+  galleryFrom: 'menu',
   guandanView: null,
   game: null,
   preGame: null,
@@ -859,6 +864,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     const lordIndex = count > 2 && mode === 'identity' ? roles.indexOf('lord') : -1;
     const lordHeroId = lordIndex > 0 ? bots[lordIndex - 1].heroId : null;
+    // 座次在选将前就定下来：有主公时以主公为先手，其余模式随机先手
+    const firstPlayer =
+      lordIndex >= 0 ? lordIndex : mode === '2v2' ? 0 : Math.floor(Math.random() * count);
     const bid =
       mode === 'landlord'
         ? { highest: 0, highestBidder: -1, bids: [null, null, null], done: false }
@@ -867,7 +875,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       screen: 'pick',
       game: null,
       suspended: false,
-      preGame: { count, rules, candidates, candidatePairs, bots, roles, lordIndex, lordHeroId, bid },
+      preGame: { count, rules, candidates, candidatePairs, bots, roles, lordIndex, firstPlayer, lordHeroId, bid },
       humanId: 0,
       firstPlayerId: null,
       devTainted: false,
@@ -977,6 +985,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         seed: (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0,
         direction: preGame.rules?.turnDirection ?? -1,
         roles: preGame.roles,
+        // 斗地主的先手由地主决定，其余模式用选将前定好的座位
+        startPlayer: preGame.rules?.mode === 'landlord' ? undefined : preGame.firstPlayer,
         rules: preGame.rules,
       },
       io,

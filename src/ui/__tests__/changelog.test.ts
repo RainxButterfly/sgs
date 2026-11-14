@@ -12,9 +12,9 @@ function allItems(entries: ChangelogEntry[]): string[] {
 
 describe('更新日志', () => {
   it('0.9 整段合并为一个分组，并保留各版本明细', () => {
-    expect(CHANGELOG[0].version).toBe('0.9.0~0.9.18');
+    expect(CHANGELOG[0].version).toBe('0.9.0~0.9.19');
     const versions = (CHANGELOG[0].versions ?? []).map((entry) => entry.version);
-    expect(versions).toContain('0.9.18');
+    expect(versions).toContain('0.9.19');
     expect(versions).toContain('0.9.16');
     expect(versions).toContain('0.9.15');
     expect(versions).toContain('0.9.14');

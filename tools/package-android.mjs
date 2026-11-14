@@ -29,6 +29,71 @@ if (!fs.existsSync(buildGradle)) {
   execFileSync('npx', ['tauri', 'android', 'init'], { stdio: 'inherit', shell: true });
 }
 
+/**
+ * 安卓 WebView 的两个默认行为会让手机端界面出问题：
+ * 1. useWideViewPort 默认 false，会忽略页面 viewport meta，把布局宽度固定成 980px；
+ * 2. 系统「强制深色」会对网页做算法暗化，把浅色牌面压成黑卡、整屏发暗。
+ * 这些设置在 tauri 重新生成 android 工程时会丢，所以每次打包前补一次。
+ */
+function patchAndroidWebView() {
+  const rustWebView = path.join(
+    androidDir,
+    'app/src/main/java/com/rainxbutterfly/sanguosha/generated/RustWebView.kt',
+  );
+  if (!fs.existsSync(rustWebView)) {
+    console.warn('未找到 RustWebView.kt，跳过 WebView 补丁');
+    return;
+  }
+  let src = fs.readFileSync(rustWebView, 'utf8');
+  let changed = false;
+
+  if (!src.includes('import androidx.webkit.WebSettingsCompat')) {
+    src = src.replace(
+      'import androidx.webkit.WebViewCompat',
+      'import androidx.webkit.WebSettingsCompat\nimport androidx.webkit.WebViewCompat',
+    );
+    changed = true;
+  }
+
+  const before = 'settings.javaScriptEnabled = true';
+  if (!src.includes('useWideViewPort = true') && src.includes(before)) {
+    src = src.replace(
+      before,
+      [
+        '// 让 WebView 按 viewport meta 排版（device-width），否则手机上会被当成 980px 宽',
+        'settings.useWideViewPort = true',
+        'settings.loadWithOverviewMode = true',
+        'settings.textZoom = 100',
+        before,
+      ].join('\n        '),
+    );
+    changed = true;
+  }
+
+  if (!src.includes('setAlgorithmicDarkeningAllowed') && src.includes(before)) {
+    src = src.replace(
+      before,
+      [
+        '// 关闭系统「强制深色」的算法暗化，避免浅色牌面被压成黑卡',
+        'if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {',
+        '    WebSettingsCompat.setAlgorithmicDarkeningAllowed(settings, false)',
+        '}',
+        before,
+      ].join('\n        '),
+    );
+    changed = true;
+  }
+
+  if (changed) {
+    fs.writeFileSync(rustWebView, src, 'utf8');
+    console.log('已为安卓 WebView 打上视口 + 深色模式补丁');
+  } else {
+    console.log('安卓 WebView 补丁已就绪');
+  }
+}
+
+patchAndroidWebView();
+
 const androidIcons = path.resolve('src-tauri/icons/android');
 if (fs.existsSync(androidIcons)) {
   for (const entry of fs.readdirSync(androidIcons)) {

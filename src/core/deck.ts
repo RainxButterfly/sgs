@@ -28,32 +28,38 @@ function equip(name: string, suit: Suit, rank: number, slot: EquipSlot, range?: 
 }
 
 export function buildStandardDeck(): Card[] {
+  // 标准包 108 张：每种花色 27 张，除 EX 牌外每个点数各两张
   const deck: Card[] = [
+    // ---- 基本牌 53 张 ----
+    // 杀 30：♠[7,8,8,9,9,10,10] ♥[10,10,J] ♦[6,7,8,9,10,K] ♣[2,3,4,5,6,7,8,8,9,9,10,10,J,J]
     ...cards('杀', 'spade', [7, 8, 8, 9, 9, 10, 10]),
     ...cards('杀', 'heart', [10, 10, 11]),
-    ...cards('杀', 'club', [2, 3, 4, 5, 6, 7, 8, 8, 9, 9, 10, 10, 12, 12]),
     ...cards('杀', 'diamond', [6, 7, 8, 9, 10, 13]),
+    ...cards('杀', 'club', [2, 3, 4, 5, 6, 7, 8, 8, 9, 9, 10, 10, 11, 11]),
 
-    ...cards('闪', 'heart', [2, 2, 11, 11, 12, 13, 13]),
-    ...cards('闪', 'diamond', [2, 3, 4, 5, 6, 7, 8, 9]),
+    // 闪 15：♥[2,2,K] ♦[2,2,3,4,5,6,7,8,9,10,J,J]
+    ...cards('闪', 'heart', [2, 2, 13]),
+    ...cards('闪', 'diamond', [2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11]),
 
-    ...cards('桃', 'heart', [3, 4, 5, 6, 7, 8, 9]),
-    ...cards('桃', 'diamond', [2]),
+    // 桃 8：♥[3,4,6,7,8,9,Q] ♦[Q]
+    ...cards('桃', 'heart', [3, 4, 6, 7, 8, 9, 12]),
+    ...cards('桃', 'diamond', [12]),
 
+    // ---- 锦囊牌 36 张 ----
     ...tricks('决斗', 'spade', [1]),
     ...tricks('决斗', 'club', [1]),
     ...tricks('决斗', 'diamond', [1]),
 
     ...tricks('过河拆桥', 'spade', [3, 4, 12]),
-    ...tricks('过河拆桥', 'club', [3, 4, 12]),
+    ...tricks('过河拆桥', 'club', [3, 4]),
+    ...tricks('过河拆桥', 'heart', [12]),
 
     ...tricks('顺手牵羊', 'spade', [3, 4, 11]),
     ...tricks('顺手牵羊', 'diamond', [3, 4]),
 
     ...tricks('万箭齐发', 'heart', [1]),
     ...tricks('桃园结义', 'heart', [1]),
-    ...tricks('五谷丰登', 'heart', [3]),
-    ...tricks('五谷丰登', 'club', [3]),
+    ...tricks('五谷丰登', 'heart', [3, 4]),
 
     ...tricks('南蛮入侵', 'spade', [7, 13]),
     ...tricks('南蛮入侵', 'club', [7]),
@@ -63,9 +69,8 @@ export function buildStandardDeck(): Card[] {
     ...tricks('无中生有', 'heart', [7, 8, 9, 11]),
 
     ...tricks('无懈可击', 'spade', [11]),
-    ...tricks('无懈可击', 'club', [12]),
+    ...tricks('无懈可击', 'club', [12, 13]),
     ...tricks('无懈可击', 'diamond', [12]),
-    ...tricks('无懈可击', 'heart', [12]),
 
     ...tricks('乐不思蜀', 'spade', [6], 'delayed'),
     ...tricks('乐不思蜀', 'club', [6], 'delayed'),
@@ -74,6 +79,7 @@ export function buildStandardDeck(): Card[] {
     ...tricks('闪电', 'spade', [1], 'delayed'),
     ...tricks('闪电', 'heart', [12], 'delayed'),
 
+    // ---- 装备牌 19 张 ----
     equip('诸葛连弩', 'club', 1, 'weapon', 1),
     equip('诸葛连弩', 'diamond', 1, 'weapon', 1),
     equip('青釭剑', 'spade', 6, 'weapon', 2),

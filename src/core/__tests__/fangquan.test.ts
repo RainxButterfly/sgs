@@ -24,15 +24,46 @@ function makeGame(mode: 'identity' | '2v2' = 'identity', heroId = 'liushan') {
 const logText = (game: Game) => JSON.stringify(game.state.log);
 
 describe('刘禅【放权】', () => {
-  it('发动后立即置「跳过出牌」与「待结算」标记', async () => {
+  it('不是出牌阶段可随时发动的主动技', () => {
+    const skill = SKILL_MAP.get('fangquan');
+    expect(skill?.active).toBeFalsy();
+  });
+
+  it('出牌阶段开始时确认发动，立即置「待结算」标记', async () => {
     const { game } = makeGame();
     const owner = game.state.players[0];
-    const skill = SKILL_MAP.get('fangquan');
-    expect(skill?.active).toBeTruthy();
-    await skill!.active!.run(game, owner);
-    expect(owner.flags.fangquanSkip).toBe(1);
+    game.confirm = async () => true;
+    // @ts-expect-error 测试中直接触发阶段开始询问
+    const skipped = await game.offerFangquan(owner);
+    expect(skipped).toBe(true);
     expect(owner.flags.fangquanPending).toBe(1);
     expect(logText(game)).toContain('跳过出牌阶段');
+  });
+
+  it('出牌阶段开始时选择取消则不发动', async () => {
+    const { game } = makeGame();
+    const owner = game.state.players[0];
+    game.confirm = async () => false;
+    // @ts-expect-error 测试中直接触发阶段开始询问
+    const skipped = await game.offerFangquan(owner);
+    expect(skipped).toBe(false);
+    expect(owner.flags.fangquanPending).toBeUndefined();
+    expect(logText(game)).not.toContain('放权');
+  });
+
+  it('无手牌时不会询问，也不会跳过出牌阶段', async () => {
+    const { game } = makeGame();
+    const owner = game.state.players[0];
+    owner.hand = [];
+    let asked = false;
+    game.confirm = async () => {
+      asked = true;
+      return true;
+    };
+    // @ts-expect-error 测试中直接触发阶段开始询问
+    const skipped = await game.offerFangquan(owner);
+    expect(skipped).toBe(false);
+    expect(asked).toBe(false);
   });
 
   it('回合末弃一张手牌，并令其他角色获得额外回合', async () => {

@@ -86,6 +86,11 @@ export function botAction(req: AskRequest): GameAction {
       const options = req.options ?? [];
       if (!options.length) return { type: 'cancel' };
       if (req.canCancel && Math.random() < 0.15) return { type: 'cancel' };
+      // 放权是主动放弃自己的出牌阶段，电脑默认不发动
+      if (req.prompt.includes('放权')) {
+        const no = options.find((o) => o.id === 'no');
+        return no ? { type: 'chooseOption', optionId: no.id } : { type: 'cancel' };
+      }
       const preferred = options.filter((o) => o.id !== 'no');
       return { type: 'chooseOption', optionId: pick(preferred.length ? preferred : options)!.id };
     }

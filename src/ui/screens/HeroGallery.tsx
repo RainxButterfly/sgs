@@ -105,7 +105,15 @@ export function HeroGallery() {
                 : '按类型查看牌堆中的基本牌、锦囊牌、延时锦囊和装备牌效果，括号内为这套牌堆中的数量。'}
             </p>
           </div>
-          <button type="button" className="btn ghost" onClick={() => useGameStore.setState({ screen: 'menu' })}>
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => {
+              const state = useGameStore.getState();
+              const back = state.galleryFrom === 'lobby' && state.lobby ? 'lobby' : 'menu';
+              useGameStore.setState({ screen: back });
+            }}
+          >
             返回
           </button>
         </div>

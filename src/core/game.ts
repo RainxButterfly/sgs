@@ -91,6 +91,8 @@ export interface GameSetup {
   direction?: 1 | -1;
   lordSeat?: number;
   roles?: Role[];
+  /** 先手座位：无主公的模式在选将前就随机确定，保证选将页与牌桌座次一致 */
+  startPlayer?: number;
   rules?: Partial<CustomRules>;
 }
 
@@ -253,11 +255,13 @@ export class Game {
     this.shuffle(deck);
 
     const initialCurrent =
-      mode === '2v2'
-        ? 0
-        : mode === 'duel' || mode === 'guozhan'
-        ? Math.floor(this.random() * players.length)
-        : Math.max(0, players.findIndex((p) => p.role === 'lord'));
+      setup.startPlayer != null && setup.startPlayer >= 0 && setup.startPlayer < players.length
+        ? setup.startPlayer
+        : mode === '2v2'
+          ? 0
+          : mode === 'duel' || mode === 'guozhan'
+            ? Math.floor(this.random() * players.length)
+            : Math.max(0, players.findIndex((p) => p.role === 'lord'));
     this.state = {
       players,
       deck,
@@ -1492,7 +1496,26 @@ ${skill.desc}` : ''}`
     return out;
   }
 
+  /**
+   * 放权：只在出牌阶段开始的这一刻询问一次。
+   * 跳过出牌阶段，回合结束时再结算「弃一张手牌换额外回合」。
+   */
+  private async offerFangquan(player: PlayerState): Promise<boolean> {
+    if (!this.skillsOf(player).some((skill) => skill.id === 'fangquan')) return false;
+    if (player.hand.length === 0) return false;
+    const ok = await this.confirm(
+      player,
+      '出牌阶段开始：是否发动【放权】？',
+      '跳过本回合的出牌阶段；回合结束时弃置一张手牌，令一名其他角色获得一个额外回合。',
+    );
+    if (!ok) return false;
+    player.flags.fangquanPending = 1;
+    this.log(`【${player.name}】发动【放权】，跳过出牌阶段`, 'skill');
+    return true;
+  }
+
   private async playPhase(player: PlayerState): Promise<void> {
+    if (await this.offerFangquan(player)) return;
     while (!this.state.over && player.alive) {
       const cardOptions = this.buildPlayOptions(player);
       const skillOptions = this.activeSkillOptions(player);

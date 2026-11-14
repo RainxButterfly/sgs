@@ -2260,16 +2260,7 @@ const SKILLS: SkillDef[] = [
   {
     id: 'fangquan',
     name: '放权',
-    desc: '出牌阶段限一次，你可以跳过出牌阶段，并于回合结束时弃置一张手牌，令一名其他角色获得一个额外回合。',
-    active: {
-      oncePerTurn: true,
-      usable: (_game, owner) => owner.hand.length > 0,
-      run: async (game, owner) => {
-        owner.flags.fangquanSkip = 1;
-        owner.flags.fangquanPending = 1;
-        game.log(`【${owner.name}】发动【放权】，跳过出牌阶段`, 'skill');
-      },
-    },
+    desc: '出牌阶段开始时，你可以跳过出牌阶段；若如此做，此回合结束时，你可以弃置一张手牌，令一名其他角色获得一个额外回合。',
   },
   {
     id: 'ruoyu',

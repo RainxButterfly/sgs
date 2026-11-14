@@ -382,7 +382,34 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   flex: 0 0 auto;
 }
 
-@media (max-width: 720px) {
+/* 主菜单里的「房间还开着」条：留足文字宽度，按钮用小号，不挤成一团 */
+.lobby-banner {
+  gap: 12px;
+  padding: 11px 14px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.lobby-banner .suspended-text {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
+.lobby-banner .suspended-text b {
+  font-size: 16px;
+}
+
+.lobby-banner .suspended-text span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lobby-banner .suspended-actions {
+  align-items: center;
+}
+
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .suspended-banner {
     flex-direction: column;
     align-items: flex-start;
@@ -817,6 +844,26 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   letter-spacing: 0.08em;
 }
 
+.pick-seat-rel {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(219, 181, 108, 0.42);
+  background: rgba(219, 181, 108, 0.12);
+  color: rgba(255, 226, 168, 0.92);
+  font-size: 10.5px;
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+.lobby-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .pick-seat-hero {
   flex: 1;
   font-family: var(--font-calligraphy);
@@ -876,7 +923,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .pick-screen {
     padding: 2vh 3vw;
   }
@@ -3368,7 +3415,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
 
 /* ---------- 手机浏览器 / 平板竖屏 ---------- */
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   html,
   body,
   #root,
@@ -4446,7 +4493,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   color: #f0cf8b;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .detail-backdrop {
     padding-top: 0;
     background: transparent;
@@ -4601,7 +4648,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   letter-spacing: 0.03em;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .rules-editor {
     grid-template-columns: 1fr;
     padding: 12px;
@@ -5217,7 +5264,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   white-space: nowrap;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .lobby-hero-grid {
     grid-template-columns: 1fr;
   }
@@ -6262,7 +6309,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   flex-wrap: wrap;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .fatal-card {
     padding: 24px 18px 20px;
   }
@@ -8419,7 +8466,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   justify-content: center;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .spectator-screen .topbar {
     flex-basis: 48px;
     height: 48px;
@@ -8795,7 +8842,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   line-height: 1.6;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .spectator-screen .brand {
     display: none;
   }
@@ -8967,7 +9014,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   border-color: rgba(219, 181, 108, 0.28);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .aoe-panel {
     left: 8px;
     top: 58px;
@@ -9204,7 +9251,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   color: rgba(219, 181, 108, 0.55);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .changelog-modal {
     width: 96vw;
     max-height: 92vh;
@@ -9751,7 +9798,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   min-width: 120px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .about-modal {
     width: 94vw;
     padding: 16px 16px 14px;
@@ -9881,7 +9928,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   margin-right: -2px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .skill-option-list {
     flex-direction: column;
   }
@@ -10040,7 +10087,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .reveal-notice {
     top: 104px;
     max-width: 82vw;
@@ -10127,7 +10174,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .judge-notice {
     top: 60px;
     min-width: 190px;
@@ -10223,7 +10270,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .skill-notice {
     top: 58px;
     left: 8px;
@@ -10397,7 +10444,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   display: none;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .spectator-focus {
     flex-direction: column;
     max-height: 42vh;
@@ -10457,7 +10504,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   z-index: 75;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .spectator-stage {
     display: flex;
     flex-direction: column;
@@ -10476,7 +10523,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .spectator-focus {
     max-height: 52vh;
   }
@@ -10533,7 +10580,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .spectator-focus-main .hand-cards {
     max-height: 84px;
     padding-bottom: 2px;
@@ -10713,7 +10760,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   min-width: 92px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .tutorial-modal {
     width: 94vw;
     padding: 18px 16px 14px;
@@ -10912,7 +10959,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .lobby-hero-grid.pair-grid {
     grid-template-columns: 1fr !important;
   }
@@ -11029,7 +11076,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .aoe-panel {
     left: 6px;
     top: 54px;
@@ -11459,7 +11506,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   color: var(--muted);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .card-gallery-grid {
     grid-template-columns: 1fr;
     gap: 8px;
@@ -12285,7 +12332,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   font-size: 9.5px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .spectator-live-hint {
     display: none;
   }
@@ -13690,7 +13737,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   white-space: nowrap;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .changelog-version-block-head {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -14916,7 +14963,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   font-weight: 600;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .menu-profile {
     margin-bottom: 14px;
     padding: 8px 10px;
@@ -15914,7 +15961,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   line-height: 1.4;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .menu-profile-head .name-chip b {
     font-size: 15px;
   }
@@ -17606,7 +17653,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .spectator-stage-v2 {
     display: flex;
     flex-direction: column;
@@ -17734,7 +17781,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   font-weight: 500;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .room-config-grid {
     grid-template-columns: 1fr;
   }
@@ -18417,7 +18464,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .menu-screen {
     padding: calc(10px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
   }
@@ -19232,7 +19279,7 @@ html.has-wallpaper.theme-magic[data-palette] .ink-bg {
   background: rgba(255, 255, 255, 0.08);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .table-piles {
     max-width: 94vw;
     padding: 3px 7px;
@@ -19843,7 +19890,7 @@ html body .own-area > .hero-panel .hero-foot {
   font-size: 11.5px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
   .about-grid-v2 {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -20458,10 +20505,11 @@ html.theme-magic .mobile-game .m-hand .card.card-selected {
   cursor: pointer;
 }
 
-/* 全局禁止系统字体放大把卡面文字挤乱 */
+/* 全局禁止系统字体放大把卡面文字挤乱；声明页面本身就是深色，避免被系统再压暗 */
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  color-scheme: dark;
 }
 
 /* 联机大厅右侧聊天 */
@@ -22863,4 +22911,514 @@ html.theme-magic .volume-window {
   border-top: 1px solid rgba(255, 148, 76, 0.22);
   color: rgba(255, 205, 165, 0.72);
   font-size: 11.5px;
+}
+
+/* ==========================================================================
+   竖屏手机对局：顶栏信息完整、座位条可滑动、牌桌不再吃掉整屏高度
+   ========================================================================== */
+@media (max-width: 720px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait) and (max-width: 1200px) {
+  .m-topbar {
+    min-height: 46px;
+    padding: max(5px, env(safe-area-inset-top)) 8px 5px;
+    gap: 6px;
+  }
+
+  .m-brand {
+    width: 30px;
+    height: 30px;
+    font-size: 17px;
+  }
+
+  /* 行动提示最多两行，不再被截成「等待 电…」 */
+  .m-turn b {
+    font-size: 12.5px;
+    line-height: 1.25;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .m-turn em {
+    font-size: 10px;
+    line-height: 1.3;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .m-top-actions {
+    gap: 3px;
+  }
+
+  .m-top-actions button {
+    min-height: 32px;
+    padding: 3px 7px;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
+
+  /* 座位条：右侧渐隐，提示可以横向滑动；单卡更紧凑，一屏能看到 3 个半 */
+  .m-seats {
+    gap: 6px;
+    padding: 6px 8px 4px;
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 18px), transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 18px), transparent 100%);
+  }
+
+  .m-seat {
+    flex: 0 0 118px;
+    width: 118px;
+    min-height: 88px;
+    padding: 6px 7px;
+  }
+
+  .m-seat-head b {
+    font-size: 14px;
+  }
+
+  .m-seat-hp,
+  .m-seat-count {
+    font-size: 10.5px;
+  }
+
+  /* 牌桌区不再无限拉高，剩余高度让给手牌 */
+  .m-table {
+    flex: 0 1 auto;
+    max-height: 40vh;
+  }
+
+  .m-stage {
+    justify-content: center;
+  }
+
+  .m-stage-empty {
+    font-size: 12px;
+  }
+
+  .m-piles,
+  .m-composition {
+    font-size: 10px;
+  }
+
+  .m-composition {
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .m-hand {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 0;
+  }
+
+  .m-hand .card {
+    width: 66px;
+    height: 98px;
+  }
+
+  .m-hand .card-name {
+    font-size: 14.5px;
+    max-width: 58px;
+  }
+
+  .m-self {
+    padding: 8px 9px;
+    gap: 7px;
+  }
+
+  .m-self-role,
+  .m-self-hp,
+  .m-self-limit {
+    font-size: 12px;
+    padding: 2px 7px;
+  }
+
+  .m-self-skills {
+    font-size: 11px;
+  }
+
+  .m-prompt .prompt-title {
+    font-size: 14.5px;
+  }
+
+  .m-prompt .prompt-status {
+    font-size: 12px;
+  }
+}
+
+/* 竖屏选将页：底部「已选 / 进入对局」不再互相挤压 */
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
+  .pick-panel .setup-actions {
+    gap: 8px;
+    padding: 8px 10px;
+    align-items: center;
+  }
+
+  .pick-panel .setup-actions .setup-picked {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pick-panel .setup-actions .setup-picked b {
+    font-size: 15px;
+  }
+
+  .pick-panel .setup-actions .btn.big {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    font-size: 13.5px;
+  }
+}
+
+/* 竖屏手机弹窗（技能发动 / 选牌 / 选项）：整体收紧，标题与按钮更利于点按 */
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
+  .modal-backdrop {
+    padding: 10px;
+  }
+
+  .modal {
+    width: 96vw;
+    max-height: 86dvh;
+    padding: 12px 13px 10px;
+    border-radius: 12px;
+  }
+
+  .modal-head {
+    align-items: center;
+    gap: 8px;
+  }
+
+  .modal-title {
+    font-size: 17px;
+    margin-bottom: 0;
+  }
+
+  .modal-minimize {
+    min-height: 30px;
+    padding: 3px 9px;
+    font-size: 11px;
+  }
+
+  .skill-prompt {
+    gap: 9px;
+    margin: 2px 0 8px;
+    padding: 9px 10px;
+  }
+
+  .skill-prompt b {
+    font-size: 15px;
+  }
+
+  .skill-prompt p {
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 3px 0 0;
+  }
+
+  .option-list {
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .option-button {
+    padding: 9px 11px;
+  }
+
+  .option-button span {
+    font-size: 15px;
+  }
+
+  .option-button em {
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+
+  .modal-actions {
+    margin-top: 8px;
+    padding-top: 8px;
+    gap: 8px;
+  }
+
+  .modal-actions .btn {
+    flex: 1;
+    min-height: 38px;
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+
+  .modal-desc {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+}
+
+/* 竖屏手机：进一步压缩顶栏与座位卡，把空间还给牌桌 */
+@media (max-width: 720px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait) and (max-width: 1200px) {
+  .m-topbar {
+    min-height: 44px;
+    padding: max(4px, env(safe-area-inset-top)) 8px 4px;
+  }
+
+  /* 行动提示只占一行，超出用省略号，避免顶栏长到 4 行 */
+  .m-turn b {
+    display: block;
+    font-size: 12.5px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: unset;
+  }
+
+  .m-turn em {
+    display: block;
+    font-size: 10px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: unset;
+  }
+
+  .m-seat {
+    height: 94px;
+    min-height: 0;
+    padding: 5px 6px;
+    overflow: hidden;
+  }
+
+  .m-seat-head {
+    gap: 4px;
+  }
+
+  .m-seat-head b {
+    font-size: 13.5px;
+  }
+
+  .m-seat-info {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .m-seat-name {
+    margin-top: 1px;
+    font-size: 10px;
+  }
+
+  .m-seat-stats {
+    margin-top: 3px;
+    gap: 4px;
+    font-size: 10.5px;
+  }
+
+  /* 技能行在竖屏隐藏，点「i」可看完整技能 */
+  .m-seat-skills {
+    display: none;
+  }
+
+  .m-seat-actions {
+    margin-top: 3px;
+    gap: 4px;
+  }
+
+  .m-seat-actions button {
+    min-height: 22px;
+    padding: 1px 6px;
+    font-size: 10.5px;
+  }
+
+  .m-seat-gear {
+    margin-top: 2px;
+    font-size: 10px;
+  }
+
+  .m-table {
+    flex: 1 1 auto;
+    min-height: 130px;
+    max-height: none;
+  }
+}
+
+@media (max-width: 720px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait) and (max-width: 1200px) {
+  /* 身份统计在牌桌顶部已经有一份，顶栏不再重复占一行 */
+  .m-topbar .m-composition {
+    display: none;
+  }
+
+  .m-device-status {
+    min-width: 30px;
+  }
+
+  .m-device-status b {
+    font-size: 11px;
+  }
+
+  .m-device-status span {
+    font-size: 8.5px;
+  }
+}
+
+/* 竖屏：限制牌桌最大高度，多余空间交给手牌区，手牌始终贴底 */
+@media (max-width: 720px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait) and (max-width: 1200px) {
+  .m-table {
+    flex: 1 1 auto;
+    min-height: 130px;
+    max-height: 44vh;
+  }
+
+  .m-bottom {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 0;
+  }
+}
+
+/* 横屏手机：8 人局 7 个对手刚好放下，右侧留渐隐提示可滑动 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .m-seats {
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 14px), transparent 100%);
+  }
+
+  .m-seat {
+    flex: 0 0 108px;
+    width: 108px;
+  }
+
+  .m-seat-head b {
+    font-size: 13px;
+  }
+
+  .m-seat-info {
+    width: 20px;
+    height: 20px;
+    font-size: 9.5px;
+  }
+
+  .m-seat-actions button {
+    min-height: 20px;
+    font-size: 10px;
+    padding: 0 5px;
+  }
+
+  .m-hand .card {
+    width: 70px;
+    height: 102px;
+  }
+}
+
+/* 竖屏最终配比：牌桌吸收剩余高度，底部区域按内容高度贴在下方 */
+@media (max-width: 720px) and (orientation: portrait), (pointer: coarse) and (orientation: portrait) and (max-width: 1200px) {
+  .m-table {
+    flex: 1 1 auto;
+    min-height: 140px;
+    max-height: none;
+  }
+
+  .m-bottom {
+    flex: 0 0 auto;
+    justify-content: flex-start;
+  }
+}
+
+/* 竖屏选将页：给吸底操作条留出空间，候选武将不会被挡住 */
+@media (max-width: 720px), (pointer: coarse) and (max-width: 1200px) {
+  .pick-screen {
+    padding-bottom: 92px;
+  }
+}
+
+/* ==========================================================================
+   对局「轮到我」提示：顶栏高亮 + 手牌上方的醒目横幅（手机竖屏/横屏通用）
+   ========================================================================== */
+.m-turn-banner {
+  display: none;
+}
+
+.mobile-game.is-my-turn .m-turn-banner {
+  display: block;
+  order: -1;
+  margin: 3px 10px 0;
+  padding: 5px 10px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #ffc85a, #ff9a3c);
+  color: #2a1a05;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: center;
+  box-shadow: 0 0 16px rgba(255, 185, 70, 0.5), inset 0 0 0 1px rgba(255, 245, 210, 0.6);
+}
+
+.mobile-game.is-my-turn .m-topbar {
+  background: linear-gradient(180deg, rgba(126, 82, 22, 0.98), rgba(64, 42, 12, 0.97));
+  box-shadow: inset 0 -2px 0 rgba(255, 205, 120, 0.45);
+}
+
+.mobile-game.is-my-turn .m-turn b {
+  color: #fff4d2;
+}
+
+.mobile-game.is-my-turn .m-brand {
+  border-color: rgba(255, 214, 132, 0.9);
+  box-shadow: 0 0 12px rgba(255, 190, 90, 0.55);
+}
+
+.mobile-game.is-my-turn .m-hand {
+  box-shadow: inset 0 0 0 1px rgba(255, 205, 120, 0.4);
+  background: rgba(255, 190, 90, 0.05);
+}
+
+/* 手牌整体提亮：暗色主题/暗卡面下也能看清花色与牌名 */
+.mobile-game .m-hand .card {
+  filter: brightness(1.06) saturate(1.04);
+}
+
+.mobile-game .m-hand .card.card-dimmed {
+  filter: brightness(1.03) saturate(1);
+  opacity: 1;
+}
+
+/* 横屏手机：省掉与顶栏重复的快捷按钮和设备状态，给手牌腾出高度 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .m-bottom .m-quick-actions {
+    display: none;
+  }
+
+  .m-device-status {
+    display: none;
+  }
+
+  .m-turn-banner {
+    margin: 2px 8px 0;
+    padding: 3px 8px;
+    font-size: 12px;
+  }
+
+  .m-hand .card {
+    width: 52px;
+    height: 76px;
+  }
+
+  .m-hand .card-name {
+    font-size: 11.5px;
+    max-width: 44px;
+  }
+
+  .m-bottom {
+    min-height: 0;
+  }
 }
